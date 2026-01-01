@@ -8,6 +8,7 @@ module.exports = {
     MISSING_REQUIRE_KEYS: ({ "retcode": -1002, "message": 'Missing Required Keys', "data": null }),
     DATATYPE_MISMATCH: ({ "retcode": -1003, "message": 'DataType Mismatch', "data": null }),
     KEY_CONFUSION: ({ "retcode": -1004, "message": 'Key Confusion', "data": null }),
+    USER_DOES_NOT_EXISTED: ({ "retcode": -1005, "message": 'User Does Not Existed', "data": null }),
     
     raiseError(res, apiErrors) {
         return res.status(200).json(apiErrors || { "retcode": -2, "message": 'Unknown', "data": null })
