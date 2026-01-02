@@ -63,7 +63,7 @@ exports.getVideoGroupInfo = async (req, res) => {
 
     // Search Video Group Info
     const data = await db.VideoDb.videoGroupData.findOne({
-        where: { id: group_id },
+        where: { group_id: group_id },
     })
 
     // Return Result
@@ -145,7 +145,7 @@ exports.getDownloadableVideo = async (req, res) => {
         const zipName = videoGroupName
             .replaceAll(" ", "_")
             .replace(/[!@#$%^&*();:<>{}[\]'\",]/g, "")
-            + new Date().getTime()
+            + Date.now()
             + ".zip";
         res.setHeader('Content-Type', 'application/zip');
         res.setHeader('Content-Disposition', `attachment; filename="${zipName}"`);

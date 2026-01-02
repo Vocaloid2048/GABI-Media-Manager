@@ -15,10 +15,6 @@ VideoDb.videoData = require("./videoData.model")(VideoDb.sequelize,Sequelize)
 VideoDb.userData = require("./userData.model")(VideoDb.sequelize,Sequelize)
 VideoDb.videoGroupData = require("./videoGroupData.model")(VideoDb.sequelize,Sequelize)
 
-// Define associations
-VideoDb.videoData.belongsToMany(VideoDb.tagData, { through: 'VideoTags', foreignKey: 'videoId' });
-VideoDb.tagData.belongsToMany(VideoDb.videoData, { through: 'VideoTags', foreignKey: 'tagId' });
-
 // Initialize the database and create tables if they don't exist
 function initDb() {
   if(VideoDb.sequelize.authenticate() == null) { return false; }

@@ -17,8 +17,7 @@ const {
       group_id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
-        primaryKey: true,
-        defaultValue:0
+        primaryKey: true
       },
       group_title: DataTypes.TEXT,
       group_desc: DataTypes.TEXT,

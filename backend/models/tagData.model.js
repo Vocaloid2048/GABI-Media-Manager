@@ -17,8 +17,7 @@ const {
       tag_id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
-        primaryKey: true,
-        defaultValue:0
+        primaryKey: true
       },
       tag_name: DataTypes.TEXT,
       tag_locale_name: DataTypes.TEXT,

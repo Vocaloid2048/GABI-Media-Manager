@@ -17,8 +17,7 @@ const {
       user_id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
-        primaryKey: true,
-        defaultValue:0
+        primaryKey: true
       },
       username: DataTypes.TEXT,
       locale_name: DataTypes.TEXT,

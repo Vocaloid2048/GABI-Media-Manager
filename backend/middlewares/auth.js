@@ -3,20 +3,24 @@ const { generateDs } = require("./generateDs")
 
 // Export the function as a module
 exports.auth = (ds, uid) => {
-    try{
-    if([undefined, null].includes(ds) || [undefined, null].includes(uid)){return false}
+    if(process.env.NODE_ENV === 'development_no_auth') {
+        return true
+    }
 
-    const dsSplit = ds.split(",")
-    if(dsSplit.length < 3){return false}
-    const dsTime = dsSplit[0]
-    const dsRandom = dsSplit[1]
+    try {
+        if ([undefined, null].includes(ds) || [undefined, null].includes(uid)) { return false }
 
-    if(ds !== generateDs(uid, dsTime,dsRandom) 
-    //    && Math.floor(Date.now() / 1000) - dsTime < 300
-    ){return false}
+        const dsSplit = ds.split(",")
+        if (dsSplit.length < 3) { return false }
+        const dsTime = dsSplit[0]
+        const dsRandom = dsSplit[1]
 
-    return true
-    }catch(error){
+        if (ds !== generateDs(uid, dsTime, dsRandom)
+            //    && Math.floor(Date.now() / 1000) - dsTime < 300
+        ) { return false }
+
+        return true
+    } catch (error) {
         errorByAPI(null, error);
         return false
     }

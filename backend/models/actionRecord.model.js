@@ -17,8 +17,7 @@ const {
       id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
-        primaryKey: true,
-        defaultValue:0
+        primaryKey: true
       },
       user_id: DataTypes.INTEGER,
       action_type: DataTypes.TEXT,

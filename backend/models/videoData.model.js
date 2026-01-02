@@ -17,8 +17,7 @@ const {
       video_id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
-        primaryKey: true,
-        defaultValue:0
+        primaryKey: true
       },
       group_id: DataTypes.INTEGER,
       video_filename: DataTypes.TEXT,
