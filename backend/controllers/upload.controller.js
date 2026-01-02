@@ -85,7 +85,6 @@ async function processVideoFiles(videoFiles, videoInfo) {
         group_author: videoInfo.group_author || 'Unknown',
         group_tags: videoInfo.group_tags ? videoInfo.group_tags.join(',') : '',
         group_thumb_name: generateSafeName(videoInfo.group_title) + "_main_" + Date.now() || '',
-        group_add_at: Date.now()
     }).then(group => group.group_id);
 
     const videoDir = process.env.VIDEO_DIR;

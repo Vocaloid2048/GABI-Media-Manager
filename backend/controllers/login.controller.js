@@ -1,3 +1,4 @@
+const { actionRecord, LOGIN } = require("../middlewares/actionRecord");
 const { raiseError, returnSuccess, checkParamsExisted, errorByAPI, USER_DOES_NOT_EXISTED, INVALID_REQUEST, WRONG_AUTHIZATION } = require("../middlewares/error");
 const db = require("../models");
 
@@ -18,4 +19,11 @@ exports.postLoginRequest = async (req, res) => {
     }
 
     returnSuccess(res, { user_id: user.id, salt: process.env.DS_SALT });
+
+    // Update last login time
+    user.last_login_at = Date.now();
+    await user.save();
+    
+    actionRecord(req, res, user.user_id, LOGIN, `User ${username} logged in`);
+    
 }
