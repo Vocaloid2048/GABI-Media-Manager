@@ -3,10 +3,11 @@ const path = require('path');
 const Sequelize = require('sequelize');
 const process = require('process');
 
-const env = process.env.NODE_ENV || 'development';
-const config = require(`../config`)[env];
-
 const VideoDb = {};
+VideoDb.sequelize = new Sequelize('database', 'username', 'password', {
+  storage: '../db/video_database.db',
+  dialect: 'sqlite'
+});
 
 VideoDb.actionRecord = require("./actionRecord.model")(VideoDb.sequelize,Sequelize)
 VideoDb.tagData = require("./tagData.model")(VideoDb.sequelize,Sequelize)
