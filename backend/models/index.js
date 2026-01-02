@@ -4,8 +4,8 @@ const Sequelize = require('sequelize');
 const process = require('process');
 
 const VideoDb = {};
-VideoDb.sequelize = new Sequelize('database', 'username', 'password', {
-  storage: '../db/video_database.db',
+VideoDb.sequelize = new Sequelize({
+  storage: './db/video_database.db',
   dialect: 'sqlite'
 });
 
@@ -19,4 +19,19 @@ VideoDb.videoGroupData = require("./videoGroupData.model")(VideoDb.sequelize,Seq
 VideoDb.videoData.belongsToMany(VideoDb.tagData, { through: 'VideoTags', foreignKey: 'videoId' });
 VideoDb.tagData.belongsToMany(VideoDb.videoData, { through: 'VideoTags', foreignKey: 'tagId' });
 
-module.exports = {VideoDb};
+// Initialize the database and create tables if they don't exist
+function initDb() {
+  if(VideoDb.sequelize.authenticate() == null) { return false; }
+
+  // Create tables(actionRecord, tagData, ...) if they do not exist
+  VideoDb.sequelize.sync()
+    .then(() => {
+      console.log("Database & tables created!");
+    })
+    .catch((error) => {
+      console.error("Error creating database tables:", error);
+    });
+  return true;
+}
+
+module.exports = {VideoDb, initDb};

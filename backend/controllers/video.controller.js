@@ -8,17 +8,16 @@ const path = require('path');
 const { generateSafeName } = require("../middlewares/generateThumb");
 
 // Pagination Requirement
-const limitRequirement = { limit: 12, offset: offset };
+const limitRequirement = (offset) => ({ limit: 12, offset: offset });
 
 exports.getVideoGroupList = async (req, res) => {
     // Get Query Params, E.g. filter=tree|mountain
     const filter = req.query.filter || null;
-    const index = req.query.index || 0;
     const offset = req.query.offset || 0;
 
     // When no filter provided, return paginated list
     if (filter === null || filter.trim() === "") {
-        const data = await db.VideoDb.videoGroupData.findAll(limitRequirement);
+        const data = await db.VideoDb.videoGroupData.findAll(limitRequirement(offset));
         return returnSuccess(res, data);
     }
 
@@ -43,7 +42,7 @@ exports.getVideoGroupList = async (req, res) => {
     });
 
     const data = await db.VideoDb.videoGroupData.findAll({
-        ...limitRequirement,
+        ...limitRequirement(offset),
         where: { [Sequelize.Op.or]: orClauses },
     });
 
@@ -100,11 +99,10 @@ exports.getVideoGroupThumbnail = async (req, res) => {
 }
 
 exports.getVideoTagsList = async (req, res) => {
-    const index = req.query.index || 0;
     const offset = req.query.offset || 0;
 
     // Fetch All Video Tags
-    const data = await db.VideoDb.tagData.findAll(limitRequirement);
+    const data = await db.VideoDb.tagData.findAll(limitRequirement(offset));
 
     returnSuccess(res, data);
 }
@@ -139,7 +137,7 @@ exports.getDownloadableVideo = async (req, res) => {
         // Video Name : FileName_HD.mp4
         const videoList = await db.VideoDb.videoData.findAll({
             where: { group_id: fileName },
-        }).finally(data => data.video_filename + data.video_resolution + "." + data.video_format.toLowerCase());
+        }).finally(data => data.video_filename + "." + data.video_format.toLowerCase());
 
         if (!videoList || videoList.length === 0) { raiseError(res, INVALID_REQUEST); }
 

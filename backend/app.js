@@ -4,7 +4,8 @@ const fs = require('fs')
 const https = require('https')
 
 const app = express();
-const router = require('./routers/router')
+const router = require('./routers/router');
+const { VideoDb, initDb } = require('./models');
 
 require('dotenv').config();
 
@@ -20,11 +21,14 @@ app.use(
   })
 )
 
+// Check is Database Connected
+initDb();
+
 // Check if the environment is production
 const isProduction = process.env.NODE_ENV === 'production'
 
 // Set up HTTPS only in production
-if (isProduction) {
+if (isProduction && !process.env.NODE_ISLOCAL) {
   const privateKey = fs.readFileSync('./cert/key.pem', 'utf8')
   const certificate = fs.readFileSync('./cert/cert.pem', 'utf8')
   const credentials = { key: privateKey, cert: certificate }
