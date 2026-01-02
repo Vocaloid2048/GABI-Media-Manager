@@ -116,36 +116,39 @@ exports.getVideoTagsList = async (req, res) => {
 exports.getDownloadableVideo = async (req, res) => {
     const user_id = req.query.user_id;
     const ds_key = req.get("ds");
-    const isGroup = req.query.is_group === 'true' || false;
-    const fileName = req.query.file_name || null;
     const options = req.query.options || null;
+    const groupId = req.query.group_id || null;
 
     // Check Auth
     const authResult = auth(user_id, ds_key);
     if (!authResult) { raiseError(res, WRONG_AUTHIZATION); return; }
 
     // Check Required Params
-    if (!checkParamsExisted(isGroup, fileName)) { raiseError(res, MISSING_REQUIRE_KEYS); return; }
+    if (!checkParamsExisted(groupId)) { raiseError(res, MISSING_REQUIRE_KEYS); return; }
+
+    // Fetch Video List in the Group
+    const videoQuery = await db.VideoDb.videoData.findAll({
+        where: { group_id: groupId },
+    });
+    const videoList = videoQuery.map(video => video.video_filename + "." + video.video_format.toLowerCase());
+
+    if (!videoList || videoList.length === 0) { raiseError(res, INVALID_REQUEST); }
+
 
     // If video_id is provided, return specific video download link
-    if (isGroup) {
+    if (videoList.length > 1) {
         // Prepare zip file for video group
-        const videoGroupName = await db.VideoDb.videoGroupData.findOne({
-            where: { id: fileName },
-        }).finally(data => data.group_title);
+        const videoGroupNameQuery = await db.VideoDb.videoGroupData.findOne({
+            where: { group_id: groupId },
+        })
 
-        // Video Name : FileName_HD.mp4
-        const videoList = await db.VideoDb.videoData.findAll({
-            where: { group_id: fileName },
-        }).finally(data => data.video_filename + "." + data.video_format.toLowerCase());
-
-        if (!videoList || videoList.length === 0) { raiseError(res, INVALID_REQUEST); }
+        const videoGroupName = videoGroupNameQuery.group_title
 
         // Have to zip all videos in the group and return the zip file link
         const zipName = videoGroupName
             .replaceAll(" ", "_")
             .replace(/[!@#$%^&*();:<>{}[\]'\",]/g, "")
-            + Date.now()
+            + "_" + Date.now()
             + ".zip";
         res.setHeader('Content-Type', 'application/zip');
         res.setHeader('Content-Disposition', `attachment; filename="${zipName}"`);
@@ -175,13 +178,7 @@ exports.getDownloadableVideo = async (req, res) => {
 
     } else {
         // Prepare single video file download link, Video Name : FileName_HD.mp4
-        const videoFilename = await db.VideoDb.videoData.findOne({
-            where: { video_filename: fileName },
-        }).finally(data => data.video_filename + data.video_resolution + "." + data.video_format.toLowerCase());
-
-        if(!videoFilename) { raiseError(res, INVALID_REQUEST); return; }
-
-        const safeVideoName = generateSafeName(videoFilename);
+        const safeVideoName = generateSafeName(videoList[0]);
 
         const filePath = path.join(process.env.VIDEO_DIR, safeVideoName);
         if (!fs.existsSync(filePath)) {
