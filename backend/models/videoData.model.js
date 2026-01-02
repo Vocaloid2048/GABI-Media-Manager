@@ -28,6 +28,7 @@ const {
       video_filesize: DataTypes.INTEGER,
       video_frame_rate: DataTypes.FLOAT,
       video_codec: DataTypes.TEXT,
+      video_thumb_name: DataTypes.TEXT
     }, {
       sequelize,
       modelName: 'VideoData',

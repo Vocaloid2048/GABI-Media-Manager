@@ -3,5 +3,6 @@ const video = require("../controllers/video.controller")
 
 // ./api/video
 router.get('/group', video.getVideoGroupInfo)
+router.get('/download', video.getDownloadableVideo)
 
 module.exports = router
