@@ -5,6 +5,7 @@ const { Sequelize, where } = require("sequelize");
 const archiver = require('archiver');
 const fs = require('fs');
 const path = require('path');
+const { generateSafeName } = require("../middlewares/generateThumb");
 
 // Pagination Requirement
 const limitRequirement = { limit: 12, offset: offset };
@@ -160,7 +161,7 @@ exports.getDownloadableVideo = async (req, res) => {
 
         // Add video files to the zip
         for (const video of videoList) {
-            const safeName = path.basename(String(video.video_filename || ''));
+            const safeName = generateSafeName(video);
             if (!safeName) {
                 continue;
             }
@@ -182,9 +183,7 @@ exports.getDownloadableVideo = async (req, res) => {
 
         if(!videoFilename) { raiseError(res, INVALID_REQUEST); return; }
 
-        const safeVideoName = path.basename(
-            String(videoFilename.replaceAll(" ", "_").replace(/[!@#$%^&*();:<>{}[\]'\",]/g, "") || '')
-        );
+        const safeVideoName = generateSafeName(videoFilename);
 
         const filePath = path.join(process.env.VIDEO_DIR, safeVideoName);
         if (!fs.existsSync(filePath)) {
