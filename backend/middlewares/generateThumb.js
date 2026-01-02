@@ -84,16 +84,72 @@ exports.generateThumbnail = async (videoFileName) => {
 }
 
 /**
- * Generate Thumbnails for all Videos in a Group
+ * Generate Merge Version of Thumbnails for a Video Group, also PNG by first video
  * @param {number} groupId ID of the video group
- * @returns {Array} Array of success statuses
+ * @returns {boolean} Success status
  */
-exports.generateThumbnailGroup = async (groupId) => {
-    // Fetch all videos in the group
-    const videos = await db.VideoDb.videoData.findAll({ where: { group_id: groupId } });
+exports.generateThumbnailGroup = async (groupId, videoGroupThumbName) => {
+    if (!ffmpegPath) { throw new Error('ffmpeg-static path not found'); }
 
-    // Generate thumbnails for each video
-    return Promise.all(videos.map((video) => exports.generateThumbnail(video.video_filename)));
+    const thumbDir = process.env.THUMB_DIR;
+    if (!thumbDir) { throw new Error('THUMB_DIR is not set'); }
+    fs.mkdirSync(thumbDir, { recursive: true });
+
+    // 1) Get all videos in the group
+    const videos = await db.VideoDb.videoData.findAll({
+        where: { group_id: groupId },
+        order: [['video_id', 'ASC']],
+    });
+    if (!videos || videos.length === 0) { throw new Error(`No videos for group ${groupId}`); }
+
+    // 2) Determine group base name
+    const groupBase = this.generateSafeName(
+        videoGroupThumbName || await db.VideoDb.videoGroupData
+            .findOne({ where: { group_id: groupId } })
+            .then(g => (g && g.group_thumb_name) ? g.group_thumb_name : `group_${groupId}`)
+    );
+    const mergedGifPath = path.join(thumbDir, `${path.parse(groupBase).name}.gif`);
+    const pngPath = path.join(thumbDir, `${path.parse(groupBase).name}.png`);
+
+    // 3) Collect individual video GIFs and PNGs
+    const gifInputs = videos
+        .map(v => path.join(thumbDir, `${(v.video_thumb_name || v.video_filename)}.gif`))
+        .filter(p => fs.existsSync(p));
+    const firstPng = videos
+        .map(v => path.join(thumbDir, `${(v.video_thumb_name || v.video_filename)}.png`))
+        .find(p => fs.existsSync(p));
+
+    if (gifInputs.length === 0) { throw new Error('No per-video GIFs to merge'); }
+
+    // 4) Merge GIFs
+    const args = ['-hide_banner', '-loglevel', 'error', '-y'];
+    gifInputs.forEach(g => args.push('-i', g));
+
+    if (gifInputs.length === 1) {
+        // Only one GIF, just copy
+        args.push(
+            '-filter_complex', 'fps=15,scale=640:-2:flags=lanczos',
+            '-loop', '0',
+            mergedGifPath
+        );
+    } else {
+        const inputs = gifInputs.map((_, i) => `[${i}:v]`).join('');
+        const filter = `${inputs}concat=n=${gifInputs.length}:v=1:a=0,fps=15,scale=640:-2:flags=lanczos`;
+        args.push(
+            '-filter_complex', filter,
+            '-loop', '0',
+            mergedGifPath
+        );
+    }
+
+    await runProcess(ffmpegPath, args);
+
+    // 5) Group PNG: prioritize copying the first video's PNG
+    if (firstPng && fs.existsSync(firstPng)) {
+        fs.copyFileSync(firstPng, pngPath);
+    }
+
+    return true;
 }
 
 exports.generateSafeName = (videoFilename) => {

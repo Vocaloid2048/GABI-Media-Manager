@@ -5,7 +5,7 @@ const { Sequelize, where } = require("sequelize");
 const archiver = require('archiver');
 const fs = require('fs');
 const path = require('path');
-const { generateSafeName, generateThumbnail } = require("../middlewares/generateThumb");
+const { generateSafeName, generateThumbnail, generateThumbnailGroup } = require("../middlewares/generateThumb");
 const unzipper = require('unzipper');
 const { group } = require("console");
 const ffmpeg = require('fluent-ffmpeg');
@@ -77,13 +77,14 @@ exports.uploadVideoZipImpl = async (zipFileLocation, videoInfo) => {
 };
 
 async function processVideoFiles(videoFiles, videoInfo) {
-    console.log(`Processing ${videoFiles.length} video files for group: ${videoInfo.group_title}`);
+    if (videoFiles.length === 0) { return true; }
+
     const groupId = await db.VideoDb.videoGroupData.create({
         group_title: videoInfo.group_title,
         group_desc: videoInfo.group_desc || '',
         group_author: videoInfo.group_author || 'Unknown',
         group_tags: videoInfo.group_tags ? videoInfo.group_tags.join(',') : '',
-        group_thumb_name: generateSafeName(videoInfo.group_title) + "_" + Date.now() || '',
+        group_thumb_name: generateSafeName(videoInfo.group_title) + "_main_" + Date.now() || '',
         group_add_at: Date.now()
     }).then(group => group.group_id);
 
@@ -93,7 +94,7 @@ async function processVideoFiles(videoFiles, videoInfo) {
     const tasks = videoFiles.map((file, index) => (async () => {
         try {
             if (!fs.existsSync(file)) throw new Error(`Source missing: ${file}`);
-            const videoName = `${generateSafeName(videoInfo.group_title)}_${String(index + 1).padStart(2, '0')}`;
+            const videoName = `${generateSafeName(videoInfo.group_title)}_${String(index + 1).padStart(2, '0')}_${Date.now()}`;
             const suffix = path.extname(file).toLowerCase();
             const destPath = path.join(videoDir, `${videoName}${suffix}`);
 
@@ -123,7 +124,7 @@ async function processVideoFiles(videoFiles, videoInfo) {
         }
     })());
 
-    await Promise.all(tasks);
+    await Promise.all(tasks).then(async () => await generateThumbnailGroup(groupId));
 }
 
 const getVideoMetadata = (filePath) => {
