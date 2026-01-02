@@ -18,10 +18,10 @@ exports.postLoginRequest = async (req, res) => {
         return;
     }
 
-    returnSuccess(res, { user_id: user.id, salt: process.env.DS_SALT });
+    returnSuccess(res, { user_id: user.user_id, salt: process.env.DS_SALT });
 
     // Update last login time
-    user.last_login_at = Date.now();
+    user.last_login_at = new Date();
     await user.save();
     
     actionRecord(req, res, user.user_id, LOGIN, `User ${username} logged in`);

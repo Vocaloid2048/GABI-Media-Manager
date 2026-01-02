@@ -2,6 +2,7 @@ const express = require('express');
 const session = require('express-session')
 const fs = require('fs')
 const https = require('https')
+const cors = require('cors')
 
 const app = express();
 const router = require('./routers/router');
@@ -20,6 +21,16 @@ app.use(
     secret: 'bla bla bla'
   })
 )
+
+// CORS (allow front-end dev server and custom headers for login)
+const allowedOrigin = process.env.VITE_DEV_SERVER_ORIGIN || process.env.FRONTEND_ORIGIN || 'http://localhost:5173'
+const corsOptions = {
+  origin: allowedOrigin,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'username', 'password_hash', 'Authorization']
+}
+app.use(cors(corsOptions))
 
 // Check is Database Connected
 initDb();
@@ -44,6 +55,12 @@ if (isProduction && !process.env.NODE_ISLOCAL) {
 }
 
 app.use('/api', router)
+
+// Serve thumbnails statically for frontend consumption
+const thumbsDir = process.env.THUMB_DIR
+if (thumbsDir && fs.existsSync(thumbsDir)) {
+  app.use('/thumbs', express.static(thumbsDir))
+}
 
 app.get('/', (req, res) => res.send('Welcome to visit GABI Media Manager API'))
 // Catch-all 404 for unmatched routes (Express v5 compatible)
