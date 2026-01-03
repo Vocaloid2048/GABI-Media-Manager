@@ -15,7 +15,7 @@ const HomePage = () => {
   const [showFilter, setShowFilter] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   
-  const [tagsList, setTagsList] = useState(["All", "Nature", "City", "Abstract", "Tech", "People", "Animals", "Space", "Dark", "Light", "Colorful", "Monochrome", "Vintage", "Modern"]);
+  const [tagsList, setTagsList] = useState(["Nature", "City", "Abstract", "Tech", "People", "Animals", "Space", "Dark", "Light", "Colorful", "Monochrome", "Vintage", "Modern"]);
 
   const [videoGroupData, setVideoGroupData] = useState([]);
   const [offset, setOffset] = useState(0);
@@ -25,7 +25,7 @@ const HomePage = () => {
   const [searchTags, setSearchTags] = useState([]);
   const isFetchingRef = React.useRef(false);
   const [filterOptions, setFilterOptions] = useState({});
-  const [selectedTags, setSelectedTags] = useState(['All']);
+  const [selectedTags, setSelectedTags] = useState([]);
 
   // Website initial data fetch
 
@@ -59,12 +59,7 @@ const HomePage = () => {
   }, [videoGroupData, isLoading, hasMore, offset]);
 
   const toggleTag = (tag) => {
-    if (tag === 'All') {
-      setSelectedTags(['All']);
-      return;
-    }
-    
-    let newTags = selectedTags.includes('All') ? [] : [...selectedTags];
+    let newTags = [...selectedTags];
     
     if (newTags.includes(tag)) {
       newTags = newTags.filter(t => t !== tag);
@@ -72,21 +67,34 @@ const HomePage = () => {
       newTags.push(tag);
     }
 
-    if (newTags.length === 0) newTags = ['All'];
     setSelectedTags(newTags);
   };
 
-  async function fetchVideoGroups(keepPrevious = false, fetchOffset = 0) {
+  async function fetchVideoGroups(keepPrevious = false, fetchOffset = 0, newSearchWord = null) {
     if (isLoading || isFetchingRef.current) return;
     if (keepPrevious && !hasMore) return;
 
     isFetchingRef.current = true;
     setIsLoading(true);
 
-    setSearchTags(selectedTags.includes('All') ? [] : selectedTags.filter(t => t !== 'All'));
+    // Use newSearchWord if provided, otherwise use current searchWord state
+    const currentSearchWord = newSearchWord !== null ? newSearchWord : searchWord;
+    
+    // Update searchTags based on selectedTags
+    const currentSearchTags = selectedTags;
+    setSearchTags(currentSearchTags);
+
     try {
       const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
-      const url = `${API_BASE}/api/video/list?offset=${fetchOffset}${searchTags.length > 0 ? "&tags=" + searchTags.join('|') : ''}`;
+      let url = `${API_BASE}/api/video/list?offset=${fetchOffset}`;
+      
+      if (currentSearchTags.length > 0) {
+        url += `&tags=${currentSearchTags.join('|')}`;
+      }
+      
+      if (currentSearchWord) {
+        url += `&search=${encodeURIComponent(currentSearchWord)}`;
+      }
 
       const res = await fetch(url);
       if (!res.ok) {
@@ -113,6 +121,14 @@ const HomePage = () => {
     }
   }
 
+  const handleSearch = (word) => {
+    setSearchWord(word);
+    setOffset(0);
+    setHasMore(true);
+    setVideoGroupData([]); // Clear existing data
+    fetchVideoGroups(false, 0, word);
+  };
+
   // initial load on mount
   React.useEffect(() => {
     fetchVideoGroups(false, 0);
@@ -129,12 +145,14 @@ const HomePage = () => {
         onFilterClick={() => setShowFilter(true)}
         onSearchClick={() => setShowSearch(true)}
         onUploadClick={() => setShowUpload(true)}
+        showSearch={showSearch}
+        onCloseSearch={() => setShowSearch(false)}
+        onSearch={handleSearch}
       />
 
       <AnimatePresence>
         {showUpload && <UploadPopup onClose={() => setShowUpload(false)} />}
         {showFilter && <FilterPopup onClose={() => setShowFilter(false)} />}
-        {showSearch && <SearchPopup onClose={() => setShowSearch(false)} />}
         {showLogin && <LoginPopup onClose={() => setShowLogin(false)} />}
       </AnimatePresence>
     </div>

@@ -1,8 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaSearch } from 'react-icons/fa';
 
-const SearchPopup = ({ onClose }) => {
+const SearchPopup = ({ onClose, onSearch }) => {
+  const [inputValue, setInputValue] = useState('');
+
+  const handleSearch = () => {
+    if (onSearch) {
+      onSearch(inputValue);
+    }
+    onClose();
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/60 backdrop-blur-sm pt-24 px-4" onClick={onClose}>
       <motion.div 
@@ -13,12 +28,18 @@ const SearchPopup = ({ onClose }) => {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 bg-gray-900 rounded-xl px-4 py-3 border border-gray-700 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
-          <FaSearch className="text-gray-400 text-lg rounded-full" />
+          <FaSearch 
+            className="text-gray-400 text-lg rounded-full cursor-pointer hover:text-white transition-colors" 
+            onClick={handleSearch}
+          />
           <input 
             type="text" 
             placeholder="Search videos, tags, authors..." 
             className="bg-transparent text-white w-full outline-none text-lg placeholder-gray-500"
             autoFocus
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
           <button onClick={onClose} className="text-gray-400 hover:text-white bg-gray-700 rounded-lg px-3 py-2">Cancel</button>
         </div>

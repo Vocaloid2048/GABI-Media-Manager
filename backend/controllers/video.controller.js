@@ -11,44 +11,57 @@ const { generateSafeName } = require("../middlewares/generateThumb");
 const limitRequirement = (offset) => ({ limit: 12, offset: offset });
 
 exports.getVideoGroupList = async (req, res) => {
-    // Get Query Params, E.g. filter=tree|mountain
-    const filter = req.query.filter || null;
+    // Get Query Params
+    const searchWords = req.query.search || "";
+    const searchTags = req.query.tags || ""; 
     const offset = req.query.offset || 0;
 
-    // When no filter provided, return paginated list
-    if (filter === null || filter.trim() === "") {
-        const data = await db.VideoDb.videoGroupData.findAll({
-            ...limitRequirement(offset),
-            order: [['group_add_at', 'DESC']]
-        });
-        return returnSuccess(res, data);
+    const whereConditions = [];
+
+    // 1. Handle Tags Filter
+    if (searchTags.trim() !== "") {
+        const tags = searchTags.split("|").map(t => t.trim()).filter(t => t.length > 0);
+        if (tags.length > 0) {
+            // Match any of the selected tags (OR logic)
+            const tagOrClauses = tags.map(tag => 
+                Sequelize.where(
+                    Sequelize.fn('LOWER', Sequelize.col('group_tags')),
+                    { [Sequelize.Op.like]: `%${tag.toLowerCase()}%` }
+                )
+            );
+            whereConditions.push({ [Sequelize.Op.or]: tagOrClauses });
+        }
     }
 
-    // Build case-insensitive "contains" conditions for tags and title
-    const tokens = filter.trim().split("|").map(t => t.trim()).filter(t => t.length > 0);
+    // 2. Handle Search Words (Case Insensitive)
+    if (searchWords.trim() !== "") {
+        const needle = searchWords.trim().toLowerCase();
+        whereConditions.push({
+            [Sequelize.Op.or]: [
+                Sequelize.where(
+                    Sequelize.fn('LOWER', Sequelize.col('group_title')),
+                    { [Sequelize.Op.like]: `%${needle}%` }
+                ),
+                Sequelize.where(
+                    Sequelize.fn('LOWER', Sequelize.col('group_tags')),
+                    { [Sequelize.Op.like]: `%${needle}%` }
+                )
+            ]
+        });
+    }
 
-    // Flatten OR conditions across tokens and fields
-    const orClauses = tokens.flatMap(t => {
-        const needle = t.toLowerCase();
-        return [
-            // group_tags ILIKE '%needle%'
-            Sequelize.where(
-                Sequelize.fn('LOWER', Sequelize.col('group_tags')),
-                { [Sequelize.Op.like]: `%${needle}%` }
-            ),
-            // group_title ILIKE '%needle%'
-            Sequelize.where(
-                Sequelize.fn('LOWER', Sequelize.col('group_title')),
-                { [Sequelize.Op.like]: `%${needle}%` }
-            ),
-        ];
-    });
-
-    const data = await db.VideoDb.videoGroupData.findAll({
+    const queryOptions = {
         ...limitRequirement(offset),
-        where: { [Sequelize.Op.or]: orClauses },
         order: [['group_add_at', 'DESC']]
-    });
+    };
+
+    if (whereConditions.length > 0) {
+        queryOptions.where = {
+            [Sequelize.Op.and]: whereConditions
+        };
+    }
+
+    const data = await db.VideoDb.videoGroupData.findAll(queryOptions);
 
     return returnSuccess(res, data);
 }
