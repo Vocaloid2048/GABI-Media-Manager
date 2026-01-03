@@ -26,6 +26,9 @@ const runProcess = (cmd, args) => {
  * @returns {boolean} Success status
  */
 exports.generateThumbnail = async (videoFileName) => {
+    // Since we are using UUIDs, the filename is already safe. 
+    // But we keep generateSafeName for compatibility if needed, or just use basename.
+    // For UUIDs, generateSafeName(uuid) returns uuid.
     const safeName = this.generateSafeName(videoFileName);
     const videoDir = process.env.VIDEO_DIR;
     const thumbDir = process.env.THUMB_DIR;
@@ -61,19 +64,19 @@ exports.generateThumbnail = async (videoFileName) => {
         pngPath,
     ]);
 
-    // GIF thumbnail (2 seconds, 15 FPS, 640px width) with palette for quality
-    // Use palettegen/paletteuse for better GIF quality
+    // GIF thumbnail (1 second, 10 FPS, 640px width) with palette for quality
+    // Use palettegen with reduced max_colors to achieve ~75% color accuracy (192/256)
     await runProcess(ffmpegPath, [
         '-hide_banner',
         '-loglevel', 'error',
         '-y',
         '-ss', '00:00:01',
-        '-t', '2',
+        '-t', '1',
         '-i', inputPath,
         '-filter_complex',
         [
-            'fps=15,scale=640:-2:flags=lanczos,split[s0][s1];',
-            '[s0]palettegen=stats_mode=diff[p];',
+            'fps=10,scale=640:-2:flags=lanczos,split[s0][s1];',
+            '[s0]palettegen=max_colors=192[p];',
             '[s1][p]paletteuse=dither=bayer:bayer_scale=3',
         ].join(''),
         '-loop', '0',
@@ -98,7 +101,7 @@ exports.generateThumbnailGroup = async (groupId, videoGroupThumbName) => {
     // 1) Get all videos in the group
     const videos = await db.VideoDb.videoData.findAll({
         where: { group_id: groupId },
-        order: [['video_id', 'ASC']],
+        order: [['video_filename', 'ASC']],
     });
     if (!videos || videos.length === 0) { throw new Error(`No videos for group ${groupId}`); }
 
@@ -128,13 +131,13 @@ exports.generateThumbnailGroup = async (groupId, videoGroupThumbName) => {
     if (gifInputs.length === 1) {
         // Only one GIF, just copy
         args.push(
-            '-filter_complex', 'fps=15,scale=640:-2:flags=lanczos',
+            '-filter_complex', 'fps=10,scale=640:-2:flags=lanczos',
             '-loop', '0',
             mergedGifPath
         );
     } else {
         const inputs = gifInputs.map((_, i) => `[${i}:v]`).join('');
-        const filter = `${inputs}concat=n=${gifInputs.length}:v=1:a=0,fps=15,scale=640:-2:flags=lanczos`;
+        const filter = `${inputs}concat=n=${gifInputs.length}:v=1:a=0,fps=10,scale=640:-2:flags=lanczos`;
         args.push(
             '-filter_complex', filter,
             '-loop', '0',

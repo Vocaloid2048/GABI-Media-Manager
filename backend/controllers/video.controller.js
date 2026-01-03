@@ -17,7 +17,10 @@ exports.getVideoGroupList = async (req, res) => {
 
     // When no filter provided, return paginated list
     if (filter === null || filter.trim() === "") {
-        const data = await db.VideoDb.videoGroupData.findAll(limitRequirement(offset));
+        const data = await db.VideoDb.videoGroupData.findAll({
+            ...limitRequirement(offset),
+            order: [['group_add_at', 'DESC']]
+        });
         return returnSuccess(res, data);
     }
 
@@ -44,6 +47,7 @@ exports.getVideoGroupList = async (req, res) => {
     const data = await db.VideoDb.videoGroupData.findAll({
         ...limitRequirement(offset),
         where: { [Sequelize.Op.or]: orClauses },
+        order: [['group_add_at', 'DESC']]
     });
 
     return returnSuccess(res, data);
@@ -62,15 +66,20 @@ exports.getVideoGroupInfo = async (req, res) => {
     if (!checkParamsExisted(group_id)) { raiseError(res, MISSING_REQUIRE_KEYS); return; }
 
     // Search Video Group Info
-    const data = await db.VideoDb.videoGroupData.findOne({
+    const groupData = await db.VideoDb.videoGroupData.findOne({
         where: { group_id: group_id },
     })
 
+    const videoData = await db.VideoDb.videoData.findAll({
+        where: { group_id: group_id },
+        order: [['video_filename', 'ASC']]
+    });
+
     // Return Result
-    if (data === null) {
+    if (groupData === null) {
         raiseError(res, INVALID_REQUEST);
     } else {
-        returnSuccess(res, data);
+        returnSuccess(res, { groupData, videoData });
     }
 };
 
@@ -83,13 +92,14 @@ exports.getVideoGroupThumbnail = async (req, res) => {
 
     // Search Video Group Thumbnails - Only Suffix Name Diff
     const groupThumbName = await db.VideoDb.videoGroupData.findOne({
-        where: { id: group_id },
-    }).finally(data => data.group_thumb_name);
+        where: { group_id: group_id },
+    }).then(data => data ? data.group_thumb_name : null);
 
     // If only main thumbnail is required, skip sub thumbnails fetching
     const videoThumbName = isMainOnly ? [] : await db.VideoDb.videoData.findAll({
         where: { group_id: group_id },
-    }).finally(data => data.video_thumb_name);
+        order: [['video_filename', 'ASC']]
+    }).then(data => data.map(v => v.video_thumb_name));
 
     // Return Result
     returnSuccess(res, {
