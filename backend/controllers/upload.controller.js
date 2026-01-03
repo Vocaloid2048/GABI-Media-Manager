@@ -20,7 +20,6 @@ exports.uploadVideoFile = async (req, res) => {
     // Authenticate User
     const user = auth(user_id, ds_key);
     if (!user) { return raiseError(res, WRONG_AUTHIZATION); }
-
     // Handle File Upload
     const file = req.file;
     if (file === undefined
@@ -29,7 +28,7 @@ exports.uploadVideoFile = async (req, res) => {
     ) { return raiseError(res, INVALID_REQUEST); }
 
     // Check is video info params existed
-    const videoInfo = JSON.parse(req.body.videoInfo || '{}')
+    const videoInfo = req.body.videoInfo || JSON.parse(req.body.videoInfo || '{}')
     if (videoInfo.group_title === undefined || videoInfo.group_title === null || videoInfo.group_title === '') {
         return raiseError(res, INVALID_REQUEST);
     }
@@ -38,7 +37,7 @@ exports.uploadVideoFile = async (req, res) => {
     returnSuccess(res, null);    
 
     try {
-        const fileLocation = file.path || path.join(process.env.TEMP_DIR || '/tmp', file.filename);
+        const fileLocation = path.join(process.env.TEMP_DIR || '/tmp', file.filename);
 
         // Move uploaded file to TEMP_DIR
         if (path.extname(file.filename).toLowerCase() === '.zip') {
