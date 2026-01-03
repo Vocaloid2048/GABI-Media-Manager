@@ -28,7 +28,7 @@ exports.uploadVideoFile = async (req, res) => {
     ) { return raiseError(res, INVALID_REQUEST); }
 
     // Check is video info params existed
-    const videoInfo = req.body.videoInfo || JSON.parse(req.body.videoInfo || '{}')
+    const videoInfo = JSON.parse(req.body.videoInfo || '{}')
     if (videoInfo.group_title === undefined || videoInfo.group_title === null || videoInfo.group_title === '') {
         return raiseError(res, INVALID_REQUEST);
     }

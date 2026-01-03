@@ -22,7 +22,7 @@ function play2() {
 
 function tempDataGenerate() {
     const dataPair = [
-        { file: { path: "XXX", filename: "XXX.zip", "originalname": "XXX.zip" }, "body": { "videoInfo": { "group_title": "XXX", "group_desc": "XXX", "group_author": "XXX" } } },
+        { file : { path : "XXX", filename: "XXX.zip",  "originalname":"XXX.zip"}, "body":{"videoInfo" :"{\"group_title\":\"XXX\", \"group_desc\": \"XXX\", \"group_author\": \"XXX\"}"}},
     ]
     const res = {
         status: function (code) {
@@ -41,7 +41,9 @@ function tempDataGenerate() {
             const sourcePath = path.join(req.file.path, req.file.filename);
             const destPath = path.join(tempDir, req.file.filename);
 
+            fs.mkdirSync(tempDir, { recursive: true });
             fs.copyFileSync(sourcePath, destPath);
+            req.get = function(header) {};
             req.file.path = destPath;
 
             req.query = { user_id: 1 };

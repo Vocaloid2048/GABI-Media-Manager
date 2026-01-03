@@ -18,7 +18,7 @@ const VideoItem = ({ group }) => {
     >
       <div className="aspect-video w-full bg-gray-900 relative">
         <img 
-          src={`${(import.meta.env.VITE_API_BASE_URL || '')}/api/video/thumb?name=${group.group_thumb_name}.${isHovered ? 'gif' : 'png'}`} 
+          src={`${(import.meta.env.VITE_API_BASE_URL || '')}/api/video/thumb?name=${group.group_thumb_name}${isHovered ? '_anim.webp' : '.webp'}`} 
           alt={group.group_title}
           className="w-full h-full object-cover transition-opacity duration-300"
         />
