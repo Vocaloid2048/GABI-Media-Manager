@@ -2,3 +2,9 @@
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.force-one-line {
+  white-space: nowrap; /* Prevents text from wrapping to a new line */
+  overflow: hidden;    /* Hides any text that overflows the container */
+  text-overflow: clip; /* Displays "..." for the clipped text */
+  max-width: 100%;     /* Ensures it respects the parent's width */
+}

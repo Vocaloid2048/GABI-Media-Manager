@@ -85,7 +85,7 @@ const HomePage = () => {
 
     setSearchTags(selectedTags.includes('All') ? [] : selectedTags.filter(t => t !== 'All'));
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
       const url = `${API_BASE}/api/video/list?offset=${fetchOffset}${searchTags.length > 0 ? "&tags=" + searchTags.join('|') : ''}`;
 
       const res = await fetch(url);
