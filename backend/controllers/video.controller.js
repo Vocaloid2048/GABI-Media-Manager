@@ -83,29 +83,20 @@ exports.getVideoGroupInfo = async (req, res) => {
     }
 };
 
-exports.getVideoGroupThumbnail = async (req, res) => {
-    const group_id = req.params.group_id;
-    const isMainOnly = req.query.is_main_only === 'true';
+exports.getVideoThumbnail = async (req, res) => {
+    const thumb_name = req.query.name;
 
     // Check Required Params
-    if (!checkParamsExisted(group_id)) { raiseError(res, MISSING_REQUIRE_KEYS); return; }
+    if (!checkParamsExisted(thumb_name)) { raiseError(res, MISSING_REQUIRE_KEYS); return; }
 
-    // Search Video Group Thumbnails - Only Suffix Name Diff
-    const groupThumbName = await db.VideoDb.videoGroupData.findOne({
-        where: { group_id: group_id },
-    }).then(data => data ? data.group_thumb_name : null);
+    // Return the thumbnail file
+    const filePath = path.join(process.env.THUMB_DIR, thumb_name);
+    if (!fs.existsSync(filePath)) {
+        raiseError(res, INVALID_REQUEST);
+        return;
+    }
 
-    // If only main thumbnail is required, skip sub thumbnails fetching
-    const videoThumbName = isMainOnly ? [] : await db.VideoDb.videoData.findAll({
-        where: { group_id: group_id },
-        order: [['video_filename', 'ASC']]
-    }).then(data => data.map(v => v.video_thumb_name));
-
-    // Return Result
-    returnSuccess(res, {
-        main_thumbnail: groupThumbName + "_main",
-        sub_thumbnail: isMainOnly ? [] : videoThumbName
-    });
+    return res.sendFile(filePath);
 }
 
 exports.getVideoTagsList = async (req, res) => {

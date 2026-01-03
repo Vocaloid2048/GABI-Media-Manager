@@ -5,5 +5,6 @@ const video = require("../controllers/video.controller")
 router.get('/list', video.getVideoGroupList)
 router.get('/group', video.getVideoGroupInfo)
 router.get('/download', video.getDownloadableVideo)
+router.get('/thumb', video.getVideoThumbnail)
 
 module.exports = router
