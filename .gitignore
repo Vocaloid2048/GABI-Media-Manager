@@ -3,7 +3,7 @@
 /backend/node_modules/
 /frontend/node_modules/
 /frontend_react/node_modules/
-/frontend_react/.vite/
+/frontend_react/.vite
 /backend/logs
 backend/.env
 *.env
