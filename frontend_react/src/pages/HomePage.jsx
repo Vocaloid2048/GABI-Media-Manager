@@ -19,7 +19,11 @@ const HomePage = () => {
 
   const [videoGroupData, setVideoGroupData] = useState([]);
   const [offset, setOffset] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [searchWord, setSearchWord] = useState('');
+  const [searchTags, setSearchTags] = useState([]);
+  const isFetchingRef = React.useRef(false);
   const [filterOptions, setFilterOptions] = useState({});
   const [selectedTags, setSelectedTags] = useState(['All']);
 
@@ -28,15 +32,31 @@ const HomePage = () => {
   // If scrolled to the bottom, load more videos (infinite scroll)
   React.useEffect(() => {
     const handleScroll = () => {
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
+      if (isLoading || isFetchingRef.current || !hasMore) return;
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
         const newOffset = offset + 12;
         setOffset(newOffset);
         fetchVideoGroups(true, newOffset);
       }
     };
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    window.addEventListener('resize', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [offset, isLoading, hasMore]);
+
+  // Auto-fetch more if screen is not filled
+  React.useEffect(() => {
+    if (!isLoading && !isFetchingRef.current && hasMore && videoGroupData.length > 0) {
+      if (document.body.offsetHeight < window.innerHeight + 100) {
+        const newOffset = offset + 12;
+        setOffset(newOffset);
+        fetchVideoGroups(true, newOffset);
+      }
+    }
+  }, [videoGroupData, isLoading, hasMore, offset]);
 
   const toggleTag = (tag) => {
     if (tag === 'All') {
@@ -57,24 +77,39 @@ const HomePage = () => {
   };
 
   async function fetchVideoGroups(keepPrevious = false, fetchOffset = 0) {
+    if (isLoading || isFetchingRef.current) return;
+    if (keepPrevious && !hasMore) return;
+
+    isFetchingRef.current = true;
+    setIsLoading(true);
+
+    setSearchTags(selectedTags.includes('All') ? [] : selectedTags.filter(t => t !== 'All'));
     try {
       const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
-      const url = `${API_BASE}/api/video/list?offset=${fetchOffset}${tagsList.length > 0 ? "&tags=" + tagsList.join('|') : ''}`;
-      console.log('Fetching video groups:', url);
+      const url = `${API_BASE}/api/video/list?offset=${fetchOffset}${searchTags.length > 0 ? "&tags=" + searchTags.join('|') : ''}`;
+
       const res = await fetch(url);
       if (!res.ok) {
         console.error('Network response was not ok', res.statusText);
         return;
       }
+
       const json = await res.json();
       if (json && json.retcode === 1) {
         const data = Array.isArray(json.data) ? json.data : [];
+        
+        if (data.length < 12) setHasMore(false);
+        else setHasMore(true);
+
         setVideoGroupData(prevData => keepPrevious ? [...prevData, ...data] : data);
       } else {
         console.error('API error:', json && json.message ? json.message : json);
       }
     } catch (err) {
       console.error('Fetch failed', err);
+    } finally {
+      isFetchingRef.current = false;
+      setIsLoading(false);
     }
   }
 
