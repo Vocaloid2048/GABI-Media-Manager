@@ -1,10 +1,17 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const uploadController = require('../controllers/upload.controller');
 
 const storage = multer.diskStorage({
-  destination: process.env.TEMP_DIR || '/tmp',
+  destination: (req, file, cb) => {
+    const dir = process.env.TEMP_DIR || '/tmp';
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     cb(null, Date.now() + ext);

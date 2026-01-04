@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       host: true,
+      port: parseInt(env.PORT) || 5173,
       https: {
         key: fs.readFileSync('./cert/key.pem', 'utf8'),
         cert: fs.readFileSync('./cert/cert.pem', 'utf8'),

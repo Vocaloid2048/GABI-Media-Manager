@@ -22,7 +22,7 @@ function play2() {
 
 async function tempDataGenerate() {
     const dataPair = [
-        { file: { path: "XXX", filename: "XXX.zip", "originalname": "XXX.zip" }, "body": { "videoInfo": "{\"group_title\":\"XXX\", \"group_desc\": \"XXX\", \"group_author\": \"XXX\"}" } },
+        { file: { filename: "XXX.zip", "originalname": "XXX.zip" }, "body": { "videoInfo": "{\"group_title\":\"XXX\", \"group_desc\": \"XXX\", \"group_author\": \"XXX\"}" } },
     ]
     const res = {
         status: function (code) {

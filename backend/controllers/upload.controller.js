@@ -37,7 +37,7 @@ exports.uploadVideoFile = async (req, res) => {
     returnSuccess(res, null);    
 
     try {
-        const fileLocation = path.join(process.env.TEMP_DIR || '/tmp', file.filename);
+        const fileLocation = file.path || path.join(process.env.TEMP_DIR || '/tmp', file.filename);
 
         // Move uploaded file to TEMP_DIR
         if (path.extname(file.filename).toLowerCase() === '.zip') {
@@ -59,6 +59,10 @@ exports.uploadVideoZipImpl = async (zipFileLocation, videoInfo) => {
     const extractDir = path.join(baseTemp, `extract_${Date.now()}`);
 
     fs.mkdirSync(extractDir, { recursive: true });
+
+    if (!fs.existsSync(zipFileLocation)) {
+        throw new Error(`Zip file not found at ${zipFileLocation}`);
+    }
 
     // Wait for extraction to complete
     await fs.createReadStream(zipFileLocation)
