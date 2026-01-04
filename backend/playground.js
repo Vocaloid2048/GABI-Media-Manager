@@ -20,9 +20,9 @@ function play2() {
     });
 }
 
-function tempDataGenerate() {
+async function tempDataGenerate() {
     const dataPair = [
-        { file : { path : "XXX", filename: "XXX.zip",  "originalname":"XXX.zip"}, "body":{"videoInfo" :"{\"group_title\":\"XXX\", \"group_desc\": \"XXX\", \"group_author\": \"XXX\"}"}},
+        { file: { path: "XXX", filename: "XXX.zip", "originalname": "XXX.zip" }, "body": { "videoInfo": "{\"group_title\":\"XXX\", \"group_desc\": \"XXX\", \"group_author\": \"XXX\"}" } },
     ]
     const res = {
         status: function (code) {
@@ -34,25 +34,39 @@ function tempDataGenerate() {
         }
     };
 
-    dataPair.forEach(async (req) => {
-        try {
-            // Copy the file to TEMP_DIR
-            const tempDir = process.env.TEMP_DIR;
-            const sourcePath = path.join(req.file.path, req.file.filename);
-            const destPath = path.join(tempDir, req.file.filename);
+    const limit = 3; // Concurrency limit
+    const executing = [];
 
-            fs.mkdirSync(tempDir, { recursive: true });
-            fs.copyFileSync(sourcePath, destPath);
-            req.get = function(header) {};
-            req.file.path = destPath;
+    for (const req of dataPair) {
+        const p = (async () => {
+            try {
+                // Copy the file to TEMP_DIR
+                const tempDir = process.env.TEMP_DIR || 'Test/Temp';
+                const sourcePath = path.join(req.file.path, req.file.filename);
+                const destPath = path.join(tempDir, req.file.filename);
 
-            req.query = { user_id: 1 };
-            await uploadVideoFile(req, res);
-            console.log(`Processed file: ${req.file.filename}`);
-        } catch (error) {
-            console.error(`Error processing file ${req.file.filename}:`, error);
+                if (!fs.existsSync(tempDir)) {
+                    fs.mkdirSync(tempDir, { recursive: true });
+                }
+                fs.copyFileSync(sourcePath, destPath);
+                req.get = function (header) { };
+                req.file.path = destPath;
+
+                req.query = { user_id: 1 };
+                await uploadVideoFile(req, res);
+                console.log(`Processed file: ${req.file.filename}`);
+            } catch (error) {
+                console.error(`Error processing file ${req.file.filename}:`, error);
+            }
+        })();
+
+        const e = p.then(() => executing.splice(executing.indexOf(e), 1));
+        executing.push(e);
+        if (executing.length >= limit) {
+            await Promise.race(executing);
         }
-    });
+    }
+    await Promise.all(executing);
 }
 
 tempDataGenerate();
