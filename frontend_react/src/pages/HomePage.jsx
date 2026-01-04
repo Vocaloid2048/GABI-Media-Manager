@@ -85,8 +85,7 @@ const HomePage = () => {
     setSearchTags(currentSearchTags);
 
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
-      let url = `${API_BASE}/api/video/list?offset=${fetchOffset}`;
+      let url = `/api/video/list?offset=${fetchOffset}`;
       
       if (currentSearchTags.length > 0) {
         url += `&tags=${currentSearchTags.join('|')}`;

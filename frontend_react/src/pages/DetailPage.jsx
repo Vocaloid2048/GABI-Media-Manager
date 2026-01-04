@@ -5,11 +5,10 @@ import { FaDownload, FaInfoCircle } from 'react-icons/fa';
 
 const VideoItem = ({ video }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
   const thumbName = video.video_thumb_name || video.video_filename;
-  const thumbUrl = `${API_BASE}/api/video/thumb?name=${thumbName}.webp`;
-  const animUrl = `${API_BASE}/api/video/thumb?name=${thumbName}_anim.webp`;
+  const thumbUrl = `/api/video/thumb?name=${thumbName}.webp`;
+  const animUrl = `/api/video/thumb?name=${thumbName}_anim.webp`;
 
   return (
     <div
@@ -49,8 +48,7 @@ const DetailPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
-        const res = await fetch(`${API_BASE}/api/video/group?group_id=${id}`);
+        const res = await fetch(`/api/video/group?group_id=${id}`);
         const json = await res.json();
 
         if (json.retcode === 1) {
@@ -88,9 +86,8 @@ const DetailPage = () => {
     );
   }
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
-  const groupThumbUrl = `${API_BASE}/api/video/thumb?name=${groupData.group_thumb_name}.webp`;
-  const groupAnimUrl = `${API_BASE}/api/video/thumb?name=${groupData.group_thumb_name}_anim.webp`;
+  const groupThumbUrl = `/api/video/thumb?name=${groupData.group_thumb_name}.webp`;
+  const groupAnimUrl = `/api/video/thumb?name=${groupData.group_thumb_name}_anim.webp`;
 
   // Helper to get unique values
   const getUniqueValues = (list, key, suffix = '') => {

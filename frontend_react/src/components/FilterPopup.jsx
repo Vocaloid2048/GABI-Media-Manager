@@ -5,9 +5,9 @@ const FilterPopup = ({ onClose }) => {
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <motion.div 
-        initial={{ y: "100%" }}
+        initial={{ y: "200%" }}
         animate={{ y: 0 }}
-        exit={{ y: "100%" }}
+        exit={{ y: "200%" }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
         className="bg-gray-800 w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-6 border-t sm:border border-gray-700 shadow-2xl"
         onClick={e => e.stopPropagation()}
