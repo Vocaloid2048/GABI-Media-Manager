@@ -1,4 +1,5 @@
 const { uploadVideoFile } = require("./controllers/upload.controller");
+const { generateColorTags } = require("./middlewares/generateColorTags");
 const { generateThumbnail, generateThumbnailGroup } = require("./middlewares/generateThumb");
 
 const fs = require('fs');
@@ -69,4 +70,29 @@ async function tempDataGenerate() {
     await Promise.all(executing);
 }
 
-tempDataGenerate();
+// 輔助函式：印出帶顏色的色塊
+function printColorBlock(rgbArray) {
+    process.stdout.write(`\x1b[48;2;${rgbArray[0]};${rgbArray[1]};${rgbArray[2]}m  \x1b[0m ${rgbToHex(rgbArray)} `);
+}
+
+function rgbToHex(rgbArray) {
+    return '#' + ((1 << 24) + (rgbArray[0] << 16) + (rgbArray[1] << 8) + rgbArray[2]).toString(16).slice(1).toUpperCase();
+}
+
+(async () => {
+    try {
+        const startTime = Date.now();
+        const result = await generateColorTags("9b849765-4b41-44c7-9193-f6836b4958e7");
+        
+        console.log("Top 3 Color Tags:");
+        result.forEach(colorRGB => {
+            printColorBlock(colorRGB);
+        });
+        console.log(""); // 換行
+        const endTime = Date.now();
+        console.log(`Execution Time: ${(endTime - startTime) / 1000} seconds`);
+
+    } catch (error) {
+        console.error("Error generating color tags:", error);
+    }
+})();
