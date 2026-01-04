@@ -1,4 +1,4 @@
-const { raiseError, returnSuccess, checkParamsExisted, errorByAPI, USER_DOES_NOT_EXISTED, INVALID_REQUEST, WRONG_AUTHIZATION } = require("../middlewares/error");
+const { raiseError, returnSuccess, checkParamsExisted, errorByAPI, USER_DOES_NOT_EXISTED, INVALID_REQUEST, WRONG_AUTHIZATION, MISSING_REQUIRE_KEYS } = require("../middlewares/error");
 const db = require("../models");
 const { auth } = require("../middlewares/auth");
 const { Sequelize, where } = require("sequelize");
@@ -131,29 +131,37 @@ exports.getDownloadableVideo = async (req, res) => {
     const user_id = req.query.user_id;
     const ds_key = req.get("ds");
     const options = req.query.options || null;
-    const groupId = req.query.group_id || null;
+    const reqId = req.query.id || null;
 
     // Check Auth
     const authResult = auth(user_id, ds_key);
     if (!authResult) { raiseError(res, WRONG_AUTHIZATION); return; }
 
     // Check Required Params
-    if (!checkParamsExisted(groupId)) { raiseError(res, MISSING_REQUIRE_KEYS); return; }
+    if (!checkParamsExisted(reqId)) { raiseError(res, MISSING_REQUIRE_KEYS); return; }
 
     // Fetch Video List in the Group
     const videoQuery = await db.VideoDb.videoData.findAll({
-        where: { group_id: groupId },
+        // where group_id = reqId OR video_id = reqId
+        where: {
+            [Sequelize.Op.or]: [
+                { group_id: reqId },
+                { video_id: reqId }
+            ]
+        },
+        order: [['video_filename', 'ASC']]
     });
-    const videoList = videoQuery.map(video => video.video_filename + "." + video.video_format.toLowerCase());
+    
+    if (!videoQuery || videoQuery.length === 0) { raiseError(res, INVALID_REQUEST); return; }
 
-    if (!videoList || videoList.length === 0) { raiseError(res, INVALID_REQUEST); }
+    console.log(`Preparing download for ID: ${reqId}, found ${videoQuery.length} videos.`);
 
 
     // If video_id is provided, return specific video download link
-    if (videoList.length > 1) {
+    if (videoQuery.length > 1) {
         // Prepare zip file for video group
         const videoGroupNameQuery = await db.VideoDb.videoGroupData.findOne({
-            where: { group_id: groupId },
+            where: { group_id: reqId },
         })
 
         const videoGroupName = videoGroupNameQuery.group_title
@@ -165,7 +173,7 @@ exports.getDownloadableVideo = async (req, res) => {
             + "_" + Date.now()
             + ".zip";
         res.setHeader('Content-Type', 'application/zip');
-        res.setHeader('Content-Disposition', `attachment; filename="${zipName}"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(zipName)}"`);
 
         // Zip the file and save to temp location
         const archive = archiver('zip', { zlib: { level: 9 } });
@@ -174,32 +182,64 @@ exports.getDownloadableVideo = async (req, res) => {
         });
         archive.pipe(res);
 
+        // Rename those video files to meaningful names, E.g. TitleName_XX.mp4
         // Add video files to the zip
-        for (const video of videoList) {
-            const safeName = generateSafeName(video);
-            if (!safeName) {
-                continue;
-            }
+        let index = 1;
+        for (const video of videoQuery) {
+            const ext = video.video_format.toLowerCase();
+            const safeName = generateSafeName(video.video_filename + "." + ext);
+            
+            if (!safeName) continue;
+            
             const filePath = path.join(process.env.VIDEO_DIR, safeName);
-            if (!fs.existsSync(filePath)) {
-                continue;
-            }
-            archive.file(filePath, { name: safeName });
+            if (!fs.existsSync(filePath)) continue;
+
+            // Generate meaningful name: GroupTitle_01.mp4
+            // Sanitize group title for filename
+            const safeTitle = videoGroupName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_');
+            const newName = `${safeTitle}_${String(index).padStart(2, '0')}.${ext}`;
+            
+            archive.file(filePath, { name: newName });
+            index++;
         }
 
         await archive.finalize();
         return;
 
     } else {
-        // Prepare single video file download link, Video Name : FileName_HD.mp4
-        const safeVideoName = generateSafeName(videoList[0]);
+        // Prepare single video file download link
+        const video = videoQuery[0];
+        const ext = video.video_format.toLowerCase();
 
-        const filePath = path.join(process.env.VIDEO_DIR, safeVideoName);
+        // 1. Find actual file on disk (using original filename)
+        const diskFileName = generateSafeName(video.video_filename + "." + ext);
+        const filePath = path.join(process.env.VIDEO_DIR, diskFileName);
+
         if (!fs.existsSync(filePath)) {
             raiseError(res, INVALID_REQUEST);
             return;
         }
 
-        return res.download(filePath, safeVideoName);
+        // 2. Generate meaningful download name: GroupTitle_XX.mp4
+        let downloadName = diskFileName;
+
+        const group = await db.VideoDb.videoGroupData.findOne({
+            where: { group_id: video.group_id },
+        });
+
+        if (group) {
+            // Find index of this video in the group
+            const allVideos = await db.VideoDb.videoData.findAll({
+                where: { group_id: video.group_id },
+                order: [['video_filename', 'ASC']],
+                attributes: ['video_id']
+            });
+            
+            const index = allVideos.findIndex(v => v.video_id === video.video_id) + 1;
+            const safeTitle = group.group_title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_');
+            downloadName = `${safeTitle}_${String(index).padStart(2, '0')}.${ext}`;
+        }
+
+        return res.download(filePath, downloadName);
     }
 }

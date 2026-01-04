@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import TitleHeader from '../components/TitleHeader';
+import DownloadResolutionPopup from '../components/DownloadResolutionPopup';
 import { FaDownload, FaInfoCircle } from 'react-icons/fa';
 
-const VideoItem = ({ video }) => {
+const VideoItem = ({ video, onDownload }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const thumbName = video.video_thumb_name || video.video_filename;
@@ -12,7 +13,7 @@ const VideoItem = ({ video }) => {
 
   return (
     <div
-      className="cursor-pointer rounded-xl overflow-hidden bg-gray-800 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-gray-700"
+      className="cursor-pointer rounded-xl overflow-hidden bg-gray-800 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-gray-700 group relative"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -21,12 +22,24 @@ const VideoItem = ({ video }) => {
           src={isHovered ? animUrl : thumbUrl}
           alt={video.video_filename}
           className="w-full h-full object-cover transition-opacity duration-300"
-          onError={(e) => { e.target.src = 'https://via.placeholder.com/640x360?text=No+Preview'; }}
+          onError={(e) => { e.target.src = '/src/assets/no_preview.webp'; }}
         />
 
-        <div className="absolute bottom-2 right-2 bg-black/60 px-2 py-1 rounded text-xs font-mono text-white">
+        <div className="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-xs font-mono text-white">
           {video.video_duration.toFixed(1)}s
         </div>
+
+        {/* Download Button Overlay */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDownload(video);
+          }}
+          className={`absolute bottom-2 right-2 bg-gray-900 hover:bg-gray-500 text-white p-2 rounded-full shadow-lg transition-all duration-200 ${isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}
+          title="Download"
+        >
+          <FaDownload size={12} />
+        </button>
       </div>
       <div className="p-3">
         <div className="flex justify-between text-xs text-gray-500">
@@ -44,6 +57,31 @@ const DetailPage = () => {
   const [groupData, setGroupData] = useState(null);
   const [videoList, setVideoList] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Resolution Popup State
+  const [isResPopupOpen, setIsResPopupOpen] = useState(false);
+  const [resPopupVideo, setResPopupVideo] = useState(null);
+
+  const handleOpenResPopup = (video) => {
+    setResPopupVideo(video);
+    setIsResPopupOpen(true);
+  };
+
+  const handleResConfirm = (itemData, options) => {
+    setIsResPopupOpen(false);
+    trigDownload(itemData, options);
+  };
+
+  const trigDownload = (itemData, options) => {
+    const downloadUrl = `/api/video/download?id=${itemData.video_id || itemData.group_id}&options=${options}`;
+
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.setAttribute('download', itemData.video_filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,14 +127,6 @@ const DetailPage = () => {
   const groupThumbUrl = `/api/video/thumb?name=${groupData.group_thumb_name}.webp`;
   const groupAnimUrl = `/api/video/thumb?name=${groupData.group_thumb_name}_anim.webp`;
 
-  // Helper to get unique values
-  const getUniqueValues = (list, key, suffix = '') => {
-    if (!list || list.length === 0) return 'N/A';
-    const values = [...new Set(list.map(item => item[key]).filter(v => v !== null && v !== undefined && v !== ''))];
-    if (values.length === 0) return 'N/A';
-    return values.join(' / ') + suffix;
-  };
-
   const formats = getUniqueValues(videoList, 'video_format');
   const frameRates = getUniqueValues(videoList, 'video_frame_rate', ' FPS');
   const resolutions = getUniqueValues(videoList, 'video_resolution');
@@ -119,7 +149,7 @@ const DetailPage = () => {
               src={isHovered ? groupAnimUrl : groupThumbUrl}
               alt={groupData.group_title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              onError={(e) => { e.target.src = 'https://via.placeholder.com/800x450?text=No+Preview'; }}
+              onError={(e) => { e.target.src = '/src/assets/no_preview.webp'; }}
             />
 
           </div>
@@ -153,7 +183,10 @@ const DetailPage = () => {
               </div>
             </div>
 
-            <button className="mt-auto w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-blue-600/20 active:scale-95">
+            <button
+              onClick={() => trigDownload(groupData)}
+              className="mt-auto w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+            >
               <FaDownload className="text-lg" />
               <span>Download Full Collection</span>
             </button>
@@ -168,10 +201,21 @@ const DetailPage = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {videoList.map(video => (
-            <VideoItem key={video.video_id} video={video} />
+            <VideoItem
+              key={video.video_id}
+              video={video}
+              onDownload={(v) => trigDownload(v)}
+            />
           ))}
         </div>
       </div>
+
+      <DownloadResolutionPopup
+        isOpen={isResPopupOpen}
+        onClose={() => setIsResPopupOpen(false)}
+        video={resPopupVideo}
+        onConfirm={handleResConfirm}
+      />
 
       <footer className="mt-24 text-center text-gray-600 text-sm border-t border-gray-800/50 pt-10 pb-6">
         <p className="font-medium text-gray-500 mb-2 cursor-pointer" onClick={() => window.open("https://github.com/Vocaloid2048/GABI-Media-Manager", "_blank")}>GABI Media Manager</p>
@@ -179,6 +223,14 @@ const DetailPage = () => {
       </footer>
     </div>
   );
+};
+
+// Helper to get unique values
+export const getUniqueValues = (list, key, suffix = '') => {
+  if (!list || list.length === 0) return 'N/A';
+  const values = [...new Set(list.map(item => item[key]).filter(v => v !== null && v !== undefined && v !== ''))];
+  if (values.length === 0) return 'N/A';
+  return values.join(' / ') + suffix;
 };
 
 export default DetailPage;
