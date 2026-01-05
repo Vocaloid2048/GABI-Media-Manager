@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { FaDownload, FaTimes, FaVideo } from 'react-icons/fa';
 import { getUniqueValues } from '../pages/DetailPage';
+import { useLanguage } from '../lang/LanguageContext';
 
 const DownloadResolutionPopup = ({ isOpen, onClose, video: itemData, onConfirm }) => {
+  const { locale } = useLanguage();
   const [selectedRes, setSelectedRes] = useState('Original');
 
   if (!isOpen || !itemData) return null;
 
   const resolutions = [
-    { label: 'Original', desc: 'Source Quality' },
-    { label: '1080p', desc: 'High Quality' },
+    { label: locale('download.res_original'), desc: locale('download.quality_source') },
+    { label: '1080p', desc: locale('download.quality_high') },
   ];
 
   return (
@@ -20,7 +22,7 @@ const DownloadResolutionPopup = ({ isOpen, onClose, video: itemData, onConfirm }
         <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900/50">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
             <FaVideo className="text-blue-400" />
-            Download Options
+            {locale('download.options_title')}
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
             <FaTimes size={20} />
@@ -67,14 +69,14 @@ const DownloadResolutionPopup = ({ isOpen, onClose, video: itemData, onConfirm }
             onClick={onClose}
             className="px-4 py-2 rounded-lg text-gray-300 hover:bg-gray-700 transition-colors text-sm font-medium"
           >
-            Cancel
+            {locale('common.cancel')}
           </button>
           <button 
             onClick={() => onConfirm(itemData, selectedRes)}
             className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-900/20 flex items-center gap-2"
           >
             <FaDownload />
-            Download
+            {locale('common.download')}
           </button>
         </div>
       </div>

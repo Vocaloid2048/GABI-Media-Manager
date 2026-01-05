@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaCloudUploadAlt, FaTimes } from 'react-icons/fa';
+import { useLanguage } from '../lang/LanguageContext';
 
 const UploadPopup = ({ onClose }) => {
+  const { locale } = useLanguage();
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -27,7 +29,7 @@ const UploadPopup = ({ onClose }) => {
         clearInterval(interval);
         setTimeout(() => {
           setUploading(false);
-          alert('Upload Complete!');
+          alert(locale('upload.complete'));
           onClose();
         }, 500);
       }
@@ -44,27 +46,27 @@ const UploadPopup = ({ onClose }) => {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-6 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white">Upload Video</h2>
+          <h2 className="text-xl font-bold text-white">{locale('upload.title')}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><FaTimes size={20} /></button>
         </div>
 
         <div className="p-6 overflow-y-auto custom-scrollbar">
           <div className="space-y-5">
             <div>
-              <label className="block text-gray-400 text-sm mb-1.5 font-medium">Title</label>
-              <input type="text" className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Enter video title" />
+              <label className="block text-gray-400 text-sm mb-1.5 font-medium">{locale('upload.field_title')}</label>
+              <input type="text" className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder={locale('upload.placeholder_title')} />
             </div>
             <div>
-              <label className="block text-gray-400 text-sm mb-1.5 font-medium">Description</label>
-              <textarea className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none transition-all" placeholder="Enter description" />
+              <label className="block text-gray-400 text-sm mb-1.5 font-medium">{locale('upload.field_desc')}</label>
+              <textarea className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none transition-all" placeholder={locale('upload.placeholder_desc')} />
             </div>
             <div>
-              <label className="block text-gray-400 text-sm mb-1.5 font-medium">Tags</label>
-              <input type="text" className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Action, Drama, 4K... (comma separated)" />
+              <label className="block text-gray-400 text-sm mb-1.5 font-medium">{locale('upload.field_tags')}</label>
+              <input type="text" className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder={locale('upload.placeholder_tags')} />
             </div>
             <div>
-              <label className="block text-gray-400 text-sm mb-1.5 font-medium">Author / Source</label>
-              <input type="text" className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Original author or source URL" />
+              <label className="block text-gray-400 text-sm mb-1.5 font-medium">{locale('upload.field_author')}</label>
+              <input type="text" className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder={locale('upload.placeholder_author')} />
             </div>
 
             <div 
@@ -75,16 +77,16 @@ const UploadPopup = ({ onClose }) => {
             >
               <FaCloudUploadAlt className={`text-4xl mb-3 ${file ? 'text-blue-400' : 'text-gray-500'}`} />
               <p className="text-gray-300 text-sm text-center font-medium">
-                {file ? file.name : "Drag & Drop or Click to Select File"}
+                {file ? file.name : locale('upload.drag_drop')}
               </p>
-              <p className="text-gray-500 text-xs mt-1">Supports .zip, .mp4, .avi</p>
+              <p className="text-gray-500 text-xs mt-1">{locale('upload.supports')}</p>
               <input type="file" id="fileInput" className="hidden" onChange={e => setFile(e.target.files[0])} accept=".zip,.mp4,.avi" />
             </div>
 
             {uploading && (
               <div className="bg-gray-900 rounded-xl p-4 border border-gray-700">
                 <div className="flex justify-between text-sm text-gray-300 mb-2">
-                  <span>Uploading...</span>
+                  <span>{locale('upload.uploading')}</span>
                   <span className="font-mono">{progress}%</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
@@ -92,7 +94,7 @@ const UploadPopup = ({ onClose }) => {
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 mt-2">
                   <span>{(file.size / 1024 / 1024).toFixed(2)} MB</span>
-                  <span>Speed: 4.2 MB/s</span>
+                  <span>{locale('upload.speed')} 4.2 MB/s</span>
                 </div>
               </div>
             )}

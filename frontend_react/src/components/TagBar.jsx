@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes } from 'react-icons/fa';
+import { useLanguage } from '../lang/LanguageContext';
 
 const TagBar = ({ tags, selectedTags, onToggleTag }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const { locale } = useLanguage();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,6 +36,9 @@ const TagBar = ({ tags, selectedTags, onToggleTag }) => {
           <div className="flex gap-2 px-4 overflow-x-auto no-scrollbar">
             {tags.slice(0, 12).map((tag) => {
               const isSelected = selectedTags.includes(tag);
+              const translatedTag = locale(`tag.${tag}`);
+              const displayTag = translatedTag.startsWith('tag.') ? tag : translatedTag;
+              
               return (
                 <button
                   key={tag}
@@ -44,7 +49,7 @@ const TagBar = ({ tags, selectedTags, onToggleTag }) => {
                       : 'bg-gray-800 text-gray-300 border-gray-600 hover:bg-gray-700'
                   }`}
                 >
-                  {tag}
+                  {displayTag}
                   {isSelected && <FaTimes className="text-xs opacity-80 hover:opacity-100" />}
                 </button>
               );

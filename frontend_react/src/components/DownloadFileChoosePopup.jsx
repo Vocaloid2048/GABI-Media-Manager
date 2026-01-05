@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { FaDownload, FaTimes, FaCheckSquare, FaSquare } from 'react-icons/fa';
+import { useLanguage } from '../lang/LanguageContext';
 
 const DownloadFilePopup = ({ isOpen, onClose, title, items = [] }) => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [isDownloading, setIsDownloading] = useState(false);
+  const { locale } = useLanguage();
 
   // Reset selection when modal opens or items change
   useEffect(() => {
@@ -94,7 +96,7 @@ const DownloadFilePopup = ({ isOpen, onClose, title, items = [] }) => {
       onClose();
     } catch (error) {
       console.error('Download error:', error);
-      alert('Download failed. Please try again.');
+      alert(locale('download.failed'));
     } finally {
       setIsDownloading(false);
     }
@@ -125,10 +127,10 @@ const DownloadFilePopup = ({ isOpen, onClose, title, items = [] }) => {
               className="flex items-center gap-2 text-sm text-gray-300 hover:text-white"
             >
               {selectedIds.length === items.length ? <FaCheckSquare className="text-blue-500" /> : <FaSquare className="text-gray-600" />}
-              Select All ({items.length})
+              {locale('common.selectAll')} ({items.length})
             </button>
             <span className="text-sm text-gray-400">
-              Selected: {formatSize(totalSize)}
+              {locale('common.selected')} {formatSize(totalSize)}
             </span>
           </div>
 
@@ -171,7 +173,7 @@ const DownloadFilePopup = ({ isOpen, onClose, title, items = [] }) => {
             onClick={onClose}
             className="px-4 py-2 rounded-lg text-gray-300 hover:bg-gray-700 transition-colors"
           >
-            Cancel
+            {locale('common.cancel')}
           </button>
           <button 
             onClick={handleDownload}
@@ -185,12 +187,12 @@ const DownloadFilePopup = ({ isOpen, onClose, title, items = [] }) => {
             {isDownloading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
-                Processing...
+                {locale('common.processing')}
               </>
             ) : (
               <>
                 <FaDownload />
-                Download ({selectedIds.length})
+                {locale('common.download')} ({selectedIds.length})
               </>
             )}
           </button>

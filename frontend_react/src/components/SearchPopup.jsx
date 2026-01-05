@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaSearch } from 'react-icons/fa';
+import { useLanguage } from '../lang/LanguageContext';
 
 const SearchPopup = ({ onClose, onSearch }) => {
+  const { locale } = useLanguage();
   const [inputValue, setInputValue] = useState('');
 
   const handleSearch = () => {
@@ -34,19 +36,19 @@ const SearchPopup = ({ onClose, onSearch }) => {
           />
           <input 
             type="text" 
-            placeholder="Search videos, tags, authors..." 
+            placeholder={locale('search.placeholder')} 
             className="bg-transparent text-white w-full outline-none text-lg placeholder-gray-500"
             autoFocus
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
           />
-          <button onClick={onClose} className="text-gray-400 hover:text-white bg-gray-700 rounded-lg px-3 py-2">Cancel</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-white bg-gray-700 rounded-lg px-3 py-2">{locale('common.cancel')}</button>
         </div>
         
         {/**
          * <div className="mt-4">
-          <h4 className="text-xs text-gray-500 uppercase font-bold mb-2 px-2">Recent Searches</h4>
+          <h4 className="text-xs text-gray-500 uppercase font-bold mb-2 px-2">{locale('search.recent')}</h4>
           <div className="space-y-1">
             {['Cyberpunk City', 'Nature 4K', 'Abstract Loop'].map(term => (
               <button key={term} className="w-full text-left px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-700 transition-colors flex items-center gap-3">

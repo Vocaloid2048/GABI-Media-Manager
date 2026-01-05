@@ -5,9 +5,11 @@ import DownloadResolutionPopup from '../components/DownloadResolutionPopup';
 import { FaDownload, FaInfoCircle } from 'react-icons/fa';
 import TitleFooter from '../components/TitleFooter';
 import TagClip from '../components/TagClip';
+import { useLanguage } from '../lang/LanguageContext';
 
 const VideoItem = ({ video, onDownload }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const { locale } = useLanguage();
 
   const thumbName = video.video_thumb_name || video.video_filename;
   const thumbUrl = `/api/video/thumb?name=${thumbName}.webp`;
@@ -38,7 +40,7 @@ const VideoItem = ({ video, onDownload }) => {
             onDownload(video);
           }}
           className={`absolute bottom-2 right-2 bg-gray-900 hover:bg-gray-500 text-white p-2 rounded-full shadow-lg transition-all duration-200 ${isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}
-          title="Download"
+          title={locale('common.download')}
         >
           <FaDownload size={12} />
         </button>
@@ -55,6 +57,7 @@ const VideoItem = ({ video, onDownload }) => {
 
 const DetailPage = () => {
   const { id } = useParams();
+  const { locale } = useLanguage();
   const [isHovered, setIsHovered] = useState(false);
   const [groupData, setGroupData] = useState(null);
   const [videoList, setVideoList] = useState([]);
@@ -121,7 +124,7 @@ const DetailPage = () => {
     return (
       <div className="bg-gray-900 min-h-screen text-white flex flex-col items-center justify-center">
         <TitleHeader />
-        <h2 className="text-2xl font-bold text-gray-400 mt-10">Group not found</h2>
+        <h2 className="text-2xl font-bold text-gray-400 mt-10">{locale('detail.notFound')}</h2>
       </div>
     );
   }
@@ -174,19 +177,19 @@ const DetailPage = () => {
 
             <div className="grid grid-cols-2 gap-3 mb-8">
               <div className="bg-gray-800/50 border border-gray-700 p-3 rounded-xl">
-                <span className="text-gray-500 block text-xs uppercase font-bold mb-1">Format</span>
+                <span className="text-gray-500 block text-xs uppercase font-bold mb-1">{locale('detail.format')}</span>
                 <span className="text-gray-200 font-mono text-sm">{formats}</span>
               </div>
               <div className="bg-gray-800/50 border border-gray-700 p-3 rounded-xl">
-                <span className="text-gray-500 block text-xs uppercase font-bold mb-1">Frame Rate</span>
+                <span className="text-gray-500 block text-xs uppercase font-bold mb-1">{locale('detail.frameRate')}</span>
                 <span className="text-gray-200 font-mono text-sm">{frameRates}</span>
               </div>
               <div className="bg-gray-800/50 border border-gray-700 p-3 rounded-xl">
-                <span className="text-gray-500 block text-xs uppercase font-bold mb-1">Resolution</span>
+                <span className="text-gray-500 block text-xs uppercase font-bold mb-1">{locale('detail.resolution')}</span>
                 <span className="text-gray-200 font-mono text-sm">{resolutions}</span>
               </div>
               <div className="bg-gray-800/50 border border-gray-700 p-3 rounded-xl">
-                <span className="text-gray-500 block text-xs uppercase font-bold mb-1">Codec</span>
+                <span className="text-gray-500 block text-xs uppercase font-bold mb-1">{locale('detail.codec')}</span>
                 <span className="text-gray-200 font-mono text-sm">{codecs}</span>
               </div>
             </div>
@@ -196,14 +199,14 @@ const DetailPage = () => {
               className="mt-auto w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
             >
               <FaDownload className="text-lg" />
-              <span>Download Full Collection</span>
+              <span>{locale('detail.downloadCollection')}</span>
             </button>
           </div>
         </div>
 
         {/* Videos Table */}
         <div className="mb-6 flex items-center gap-2">
-          <h2 className="text-2xl font-bold text-white">Included Videos</h2>
+          <h2 className="text-2xl font-bold text-white">{locale('detail.includedVideos')}</h2>
           <span className="bg-gray-800 text-gray-400 text-xs px-2 py-1 rounded-full">{videoList.length}</span>
         </div>
 

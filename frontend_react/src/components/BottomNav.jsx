@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaFilter, FaSearch, FaCloudUploadAlt, FaTimes, FaArrowRight } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../lang/LanguageContext';
 
 const BottomNav = ({ onFilterClick, onSearchClick, onUploadClick, showSearch, onCloseSearch, onSearch, className }) => {
+  const { locale } = useLanguage();
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef(null);
 
@@ -44,7 +46,7 @@ const BottomNav = ({ onFilterClick, onSearchClick, onUploadClick, showSearch, on
             <input 
               ref={inputRef}
               type="text" 
-              placeholder="Search" 
+              placeholder={locale('nav.search')} 
               className="bg-transparent text-white flex-1 outline-none text-sm min-w-0"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
@@ -64,7 +66,7 @@ const BottomNav = ({ onFilterClick, onSearchClick, onUploadClick, showSearch, on
           className="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-500 active:scale-95 transition-all"
         >
           <FaFilter className="text-xl mb-1" />
-          <span className="text-xs font-medium">Filter</span>
+          <span className="text-xs font-medium">{locale('nav.filter')}</span>
         </button>
         
         <div className="w-px h-8 bg-gray-800"></div>
@@ -74,7 +76,7 @@ const BottomNav = ({ onFilterClick, onSearchClick, onUploadClick, showSearch, on
           className={`flex flex-col items-center justify-center w-full h-full active:scale-95 transition-all ${showSearch ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'}`}
         >
           <FaSearch className="text-xl mb-1" />
-          <span className="text-xs font-medium">Search</span>
+          <span className="text-xs font-medium">{locale('nav.search')}</span>
         </button>
 
         <div className="w-px h-8 bg-gray-800"></div>
@@ -84,7 +86,7 @@ const BottomNav = ({ onFilterClick, onSearchClick, onUploadClick, showSearch, on
           className="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-500 active:scale-95 transition-all"
         >
           <FaCloudUploadAlt className="text-xl mb-1" />
-          <span className="text-xs font-medium">Upload</span>
+          <span className="text-xs font-medium">{locale('nav.upload')}</span>
         </button>
       </div>
     </div>
