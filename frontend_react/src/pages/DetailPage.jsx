@@ -6,6 +6,7 @@ import { FaDownload, FaInfoCircle } from 'react-icons/fa';
 import TitleFooter from '../components/TitleFooter';
 import {TagClip} from '../components/TagClip';
 import { useLanguage } from '../lang/LanguageContext';
+import { generateDs } from '../utils/auth';
 
 const VideoItem = ({ video, onDownload }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -77,8 +78,39 @@ const DetailPage = () => {
     trigDownload(itemData, options);
   };
 
-  const trigDownload = (itemData, options) => {
-    const downloadUrl = `/api/video/download?id=${itemData.video_id || itemData.group_id}&options=${options}`;
+  const trigDownload = async (itemData, options) => {
+    const userId = localStorage.getItem('user_id');
+    const ds = generateDs(userId);
+
+    if (!ds) {
+      alert('Authentication error. Please login again.');
+      return;
+    }
+
+    // 1. Check Auth First
+    try {
+      const checkUrl = `/api/video/download?check=true&user_id=${userId}&ds=${encodeURIComponent(ds)}`;
+      const res = await fetch(checkUrl);
+      const json = await res.json();
+
+      if (json.retcode === -1001) {
+        alert('Session expired. Please login again.');
+        localStorage.clear();
+        window.location.reload();
+        return;
+      } else if (json.retcode !== 1) {
+        alert('Download error: ' + (json.message || 'Unknown error'));
+        return;
+      }
+    } catch (e) {
+      console.error("Auth check failed", e);
+      // Optional: decide whether to proceed or stop. 
+      // If network error, maybe stop.
+      return;
+    }
+
+    // 2. Proceed to Download
+    const downloadUrl = `/api/video/download?id=${itemData.video_id || itemData.group_id}&options=${options}&user_id=${userId}&ds=${encodeURIComponent(ds)}`;
 
     const link = document.createElement('a');
     link.href = downloadUrl;

@@ -14,11 +14,11 @@ const crypto = require('crypto');
 const validExtensions = (process.env.VALID_VIDEO_EXTENSIONS || '.mp4,.mkv,.avi,.mov,.wmv,.flv,.webm').split(',');
 
 exports.uploadVideoFile = async (req, res) => {
-    const user_id = req.query.user_id;
+    const user_id = req.get("user_id");
     const ds_key = req.get("ds");
 
     // Authenticate User
-    const user = auth(user_id, ds_key);
+    const user = auth(ds_key, user_id);
     if (!user) { return raiseError(res, WRONG_AUTHIZATION); }
     // Handle File Upload
     const file = req.file;

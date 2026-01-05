@@ -15,9 +15,12 @@ exports.auth = (ds, uid) => {
         const dsTime = dsSplit[0]
         const dsRandom = dsSplit[1]
 
-        if (ds !== generateDs(uid, dsTime, dsRandom)
-            //    && Math.floor(Date.now() / 1000) - dsTime < 300
-        ) { return false }
+        const serverDs = generateDs(uid, dsTime, dsRandom);
+        
+        if (ds !== serverDs) { 
+            console.log(`Auth Failed: Client DS: ${ds} | Server DS: ${serverDs} | UID: ${uid}`);
+            return false 
+        }
 
         return true
     } catch (error) {

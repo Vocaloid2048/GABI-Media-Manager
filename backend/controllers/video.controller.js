@@ -151,13 +151,19 @@ exports.getVideoTagsList = async (req, res) => {
  */
 exports.getDownloadableVideo = async (req, res) => {
     const user_id = req.query.user_id;
-    const ds_key = req.get("ds");
+    const ds_key = req.query.ds || req.get("ds");
     const options = req.query.options || null;
     const reqId = req.query.id || null;
 
     // Check Auth
-    const authResult = auth(user_id, ds_key);
+    const authResult = auth(ds_key, user_id);
     if (!authResult) { raiseError(res, WRONG_AUTHIZATION); return; }
+
+    // Check Mode
+    if (req.query.check === 'true') {
+        returnSuccess(res, { message: "Auth Valid" });
+        return;
+    }
 
     // Check Required Params
     if (!checkParamsExisted(reqId)) { raiseError(res, MISSING_REQUIRE_KEYS); return; }

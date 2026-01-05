@@ -9,6 +9,8 @@ module.exports = {
     DATATYPE_MISMATCH: ({ "retcode": -1003, "message": 'DataType Mismatch', "data": null }),
     KEY_CONFUSION: ({ "retcode": -1004, "message": 'Key Confusion', "data": null }),
     USER_DOES_NOT_EXISTED: ({ "retcode": -1005, "message": 'User Does Not Existed', "data": null }),
+    USER_ALREADY_EXISTED: ({ "retcode": -1006, "message": 'User Already Existed', "data": null }),
+    INVALID_INVITATION_CODE: ({ "retcode": -1007, "message": 'Invalid Invitation Code', "data": null }),
     
     raiseError(res, apiErrors) {
         return res.status(200).json(apiErrors || { "retcode": -2, "message": 'Unknown', "data": null })

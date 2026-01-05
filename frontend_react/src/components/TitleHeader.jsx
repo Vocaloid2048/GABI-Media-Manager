@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaArrowCircleLeft, FaBackward, FaPlayCircle, FaGlobe } from 'react-icons/fa';
+import { FaArrowCircleLeft, FaBackward, FaPlayCircle, FaGlobe, FaArrowLeft } from 'react-icons/fa';
 import { useLanguage } from '../lang/LanguageContext';
 
 const TitleHeader = ({isHomePage = false}) => {
@@ -10,7 +10,7 @@ const TitleHeader = ({isHomePage = false}) => {
       {/* Left: Back Button */}
       <div className="flex items-center w-10 shrink-0">
         {isHomePage !== true && 
-          <FaArrowCircleLeft className="text-2xl cursor-pointer hover:text-gray-300 transition-colors" onClick={() => window.history.back()} />
+          <FaArrowLeft className="text-2xl cursor-pointer hover:text-gray-300 transition-colors" onClick={() => window.history.back()} />
         }
       </div>
 

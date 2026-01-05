@@ -57,6 +57,7 @@ export default {
   "upload.uploading": "上傳中...",
   "upload.speed": "速度:",
   "upload.complete": "上傳完成！",
+  "upload.auth_error": "驗證錯誤。請重新登入。",
   
   // Login
   "login.title": "登入",
@@ -65,6 +66,11 @@ export default {
   "login.password": "密碼",
   "login.sign_in": "登入",
   "login.or_continue": "或透過以下方式繼續",
+  "login.register": "註冊",
+  "login.invitation_code": "邀請碼",
+  "login.have_account": "已有帳號？",
+  "login.no_account": "還沒有帳號？",
+  "login.create_account": "建立帳號",
   
   // Download
   "download.options_title": "下載選項",

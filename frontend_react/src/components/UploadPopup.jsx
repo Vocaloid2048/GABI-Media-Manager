@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaCloudUploadAlt, FaTimes } from 'react-icons/fa';
 import { useLanguage } from '../lang/LanguageContext';
+import { generateDs } from '../utils/auth';
 
 const UploadPopup = ({ onClose }) => {
   const { locale } = useLanguage();
@@ -16,24 +17,68 @@ const UploadPopup = ({ onClose }) => {
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!file) return;
     setUploading(true);
-    // Mock upload simulation
-    let p = 0;
-    const interval = setInterval(() => {
-      p += Math.random() * 10;
-      if (p > 100) p = 100;
-      setProgress(Math.floor(p));
-      if (p >= 100) {
-        clearInterval(interval);
-        setTimeout(() => {
-          setUploading(false);
-          alert(locale('upload.complete'));
-          onClose();
-        }, 500);
-      }
-    }, 500);
+
+    const userId = localStorage.getItem('user_id');
+    const ds = generateDs(userId);
+
+    if (!ds) {
+      alert(locale('upload.auth_error'));
+      setUploading(false);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    // Add other fields...
+
+    try {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/upload');
+      
+      // Set Auth Headers
+      xhr.setRequestHeader('user_id', userId);
+      xhr.setRequestHeader('ds', ds);
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = (event.loaded / event.total) * 100;
+          setProgress(Math.floor(percentComplete));
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          const response = JSON.parse(xhr.responseText);
+          if (response.retcode === 1) {
+            alert(locale('upload.complete'));
+            onClose();
+          } else if (response.retcode === -1001) {
+            // Auth failed
+            alert('Session expired. Please login again.');
+            localStorage.clear();
+            window.location.reload();
+          } else {
+            alert('Upload failed: ' + response.message);
+          }
+        } else {
+          alert('Upload failed');
+        }
+        setUploading(false);
+      };
+
+      xhr.onerror = () => {
+        alert('Network error');
+        setUploading(false);
+      };
+
+      xhr.send(formData);
+    } catch (error) {
+      console.error(error);
+      setUploading(false);
+    }
   };
 
   return (

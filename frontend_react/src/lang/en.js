@@ -57,6 +57,7 @@ export default {
   "upload.uploading": "Uploading...",
   "upload.speed": "Speed:",
   "upload.complete": "Upload Complete!",
+  "upload.auth_error": "Authentication error. Please login again.",
   
   // Login
   "login.title": "Login",
@@ -65,6 +66,11 @@ export default {
   "login.password": "Password",
   "login.sign_in": "Sign In",
   "login.or_continue": "Or continue with",
+  "login.register": "Register",
+  "login.invitation_code": "Invitation Code",
+  "login.have_account": "Already have an account?",
+  "login.no_account": "Don't have an account?",
+  "login.create_account": "Create Account",
   
   // Download
   "download.options_title": "Download Options",

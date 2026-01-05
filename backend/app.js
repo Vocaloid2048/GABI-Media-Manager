@@ -3,12 +3,11 @@ const session = require('express-session')
 const fs = require('fs')
 const https = require('https')
 const cors = require('cors')
+require('dotenv').config();
 
 const app = express();
 const router = require('./routers/router');
 const { VideoDb, initDb } = require('./models');
-
-require('dotenv').config();
 
 const PORT = process.env.PORT || 3000
 
