@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FaCloudUploadAlt, FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
 import { useLanguage } from '../lang/LanguageContext';
@@ -26,6 +26,9 @@ const UploadPopup = ({ onClose }) => {
   const [newTagZh, setNewTagZh] = useState('');
   const [newTagEn, setNewTagEn] = useState('');
   const [newTagType, setNewTagType] = useState(Object.keys(TagTypeEnum)[0]);
+  
+  // Use useRef for XHR to ensure immediate access without re-renders
+  const xhrRef = useRef(null);
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -40,7 +43,24 @@ const UploadPopup = ({ onClose }) => {
       }
     };
     fetchTags();
+
+    // Cleanup on unmount
+    return () => {
+      if (xhrRef.current) {
+        console.log('Unmounting: Aborting active upload');
+        xhrRef.current.abort();
+      }
+    };
   }, []);
+
+  const handleClose = () => {
+    if (xhrRef.current) {
+      console.log('User Cancelled: Aborting upload');
+      xhrRef.current.abort();
+      xhrRef.current = null;
+    }
+    onClose();
+  };
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -101,7 +121,14 @@ const UploadPopup = ({ onClose }) => {
     formData.append('videoInfo', JSON.stringify(videoInfo));
 
     try {
+      // Cancel any existing request before starting a new one
+      if (xhrRef.current) {
+        xhrRef.current.abort();
+      }
+
       const xhr = new XMLHttpRequest();
+      xhrRef.current = xhr;
+      
       xhr.open('POST', '/api/upload');
       
       // Set Auth Headers
@@ -133,22 +160,31 @@ const UploadPopup = ({ onClose }) => {
           alert('Upload failed');
         }
         setUploading(false);
+        xhrRef.current = null;
       };
 
       xhr.onerror = () => {
         alert('Network error');
         setUploading(false);
+        xhrRef.current = null;
+      };
+
+      xhr.onabort = () => {
+        console.log('Upload aborted');
+        setUploading(false);
+        xhrRef.current = null;
       };
 
       xhr.send(formData);
     } catch (error) {
       console.error(error);
       setUploading(false);
+      xhrRef.current = null;
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={handleClose}>
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 10px;
@@ -175,7 +211,7 @@ const UploadPopup = ({ onClose }) => {
       >
         <div className="flex justify-between items-center p-6 border-b border-gray-700 shrink-0">
           <h2 className="text-xl font-bold text-white">{locale('upload.title')}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><FaTimes size={20} /></button>
+          <button onClick={handleClose} className="text-gray-400 hover:text-white transition-colors"><FaTimes size={20} /></button>
         </div>
 
         <div className="p-6 overflow-y-auto custom-scrollbar pr-2 mr-1">
@@ -297,7 +333,7 @@ const UploadPopup = ({ onClose }) => {
         </div>
 
         <div className="p-6 border-t border-gray-700 flex justify-end gap-3 shrink-0">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors text-sm font-medium">{locale('common.cancel')}</button>
+          <button onClick={handleClose} className="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors text-sm font-medium">{locale('common.cancel')}</button>
           <button 
             onClick={handleUpload} 
             disabled={!file || !title || uploading}

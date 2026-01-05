@@ -6,7 +6,18 @@ const process = require('process');
 const VideoDb = {};
 VideoDb.sequelize = new Sequelize({
   storage: './db/video_database.db',
-  dialect: 'sqlite'
+  dialect: 'sqlite',
+  logging: false, // Reduce console noise
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  },
+  dialectOptions: {
+    // Enable WAL mode for better concurrency
+    mode: 'WAL' 
+  }
 });
 
 VideoDb.actionRecord = require("./actionRecord.model")(VideoDb.sequelize,Sequelize)

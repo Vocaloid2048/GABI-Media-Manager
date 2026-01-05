@@ -23,6 +23,7 @@ const FilterPopup = ({ tagList, selectedTags, onClose, onApply }) => {
 
   const handleApply = () => {
     onApply(localSelectedTags);
+    onClose();
   };
 
   return (

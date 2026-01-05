@@ -80,9 +80,11 @@ exports.uploadVideoZipImpl = async (zipFileLocation, videoInfo) => {
     const baseTemp = process.env.TEMP_DIR || path.dirname(zipFileLocation);
     const extractDir = path.join(baseTemp, `extract_${Date.now()}`);
 
-    fs.mkdirSync(extractDir, { recursive: true });
+    await fs.promises.mkdir(extractDir, { recursive: true });
 
-    if (!fs.existsSync(zipFileLocation)) {
+    try {
+        await fs.promises.access(zipFileLocation);
+    } catch {
         throw new Error(`Zip file not found at ${zipFileLocation}`);
     }
 
@@ -92,14 +94,19 @@ exports.uploadVideoZipImpl = async (zipFileLocation, videoInfo) => {
         .promise();
 
     // Extraction complete, now process
-    const extractedFiles = fs.readdirSync(extractDir).map(f => path.join(extractDir, f));
-    const videoFiles = extractedFiles.filter(f => validExtensions.includes(path.extname(f).toLowerCase()));
+    const extractedFiles = await fs.promises.readdir(extractDir);
+    const fullPaths = extractedFiles.map(f => path.join(extractDir, f));
+    const videoFiles = fullPaths.filter(f => validExtensions.includes(path.extname(f).toLowerCase()));
 
     await processVideoFiles(videoFiles, videoInfo);
 
     // Cleanup
-    fs.rmSync(zipFileLocation, { force: true });
-    fs.rmSync(extractDir, { recursive: true, force: true });
+    try {
+        await fs.promises.rm(zipFileLocation, { force: true });
+        await fs.promises.rm(extractDir, { recursive: true, force: true });
+    } catch (e) {
+        console.error("Cleanup error:", e);
+    }
 };
 
 async function processVideoFiles(videoFiles, videoInfo) {
@@ -119,61 +126,72 @@ async function processVideoFiles(videoFiles, videoInfo) {
     });
 
     const videoDir = process.env.VIDEO_DIR;
-    fs.mkdirSync(videoDir, { recursive: true }); // Ensure video directory exists
+    await fs.promises.mkdir(videoDir, { recursive: true }); // Ensure video directory exists
 
-    const tasks = videoFiles.map((file, index) => (async () => {
-        try {
-            if (!fs.existsSync(file)) throw new Error(`Source missing: ${file}`);
-            
-            // Generate UUID for video
-            const videoId = crypto.randomUUID();
-            const suffix = path.extname(file).toLowerCase();
-            
-            // Use UUID for storage filename and thumbnail
-            const videoStorageName = videoId; 
-            const destPath = path.join(videoDir, `${videoStorageName}${suffix}`);
-
+    // Limit concurrency to avoid CPU starvation (ffmpeg) and DB locking
+    const CONCURRENCY_LIMIT = 2;
+    const results = [];
+    
+    for (let i = 0; i < videoFiles.length; i += CONCURRENCY_LIMIT) {
+        const chunk = videoFiles.slice(i, i + CONCURRENCY_LIMIT);
+        const chunkResults = await Promise.all(chunk.map(file => (async () => {
             try {
-                fs.renameSync(file, destPath);
-            } catch (err) {
-                if (err.code === 'EXDEV') {
-                    // Cross-device move: copy and delete
-                    fs.copyFileSync(file, destPath);
-                    fs.unlinkSync(file);
-                } else {
-                    throw err;
+                try {
+                    await fs.promises.access(file);
+                } catch {
+                    throw new Error(`Source missing: ${file}`);
                 }
+                
+                // Generate UUID for video
+                const videoId = crypto.randomUUID();
+                const suffix = path.extname(file).toLowerCase();
+                
+                // Use UUID for storage filename and thumbnail
+                const videoStorageName = videoId; 
+                const destPath = path.join(videoDir, `${videoStorageName}${suffix}`);
+
+                try {
+                    await fs.promises.rename(file, destPath);
+                } catch (err) {
+                    if (err.code === 'EXDEV') {
+                        // Cross-device move: copy and delete
+                        await fs.promises.copyFile(file, destPath);
+                        await fs.promises.unlink(file);
+                    } else {
+                        throw err;
+                    }
+                }
+
+                const metadata = await getVideoMetadata(destPath);
+                const { streams, format } = metadata;
+                const videoStream = streams.find(s => s.codec_type === 'video');
+
+                await db.VideoDb.videoData.create({
+                    video_id: videoId,
+                    group_id: groupId,
+                    video_filename: videoStorageName, // Stored as UUID
+                    video_resolution: videoStream ? `${videoStream.width}x${videoStream.height}` : 'Unknown',
+                    video_format: suffix.replace('.', '').toUpperCase(),
+                    video_duration: format.duration,
+                    video_filesize: format.size,
+                    video_frame_rate: videoStream && videoStream.avg_frame_rate?.includes('/')
+                        ? Number(videoStream.avg_frame_rate.split('/')[0]) / Number(videoStream.avg_frame_rate.split('/')[1] || 1)
+                        : (Number(videoStream?.avg_frame_rate) || 0),
+                    video_codec: videoStream ? videoStream.codec_name : 'Unknown',
+                    video_thumb_name: videoStorageName, // Stored as UUID
+                });
+
+                await generateThumbnail(`${videoStorageName}${suffix}`);
+                return true;
+            } catch (error) {
+                console.error(`Failed to process video ${file}:`, error);
+                errorByAPI(null, error, true);
+                return false;
             }
+        })()));
+        results.push(...chunkResults);
+    }
 
-            const metadata = await getVideoMetadata(destPath);
-            const { streams, format } = metadata;
-            const videoStream = streams.find(s => s.codec_type === 'video');
-
-            await db.VideoDb.videoData.create({
-                video_id: videoId,
-                group_id: groupId,
-                video_filename: videoStorageName, // Stored as UUID
-                video_resolution: videoStream ? `${videoStream.width}x${videoStream.height}` : 'Unknown',
-                video_format: suffix.replace('.', '').toUpperCase(),
-                video_duration: format.duration,
-                video_filesize: format.size,
-                video_frame_rate: videoStream && videoStream.avg_frame_rate?.includes('/')
-                    ? Number(videoStream.avg_frame_rate.split('/')[0]) / Number(videoStream.avg_frame_rate.split('/')[1] || 1)
-                    : (Number(videoStream?.avg_frame_rate) || 0),
-                video_codec: videoStream ? videoStream.codec_name : 'Unknown',
-                video_thumb_name: videoStorageName, // Stored as UUID
-            });
-
-            await generateThumbnail(`${videoStorageName}${suffix}`);
-            return true;
-        } catch (error) {
-            console.error(`Failed to process video ${file}:`, error);
-            errorByAPI(null, error, true);
-            return false;
-        }
-    })());
-
-    const results = await Promise.all(tasks);
     const successCount = results.filter(r => r === true).length;
 
     if (successCount > 0) {
