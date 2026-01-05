@@ -14,12 +14,8 @@ const crypto = require('crypto');
 const validExtensions = (process.env.VALID_VIDEO_EXTENSIONS || '.mp4,.mkv,.avi,.mov,.wmv,.flv,.webm').split(',');
 
 exports.uploadVideoFile = async (req, res) => {
-    const user_id = req.get("user_id");
-    const ds_key = req.get("ds");
-
-    // Authenticate User
-    const user = auth(ds_key, user_id);
-    if (!user) { return raiseError(res, WRONG_AUTHIZATION); }
+    // Auth is handled by middleware
+    
     // Handle File Upload
     const file = req.file;
     if (file === undefined
@@ -28,9 +24,35 @@ exports.uploadVideoFile = async (req, res) => {
     ) { return raiseError(res, INVALID_REQUEST); }
 
     // Check is video info params existed
-    const videoInfo = JSON.parse(req.body.videoInfo || '{}')
+    let videoInfo = JSON.parse(req.body.videoInfo || '{}')
     if (videoInfo.group_title === undefined || videoInfo.group_title === null || videoInfo.group_title === '') {
         return raiseError(res, INVALID_REQUEST);
+    }
+
+    // Process Tags
+    try {
+        const finalTags = new Set(videoInfo.selectedTags || []);
+
+        // Create New Tags
+        if (videoInfo.newTags && Array.isArray(videoInfo.newTags)) {
+            for (const newTag of videoInfo.newTags) {
+                if (newTag.tag_zh_name && newTag.tag_type) {
+                    const createdTag = await db.VideoDb.tagData.create({
+                        tag_zh_name: newTag.tag_zh_name,
+                        tag_en_name: newTag.tag_en_name || newTag.tag_zh_name,
+                        tag_type: newTag.tag_type
+                    });
+                    finalTags.add(createdTag.tag_id);
+                }
+            }
+        }
+        
+        videoInfo.group_tags = Array.from(finalTags);
+
+    } catch (err) {
+        console.error("Error processing tags:", err);
+        // Continue even if tag creation fails? Or fail?
+        // Let's log and continue with what we have
     }
     
     // Return Success Response
@@ -111,7 +133,17 @@ async function processVideoFiles(videoFiles, videoInfo) {
             const videoStorageName = videoId; 
             const destPath = path.join(videoDir, `${videoStorageName}${suffix}`);
 
-            fs.renameSync(file, destPath);
+            try {
+                fs.renameSync(file, destPath);
+            } catch (err) {
+                if (err.code === 'EXDEV') {
+                    // Cross-device move: copy and delete
+                    fs.copyFileSync(file, destPath);
+                    fs.unlinkSync(file);
+                } else {
+                    throw err;
+                }
+            }
 
             const metadata = await getVideoMetadata(destPath);
             const { streams, format } = metadata;
@@ -133,12 +165,22 @@ async function processVideoFiles(videoFiles, videoInfo) {
             });
 
             await generateThumbnail(`${videoStorageName}${suffix}`);
+            return true;
         } catch (error) {
+            console.error(`Failed to process video ${file}:`, error);
             errorByAPI(null, error, true);
+            return false;
         }
     })());
 
-    await Promise.all(tasks).then(async () => await generateThumbnailGroup(groupId));
+    const results = await Promise.all(tasks);
+    const successCount = results.filter(r => r === true).length;
+
+    if (successCount > 0) {
+        await generateThumbnailGroup(groupId);
+    } else {
+        console.error(`No videos were successfully processed for group ${groupId}. Skipping group thumbnail generation.`);
+    }
 }
 
 const getVideoMetadata = (filePath) => {

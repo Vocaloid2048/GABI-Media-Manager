@@ -3,6 +3,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const uploadController = require('../controllers/upload.controller');
+const uploadQueue = require('../middlewares/uploadQueue');
+const checkAuth = require('../middlewares/checkAuth');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -21,6 +23,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 const router = express.Router();
-router.post('/', upload.single('file'), uploadController.uploadVideoFile);
+// Order: Auth -> Queue -> Multer -> Controller
+router.post('/', checkAuth, uploadQueue, upload.single('file'), uploadController.uploadVideoFile);
 
 module.exports = router;

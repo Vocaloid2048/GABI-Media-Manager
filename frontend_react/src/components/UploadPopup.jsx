@@ -1,14 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FaCloudUploadAlt, FaTimes } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
 import { useLanguage } from '../lang/LanguageContext';
 import { generateDs } from '../utils/auth';
+import { TagTypeEnum } from './TagClip';
 
 const UploadPopup = ({ onClose }) => {
-  const { locale } = useLanguage();
+  const { locale, language } = useLanguage();
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  
+  // Form Fields
+  const [title, setTitle] = useState('');
+  const [desc, setDesc] = useState('');
+  const [author, setAuthor] = useState('');
+  
+  // Tags State
+  const [fullTagList, setFullTagList] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [newTags, setNewTags] = useState([]);
+  
+  // New Tag Input State
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [newTagZh, setNewTagZh] = useState('');
+  const [newTagEn, setNewTagEn] = useState('');
+  const [newTagType, setNewTagType] = useState(Object.keys(TagTypeEnum)[0]);
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const res = await fetch('/api/video/tags');
+        const json = await res.json();
+        if (json.retcode === 1 && Array.isArray(json.data)) {
+          setFullTagList(json.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch tags:', error);
+      }
+    };
+    fetchTags();
+  }, []);
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -17,22 +49,56 @@ const UploadPopup = ({ onClose }) => {
     }
   };
 
+  const toggleTag = (tagId) => {
+    setSelectedTags(prev => 
+      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+    );
+  };
+
+  const handleAddNewTag = () => {
+    if (!newTagZh || !newTagType) return;
+    
+    const newTagObj = {
+      tag_zh_name: newTagZh,
+      tag_en_name: newTagEn || newTagZh,
+      tag_type: newTagType,
+      temp_id: Date.now() // Temporary ID for UI
+    };
+    
+    setNewTags([...newTags, newTagObj]);
+    setNewTagZh('');
+    setNewTagEn('');
+    setIsAddingTag(false);
+  };
+
+  const removeNewTag = (tempId) => {
+    setNewTags(prev => prev.filter(t => t.temp_id !== tempId));
+  };
+
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file || !title) return;
     setUploading(true);
 
     const userId = localStorage.getItem('user_id');
     const ds = generateDs(userId);
 
     if (!ds) {
-      alert(locale('upload.auth_error'));
+      alert('Authentication error. Please login again.');
       setUploading(false);
       return;
     }
 
+    const videoInfo = {
+      group_title: title,
+      group_desc: desc,
+      group_author: author,
+      selectedTags: selectedTags,
+      newTags: newTags.map(({ temp_id, ...rest }) => rest) // Remove temp_id
+    };
+
     const formData = new FormData();
     formData.append('file', file);
-    // Add other fields...
+    formData.append('videoInfo', JSON.stringify(videoInfo));
 
     try {
       const xhr = new XMLHttpRequest();
@@ -114,23 +180,98 @@ const UploadPopup = ({ onClose }) => {
 
         <div className="p-6 overflow-y-auto custom-scrollbar pr-2 mr-1">
           <div className="space-y-5 pr-3">
+            {/* Basic Info */}
             <div>
               <label className="block text-gray-400 text-sm mb-1.5 font-medium">{locale('upload.field_title')}</label>
-              <input type="text" className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder={locale('upload.placeholder_title')} />
+              <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder={locale('upload.placeholder_title')} />
             </div>
             <div>
               <label className="block text-gray-400 text-sm mb-1.5 font-medium">{locale('upload.field_desc')}</label>
-              <textarea className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none transition-all" placeholder={locale('upload.placeholder_desc')} />
-            </div>
-            <div>
-              <label className="block text-gray-400 text-sm mb-1.5 font-medium">{locale('upload.field_tags')}</label>
-              <input type="text" className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder={locale('upload.placeholder_tags')} />
+              <textarea value={desc} onChange={e => setDesc(e.target.value)} className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none transition-all" placeholder={locale('upload.placeholder_desc')} />
             </div>
             <div>
               <label className="block text-gray-400 text-sm mb-1.5 font-medium">{locale('upload.field_author')}</label>
-              <input type="text" className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder={locale('upload.placeholder_author')} />
+              <input type="text" value={author} onChange={e => setAuthor(e.target.value)} className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder={locale('upload.placeholder_author')} />
             </div>
 
+            {/* Tag Selection */}
+            <div>
+              <label className="block text-gray-400 text-sm mb-3 font-medium">{locale('upload.field_tags')}</label>
+              
+              <div className="space-y-4 bg-gray-900/50 p-4 rounded-xl border border-gray-700">
+                {Object.keys(TagTypeEnum).map((tagType) => (
+                  <div key={tagType}>
+                    <h4 className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">{locale(TagTypeEnum[tagType].localeKey)}</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {fullTagList.filter(tagItem => tagItem.tag_type === tagType).map(tag => {
+                        const isSelected = selectedTags.includes(tag.tag_id);
+                        return (
+                          <button 
+                            key={tag.tag_id} 
+                            onClick={() => toggleTag(tag.tag_id)}
+                            className={`px-3 py-1 rounded-md text-xs transition-colors border ${
+                              isSelected 
+                              ? 'bg-blue-600 text-white border-blue-500' 
+                              : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
+                            }`}
+                          >
+                            {language === 'zh' ? tag.tag_zh_name : tag.tag_en_name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                {/* New Tags Display */}
+                {newTags.length > 0 && (
+                  <div>
+                    <h4 className="text-xs text-blue-400 mb-2 font-medium uppercase tracking-wider">New Tags</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {newTags.map(tag => (
+                        <div key={tag.temp_id} className="flex items-center bg-blue-900/30 border border-blue-500/50 text-blue-200 px-3 py-1 rounded-md text-xs">
+                          <span>{tag.tag_zh_name} ({tag.tag_type})</span>
+                          <button onClick={() => removeNewTag(tag.temp_id)} className="ml-2 hover:text-white"><FaTimes /></button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add New Tag UI */}
+                {!isAddingTag ? (
+                  <button 
+                    onClick={() => setIsAddingTag(true)}
+                    className="flex items-center gap-2 text-xs text-gray-400 hover:text-white transition-colors mt-2"
+                  >
+                    <FaPlus /> Add Custom Tag
+                  </button>
+                ) : (
+                  <div className="mt-2 p-3 bg-gray-800 rounded-lg border border-gray-600 flex flex-wrap gap-2 items-end">
+                    <div className="flex-1 min-w-[100px]">
+                      <label className="text-[10px] text-gray-400 block mb-1">ZH Name</label>
+                      <input type="text" value={newTagZh} onChange={e => setNewTagZh(e.target.value)} className="w-full bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 text-xs" placeholder="標籤名稱" />
+                    </div>
+                    <div className="flex-1 min-w-[100px]">
+                      <label className="text-[10px] text-gray-400 block mb-1">EN Name (Opt)</label>
+                      <input type="text" value={newTagEn} onChange={e => setNewTagEn(e.target.value)} className="w-full bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 text-xs" placeholder="Tag Name" />
+                    </div>
+                    <div className="w-[100px]">
+                      <label className="text-[10px] text-gray-400 block mb-1">Type</label>
+                      <select value={newTagType} onChange={e => setNewTagType(e.target.value)} className="w-full bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 text-xs">
+                        {Object.keys(TagTypeEnum).map(type => (
+                          <option key={type} value={type}>{locale(TagTypeEnum[type].localeKey)}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <button onClick={handleAddNewTag} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-xs h-[26px]">Add</button>
+                    <button onClick={() => setIsAddingTag(false)} className="text-gray-400 hover:text-white px-2 py-1 text-xs h-[26px]">Cancel</button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* File Drop Zone */}
             <div 
               className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${file ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 bg-gray-900/50 hover:bg-gray-900 hover:border-gray-500'}`}
               onDragOver={e => e.preventDefault()}
@@ -145,28 +286,28 @@ const UploadPopup = ({ onClose }) => {
               <input type="file" id="fileInput" className="hidden" onChange={e => setFile(e.target.files[0])} accept=".zip,.mp4,.avi" />
             </div>
 
+            {/* Progress Bar */}
             {uploading && (
-              <div className="bg-gray-900 rounded-xl p-4 border border-gray-700">
-                <div className="flex justify-between text-sm text-gray-300 mb-2">
-                  <span>{locale('upload.uploading')}</span>
-                  <span className="font-mono">{progress}%</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-                  <div className="bg-blue-500 h-full rounded-full transition-all duration-300 ease-out" style={{ width: `${progress}%` }}></div>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500 mt-2">
-                  <span>{(file.size / 1024 / 1024).toFixed(2)} MB</span>
-                  <span>{locale('upload.speed')} 4.2 MB/s</span>
-                </div>
+              <div className="w-full bg-gray-700 rounded-full h-2.5">
+                <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                <p className="text-right text-xs text-gray-400 mt-1">{progress}%</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-700 flex justify-end gap-3 bg-gray-800 rounded-b-2xl">
-          <button onClick={onClose} className="px-5 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors font-medium">Cancel</button>
-          <button onClick={handleUpload} disabled={!file || uploading} className="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/20">
-            {uploading ? 'Processing...' : 'Confirm Upload'}
+        <div className="p-6 border-t border-gray-700 flex justify-end gap-3 shrink-0">
+          <button onClick={onClose} className="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors text-sm font-medium">{locale('common.cancel')}</button>
+          <button 
+            onClick={handleUpload} 
+            disabled={!file || !title || uploading}
+            className={`px-6 py-2 rounded-lg text-white font-medium text-sm transition-all shadow-lg ${
+              !file || !title || uploading 
+              ? 'bg-gray-600 cursor-not-allowed opacity-50' 
+              : 'bg-blue-600 hover:bg-blue-500 shadow-blue-600/20'
+            }`}
+          >
+            {uploading ? locale('upload.uploading') : locale('common.confirm')}
           </button>
         </div>
       </motion.div>
