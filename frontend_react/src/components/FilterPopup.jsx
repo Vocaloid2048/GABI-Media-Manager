@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../lang/LanguageContext';
 import { TagTypeEnum } from './TagClip';
+import { ColorMapTable } from './ColorMapTable';
 
 const FilterPopup = ({ tagList, selectedTags, onClose, onApply }) => {
   const { locale, language } = useLanguage();
@@ -38,6 +39,7 @@ const FilterPopup = ({ tagList, selectedTags, onClose, onApply }) => {
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 10px;
+          height: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
           background: transparent;
@@ -99,6 +101,14 @@ const FilterPopup = ({ tagList, selectedTags, onClose, onApply }) => {
                     );
                     })}
                 </div>
+                {tagType === '風格' && (
+                    <div className="mt-6">
+                        <ColorMapTable 
+                            selectedTags={localSelectedTags} 
+                            onToggleColor={toggleLocalTag} 
+                        />
+                    </div>
+                )}
                 </div>
             ))}
             </div>

@@ -1,13 +1,13 @@
 export default {
   "app.title": "GABI Media Manager", // Never translate app name
-    "app.lang_curr": "繁體中文",
-  
+  "app.lang_curr": "繁體中文",
+
   // Navigation
   "nav.home": "首頁",
   "nav.filter": "篩選",
   "nav.search": "搜尋",
   "nav.upload": "上傳",
-  
+
   // Common
   "common.download": "下載",
   "common.cancel": "取消",
@@ -18,7 +18,7 @@ export default {
   "common.selected": "已選擇:",
   "common.processing": "處理中...",
   "common.refresh": "刷新",
-  
+
   // Detail Page
   "detail.format": "格式",
   "detail.frame_rate": "幀率",
@@ -28,17 +28,28 @@ export default {
   "detail.group_not_found": "找不到該群組",
   "detail.download_collection": "完整下載組合",
   "detail.included_videos": "包含影片",
-  
+
   // Search
   "search.placeholder": "搜尋影片、標籤、作者...",
   "search.recent": "最近搜尋",
-  
+
   // Filter
   "filter.title": "篩選",
   "filter.style": "風格",
   "filter.scenery": "風景",
   "filter.weather": "天氣",
   "filter.view": "角度",
+  "filter.color": "顏色",
+  "filter.color_category.grayscale": "黑白灰系",
+  "filter.color_category.red": "紅色系",
+  "filter.color_category.pink": "粉色系",
+  "filter.color_category.orange": "橙色系",
+  "filter.color_category.yellow": "黃色系",
+  "filter.color_category.brown": "棕色系",
+  "filter.color_category.green": "綠色系",
+  "filter.color_category.cyan": "青色/藍綠色系",
+  "filter.color_category.blue": "藍色系",
+  "filter.color_category.purple": "紫色系",
   "filter.apply": "套用",
   "filter.reset": "重置",
 
@@ -58,7 +69,7 @@ export default {
   "upload.speed": "速度:",
   "upload.complete": "上傳完成！",
   "upload.auth_error": "驗證錯誤。請重新登入。",
-  
+
   // Login
   "login.title": "登入",
   "login.welcome": "歡迎回來",
@@ -71,14 +82,92 @@ export default {
   "login.have_account": "已有帳號？",
   "login.no_account": "還沒有帳號？",
   "login.create_account": "建立帳號",
-  
+
   // Download
   "download.options_title": "下載選項",
   "download.quality_source": "原始畫質",
   "download.quality_high": "高畫質",
   "download.res_original": "原始",
   "download.failed": "下載失敗，請重試。",
-  
+
   // Footer
   "footer.rights": "版權所有。",
+
+  // Color
+  "color.black": "黑色",
+  "color.dark_gray": "深灰色",
+  "color.gray": "灰色",
+  "color.silver": "銀色",
+  "color.light_gray": "淺灰色",
+  "color.white": "白色",
+  "color.slate_gray": "石板灰",
+  "color.dark_slate_gray": "暗石板灰",
+  "color.maroon": "栗色",
+  "color.dark_red": "深紅色",
+  "color.red": "紅色",
+  "color.firebrick": "磚紅色",
+  "color.crimson": "猩紅",
+  "color.tomato": "番茄紅",
+  "color.coral": "珊瑚紅",
+  "color.indian_red": "印度紅",
+  "color.deep_pink": "深粉紅",
+  "color.hot_pink": "熱粉紅",
+  "color.pink": "粉紅色",
+  "color.light_pink": "淺粉紅",
+  "color.misty_rose": "霧玫瑰",
+  "color.orange_red": "紅橙色",
+  "color.dark_orange": "深橙色",
+  "color.orange": "橙色",
+  "color.gold": "金色",
+  "color.yellow": "黃色",
+  "color.light_yellow": "淺黃色",
+  "color.khaki": "卡其色",
+  "color.moccasin": "鹿皮色",
+  "color.lemon_chiffon": "檸檬綢",
+  "color.saddle_brown": "馬鞍棕",
+  "color.sienna": "赭色",
+  "color.chocolate": "巧克力色",
+  "color.peru": "秘魯色",
+  "color.sandy_brown": "沙棕色",
+  "color.burlywood": "硬木色",
+  "color.tan": "棕褐色",
+  "color.beige": "米色",
+  "color.rosy_brown": "玫瑰褐",
+  "color.dark_green": "深綠色",
+  "color.green": "綠色",
+  "color.forest_green": "森林綠",
+  "color.lime_green": "萊姆綠",
+  "color.lime": "萊姆色",
+  "color.yellow_green": "黃綠色",
+  "color.olive": "橄欖色",
+  "color.dark_olive_green": "深橄欖綠",
+  "color.sea_green": "海綠色",
+  "color.lawn_green": "草坪綠",
+  "color.teal": "藍綠色",
+  "color.dark_cyan": "深青色",
+  "color.turquoise": "綠松石",
+  "color.cyan": "青色",
+  "color.aquamarine": "海藍色",
+  "color.pale_turquoise": "蒼白綠松石",
+  "color.midnight_blue": "午夜藍",
+  "color.navy": "海軍藍",
+  "color.dark_blue": "深藍色",
+  "color.medium_blue": "中藍色",
+  "color.blue": "藍色",
+  "color.royal_blue": "皇家藍",
+  "color.steel_blue": "鋼藍色",
+  "color.sky_blue": "天藍色",
+  "color.light_blue": "淺藍色",
+  "color.powder_blue": "粉末藍",
+  "color.cornflower_blue": "矢車菊藍",
+  "color.indigo": "靛青色",
+  "color.purple": "紫色",
+  "color.dark_magenta": "深洋紅",
+  "color.blue_violet": "藍紫色",
+  "color.medium_purple": "中紫色",
+  "color.plum": "李子色",
+  "color.violet": "紫羅蘭",
+  "color.magenta": "洋紅色",
+  "color.orchid": "蘭花色",
+  "color.thistle": "薊色",
 };

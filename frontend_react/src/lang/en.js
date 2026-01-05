@@ -1,13 +1,13 @@
 export default {
   "app.title": "GABI Media Manager",
   "app.lang_curr": "EN",
-  
+
   // Navigation
   "nav.home": "Home",
   "nav.filter": "Filter",
   "nav.search": "Search",
   "nav.upload": "Upload",
-  
+
   // Common
   "common.download": "Download",
   "common.cancel": "Cancel",
@@ -18,7 +18,7 @@ export default {
   "common.selected": "Selected:",
   "common.processing": "Processing...",
   "common.refresh": "Refresh",
-  
+
   // Detail Page
   "detail.format": "Format",
   "detail.frame_rate": "Frame Rate",
@@ -28,17 +28,28 @@ export default {
   "detail.group_not_found": "Group not found",
   "detail.download_collection": "Download Full Collection",
   "detail.included_videos": "Included Videos",
-  
+
   // Search
   "search.placeholder": "Search videos, tags, authors...",
   "search.recent": "Recent Searches",
-  
+
   // Filter
   "filter.title": "Filter",
   "filter.style": "Style",
   "filter.scenery": "Scenery",
   "filter.weather": "Weather",
   "filter.view": "View",
+  "filter.color": "Color",
+  "filter.color_category.grayscale": "Grayscale",
+  "filter.color_category.red": "Red",
+  "filter.color_category.pink": "Pink",
+  "filter.color_category.orange": "Orange",
+  "filter.color_category.yellow": "Yellow",
+  "filter.color_category.brown": "Brown",
+  "filter.color_category.green": "Green",
+  "filter.color_category.cyan": "Cyan / Teal",
+  "filter.color_category.blue": "Blue",
+  "filter.color_category.purple": "Purple",
   "filter.apply": "Apply Filter",
   "filter.reset": "Reset",
 
@@ -58,7 +69,7 @@ export default {
   "upload.speed": "Speed:",
   "upload.complete": "Upload Complete!",
   "upload.auth_error": "Authentication error. Please login again.",
-  
+
   // Login
   "login.title": "Login",
   "login.welcome": "Welcome Back",
@@ -71,14 +82,92 @@ export default {
   "login.have_account": "Already have an account?",
   "login.no_account": "Don't have an account?",
   "login.create_account": "Create Account",
-  
+
   // Download
   "download.options_title": "Download Options",
   "download.quality_source": "Source Quality",
   "download.quality_high": "High Quality",
   "download.res_original": "Original",
   "download.failed": "Download failed. Please try again.",
-  
+
   // Footer
   "footer.rights": "All Rights Reserved.",
+
+  // Color
+  "color.black": "Black",
+  "color.dark_gray": "Dark Gray",
+  "color.gray": "Gray",
+  "color.silver": "Silver",
+  "color.light_gray": "Light Gray",
+  "color.white": "White",
+  "color.slate_gray": "Slate Gray",
+  "color.dark_slate_gray": "Dark Slate Gray",
+  "color.maroon": "Maroon",
+  "color.dark_red": "Dark Red",
+  "color.red": "Red",
+  "color.firebrick": "Firebrick",
+  "color.crimson": "Crimson",
+  "color.tomato": "Tomato",
+  "color.coral": "Coral",
+  "color.indian_red": "Indian Red",
+  "color.deep_pink": "Deep Pink",
+  "color.hot_pink": "Hot Pink",
+  "color.pink": "Pink",
+  "color.light_pink": "Light Pink",
+  "color.misty_rose": "Misty Rose",
+  "color.orange_red": "Orange Red",
+  "color.dark_orange": "Dark Orange",
+  "color.orange": "Orange",
+  "color.gold": "Gold",
+  "color.yellow": "Yellow",
+  "color.light_yellow": "Light Yellow",
+  "color.khaki": "Khaki",
+  "color.moccasin": "Moccasin",
+  "color.lemon_chiffon": "Lemon Chiffon",
+  "color.saddle_brown": "Saddle Brown",
+  "color.sienna": "Sienna",
+  "color.chocolate": "Chocolate",
+  "color.peru": "Peru",
+  "color.sandy_brown": "Sandy Brown",
+  "color.burlywood": "Burlywood",
+  "color.tan": "Tan",
+  "color.beige": "Beige",
+  "color.rosy_brown": "Rosy Brown",
+  "color.dark_green": "Dark Green",
+  "color.green": "Green",
+  "color.forest_green": "Forest Green",
+  "color.lime_green": "Lime Green",
+  "color.lime": "Lime",
+  "color.yellow_green": "Yellow Green",
+  "color.olive": "Olive",
+  "color.dark_olive_green": "Dark Olive Green",
+  "color.sea_green": "Sea Green",
+  "color.lawn_green": "Lawn Green",
+  "color.teal": "Teal",
+  "color.dark_cyan": "Dark Cyan",
+  "color.turquoise": "Turquoise",
+  "color.cyan": "Cyan",
+  "color.aquamarine": "Aquamarine",
+  "color.pale_turquoise": "Pale Turquoise",
+  "color.midnight_blue": "Midnight Blue",
+  "color.navy": "Navy",
+  "color.dark_blue": "Dark Blue",
+  "color.medium_blue": "Medium Blue",
+  "color.blue": "Blue",
+  "color.royal_blue": "Royal Blue",
+  "color.steel_blue": "Steel Blue",
+  "color.sky_blue": "Sky Blue",
+  "color.light_blue": "Light Blue",
+  "color.powder_blue": "Powder Blue",
+  "color.cornflower_blue": "Cornflower Blue",
+  "color.indigo": "Indigo",
+  "color.purple": "Purple",
+  "color.dark_magenta": "Dark Magenta",
+  "color.blue_violet": "Blue Violet",
+  "color.medium_purple": "Medium Purple",
+  "color.plum": "Plum",
+  "color.violet": "Violet",
+  "color.magenta": "Magenta",
+  "color.orchid": "Orchid",
+  "color.thistle": "Thistle",
 };
