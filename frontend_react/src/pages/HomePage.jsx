@@ -8,6 +8,7 @@ import UploadPopup from '../components/UploadPopup';
 import FilterPopup from '../components/FilterPopup';
 import SearchPopup from '../components/SearchPopup';
 import { AnimatePresence } from 'framer-motion';
+import TitleFooter from '../components/TitleFooter';
 
 const HomePage = () => {
   const [showLogin, setShowLogin] = useState(false);
@@ -26,6 +27,7 @@ const HomePage = () => {
   const isFetchingRef = React.useRef(false);
   const [filterOptions, setFilterOptions] = useState({});
   const [selectedTags, setSelectedTags] = useState([]);
+  const scrollContainerRef = React.useRef(null);
 
   // Website initial data fetch
 
@@ -33,16 +35,24 @@ const HomePage = () => {
   React.useEffect(() => {
     const handleScroll = () => {
       if (isLoading || isFetchingRef.current || !hasMore) return;
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      if (container.scrollTop + container.clientHeight >= container.scrollHeight - 100) {
         const newOffset = offset + 12;
         setOffset(newOffset);
         fetchVideoGroups(true, newOffset);
       }
     };
-    window.addEventListener('scroll', handleScroll);
-    window.addEventListener('resize', handleScroll);
+    
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      window.addEventListener('resize', handleScroll);
+    }
+    
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      if (container) container.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
     };
   }, [offset, isLoading, hasMore]);
@@ -50,7 +60,8 @@ const HomePage = () => {
   // Auto-fetch more if screen is not filled
   React.useEffect(() => {
     if (!isLoading && !isFetchingRef.current && hasMore && videoGroupData.length > 0) {
-      if (document.body.offsetHeight < window.innerHeight + 100) {
+      const container = scrollContainerRef.current;
+      if (container && container.scrollHeight < container.clientHeight + 100) {
         const newOffset = offset + 12;
         setOffset(newOffset);
         fetchVideoGroups(true, newOffset);
@@ -134,13 +145,19 @@ const HomePage = () => {
   }, []);
 
   return (
-    <div className="bg-gray-900 min-h-screen text-white font-sans">
+    <div className="bg-gray-900 h-[100dvh] flex flex-col text-white font-sans overflow-hidden">
       <TitleHeader isHomePage={true} />
       <TagBar tags={tagsList} selectedTags={selectedTags} onToggleTag={toggleTag} />
       
-      <VideoGrid groups={videoGroupData} />
+      <div 
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto no-scrollbar relative"
+      >
+        <VideoGrid groups={videoGroupData} />
+      </div>
       
       <BottomNav 
+        className="w-full z-50"
         onFilterClick={() => setShowFilter(true)}
         onSearchClick={() => setShowSearch(true)}
         onUploadClick={() => setShowUpload(true)}

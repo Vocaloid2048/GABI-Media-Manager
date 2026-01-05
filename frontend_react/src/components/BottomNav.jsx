@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FaFilter, FaSearch, FaCloudUploadAlt, FaTimes, FaArrowRight } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const BottomNav = ({ onFilterClick, onSearchClick, onUploadClick, showSearch, onCloseSearch, onSearch }) => {
+const BottomNav = ({ onFilterClick, onSearchClick, onUploadClick, showSearch, onCloseSearch, onSearch, className }) => {
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef(null);
 
@@ -29,7 +29,7 @@ const BottomNav = ({ onFilterClick, onSearchClick, onUploadClick, showSearch, on
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur border-t border-gray-800 h-16 z-50 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+    <div className={`bg-gray-900/95 backdrop-blur border-t border-gray-800 h-16 z-50 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] ${className || 'fixed bottom-0 left-0 right-0'}`}>
       
       {/* Floating Search Bar */}
       <AnimatePresence>
