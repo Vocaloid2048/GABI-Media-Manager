@@ -92,6 +92,26 @@ exports.getVideoGroupInfo = async (req, res) => {
     if (groupData === null) {
         raiseError(res, INVALID_REQUEST);
     } else {
+        // Process tags: Convert comma-separated IDs string to array of Tag objects
+        if (groupData.group_tags) {
+            const tagIds = groupData.group_tags.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+            if (tagIds.length > 0) {
+                const tags = await db.VideoDb.tagData.findAll({
+                    where: {
+                        tag_id: {
+                            [Sequelize.Op.in]: tagIds
+                        }
+                    }
+                });
+                // Replace the string with the array of tag objects
+                groupData.dataValues.group_tags = tags;
+            } else {
+                groupData.dataValues.group_tags = [];
+            }
+        } else {
+            groupData.dataValues.group_tags = [];
+        }
+
         returnSuccess(res, { groupData, videoData });
     }
 };
@@ -113,10 +133,12 @@ exports.getVideoThumbnail = async (req, res) => {
 }
 
 exports.getVideoTagsList = async (req, res) => {
-    const offset = req.query.offset || 0;
+    const typeOption = req.query.type || null;
 
     // Fetch All Video Tags
-    const data = await db.VideoDb.tagData.findAll(limitRequirement(offset));
+    const data = await db.VideoDb.tagData.findAll(
+        typeOption ? { where: { tag_type: typeOption } } : {}
+    );
 
     returnSuccess(res, data);
 }

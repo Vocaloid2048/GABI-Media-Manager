@@ -4,6 +4,7 @@ import TitleHeader from '../components/TitleHeader';
 import DownloadResolutionPopup from '../components/DownloadResolutionPopup';
 import { FaDownload, FaInfoCircle } from 'react-icons/fa';
 import TitleFooter from '../components/TitleFooter';
+import TagClip from '../components/TagClip';
 
 const VideoItem = ({ video, onDownload }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -161,6 +162,12 @@ const DetailPage = () => {
             <h1 className="text-3xl md:text-4xl font-bold mb-3 leading-tight">{groupData.group_title}</h1>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-blue-400 text-xs font-bold tracking-wider bg-blue-500/10 px-2 py-1 rounded">{groupData.group_author}</span>
+            </div>
+
+            <div className="flex flex-wrap">
+              {groupData.group_tags && groupData.group_tags.slice(",").map((tag) => (
+                <TagClip key={tag.tag_id} tagData={tag} />
+              ))}
             </div>
 
             <p className="text-gray-400 mb-8 leading-relaxed text-sm md:text-base">{groupData.group_desc}</p>
