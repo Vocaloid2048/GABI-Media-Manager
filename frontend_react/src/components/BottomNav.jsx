@@ -15,7 +15,7 @@ const BottomNav = ({ onFilterClick, onSearchClick, onUploadClick, showSearch, on
   }, [showSearch]);
 
   const handleSearchSubmit = () => {
-    if (onSearch) {
+    if (onSearch && inputValue.trim() !== '') {
       onSearch(inputValue);
     }
     // Optional: Close search after submit or keep it open? 

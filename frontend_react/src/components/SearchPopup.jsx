@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FaSearch } from 'react-icons/fa';
+import { FaSearch, FaTimes } from 'react-icons/fa';
 import { useLanguage } from '../lang/LanguageContext';
 
 const SearchPopup = ({ onClose, onSearch }) => {
@@ -18,6 +18,12 @@ const SearchPopup = ({ onClose, onSearch }) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
+  };
+
+  const handleClear = () => {
+    setInputValue('');
+    // Optional: if you want to close when clearing empty input
+    // onClose(); 
   };
 
   return (
@@ -43,7 +49,12 @@ const SearchPopup = ({ onClose, onSearch }) => {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
           />
-          <button onClick={onClose} className="text-gray-400 hover:text-white bg-gray-700 rounded-lg px-3 py-2">{locale('common.cancel')}</button>
+          {inputValue && (
+            <button onClick={handleClear} className="text-gray-400 hover:text-white p-1">
+                <FaTimes />
+            </button>
+          )}
+          <button onClick={onClose} className="text-gray-400 hover:text-white bg-gray-700 rounded-lg px-3 py-2 text-sm font-medium ml-2">{locale('common.cancel')}</button>
         </div>
         
         {/**

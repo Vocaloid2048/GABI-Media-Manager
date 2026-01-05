@@ -15,8 +15,9 @@ const HomePage = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  
-  const [tagsList, setTagsList] = useState(["Nature", "City", "Abstract", "Tech", "People", "Animals", "Space", "Dark", "Light", "Colorful", "Monochrome", "Vintage", "Modern"]);
+
+  const [tagsList, setTagsList] = useState([]);
+  const [fullTagList, setFullTagList] = useState([]);
 
   const [videoGroupData, setVideoGroupData] = useState([]);
   const [offset, setOffset] = useState(0);
@@ -28,15 +29,48 @@ const HomePage = () => {
   const [filterOptions, setFilterOptions] = useState({});
   const [selectedTags, setSelectedTags] = useState([]);
   const scrollContainerRef = React.useRef(null);
+  const lastScrollTopRef = React.useRef(0);
+  const [isTagBarVisible, setIsTagBarVisible] = useState(true);
 
   // Website initial data fetch
+  React.useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const res = await fetch('/api/video/tags');
+        const json = await res.json();
+        if (json.retcode === 1 && Array.isArray(json.data)) {
+          setFullTagList(json.data);
+
+          const shuffled = json.data.sort(() => 0.5 - Math.random());
+          const selected = shuffled.slice(0, 15);
+
+          setTagsList(selected);
+        }
+      } catch (error) {
+        console.error('Failed to fetch tags:', error);
+      }
+
+    };
+
+    fetchTags();
+  }, []);
 
   // If scrolled to the bottom, load more videos (infinite scroll)
   React.useEffect(() => {
     const handleScroll = () => {
-      if (isLoading || isFetchingRef.current || !hasMore) return;
       const container = scrollContainerRef.current;
       if (!container) return;
+
+      // TagBar visibility logic
+      const currentScrollTop = container.scrollTop;
+      if (currentScrollTop > lastScrollTopRef.current && currentScrollTop > 50) {
+        setIsTagBarVisible(false);
+      } else {
+        setIsTagBarVisible(true);
+      }
+      lastScrollTopRef.current = currentScrollTop;
+
+      if (isLoading || isFetchingRef.current || !hasMore) return;
 
       if (container.scrollTop + container.clientHeight >= container.scrollHeight - 100) {
         const newOffset = offset + 12;
@@ -44,13 +78,13 @@ const HomePage = () => {
         fetchVideoGroups(true, newOffset);
       }
     };
-    
+
     const container = scrollContainerRef.current;
     if (container) {
       container.addEventListener('scroll', handleScroll);
       window.addEventListener('resize', handleScroll);
     }
-    
+
     return () => {
       if (container) container.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
@@ -71,7 +105,7 @@ const HomePage = () => {
 
   const toggleTag = (tag) => {
     let newTags = [...selectedTags];
-    
+
     if (newTags.includes(tag)) {
       newTags = newTags.filter(t => t !== tag);
     } else {
@@ -80,6 +114,28 @@ const HomePage = () => {
 
     setSelectedTags(newTags);
   };
+
+  const handleClearTags = () => {
+    setSelectedTags([]);
+  };
+
+  const handleRefreshTags = () => {
+    if (fullTagList.length > 0) {
+      // Reset selected tags
+      setSelectedTags([]);
+      const shuffled = fullTagList.sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, 15);
+      setTagsList(selected);
+    }
+  };
+
+  // Watch selectedTags for changes to trigger fetch
+  React.useEffect(() => {
+    setOffset(0);
+    setHasMore(true);
+    setVideoGroupData([]);
+    fetchVideoGroups(false, 0);
+  }, [selectedTags]); 
 
   async function fetchVideoGroups(keepPrevious = false, fetchOffset = 0, newSearchWord = null) {
     if (isLoading || isFetchingRef.current) return;
@@ -90,18 +146,18 @@ const HomePage = () => {
 
     // Use newSearchWord if provided, otherwise use current searchWord state
     const currentSearchWord = newSearchWord !== null ? newSearchWord : searchWord;
-    
+
     // Update searchTags based on selectedTags
     const currentSearchTags = selectedTags;
     setSearchTags(currentSearchTags);
 
     try {
       let url = `/api/video/list?offset=${fetchOffset}`;
-      
+
       if (currentSearchTags.length > 0) {
         url += `&tags=${currentSearchTags.join('|')}`;
       }
-      
+
       if (currentSearchWord) {
         url += `&search=${encodeURIComponent(currentSearchWord)}`;
       }
@@ -115,7 +171,7 @@ const HomePage = () => {
       const json = await res.json();
       if (json && json.retcode === 1) {
         const data = Array.isArray(json.data) ? json.data : [];
-        
+
         if (data.length < 12) setHasMore(false);
         else setHasMore(true);
 
@@ -139,24 +195,29 @@ const HomePage = () => {
     fetchVideoGroups(false, 0, word);
   };
 
-  // initial load on mount
-  React.useEffect(() => {
-    fetchVideoGroups(false, 0);
-  }, []);
+  const handleApplyFilter = (newTags) => {
+    setSelectedTags(newTags);
+  };
 
   return (
     <div className="bg-gray-900 h-[100dvh] flex flex-col text-white font-sans overflow-hidden">
       <TitleHeader isHomePage={true} />
-      <TagBar tags={tagsList} selectedTags={selectedTags} onToggleTag={toggleTag} />
-      
-      <div 
+      <TagBar 
+        tags={tagsList} 
+        selectedTags={selectedTags} 
+        onToggleTag={toggleTag} 
+        onRefreshTags={handleRefreshTags} 
+        isVisible={isTagBarVisible}
+      />
+
+      <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto no-scrollbar relative"
       >
         <VideoGrid groups={videoGroupData} />
       </div>
-      
-      <BottomNav 
+
+      <BottomNav
         className="w-full z-50"
         onFilterClick={() => setShowFilter(true)}
         onSearchClick={() => setShowSearch(true)}
@@ -168,7 +229,7 @@ const HomePage = () => {
 
       <AnimatePresence>
         {showUpload && <UploadPopup onClose={() => setShowUpload(false)} />}
-        {showFilter && <FilterPopup onClose={() => setShowFilter(false)} />}
+        {showFilter && <FilterPopup tagList={fullTagList} selectedTags={selectedTags} onClose={() => setShowFilter(false)} onApply={handleApplyFilter} />}
         {showLogin && <LoginPopup onClose={() => setShowLogin(false)} />}
       </AnimatePresence>
     </div>

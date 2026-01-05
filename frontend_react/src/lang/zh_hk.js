@@ -17,9 +17,7 @@ export default {
   "common.selectAll": "全選",
   "common.selected": "已選擇:",
   "common.processing": "處理中...",
-  
-  // Home
-  "home.included_videos": "包含影片",
+  "common.refresh": "刷新",
   
   // Detail Page
   "detail.format": "格式",
@@ -28,29 +26,21 @@ export default {
   "detail.codec": "編碼",
   "detail.download_full": "下載整套合集",
   "detail.group_not_found": "找不到該群組",
+  "detail.download_collection": "完整下載組合",
+  "detail.included_videos": "包含影片",
   
   // Search
   "search.placeholder": "搜尋影片、標籤、作者...",
   "search.recent": "最近搜尋",
   
   // Filter
-  "filter.title": "篩選選項",
-  "filter.advanced_title": "進階篩選",
+  "filter.title": "篩選",
   "filter.style": "風格",
-  "filter.speed": "速度",
-  "filter.resolution": "解析度",
-  "filter.apply": "套用篩選",
-  
-  // Filter Options
-  "filter.opt_realistic": "寫實",
-  "filter.opt_anime": "動漫",
-  "filter.opt_3d": "3D",
-  "filter.opt_sketch": "素描",
-  "filter.opt_abstract": "抽象",
-  "filter.opt_slow": "慢速",
-  "filter.opt_normal": "正常",
-  "filter.opt_fast": "快速",
-  "filter.opt_timelapse": "縮時",
+  "filter.scenery": "風景",
+  "filter.weather": "天氣",
+  "filter.view": "角度",
+  "filter.apply": "套用",
+  "filter.reset": "重置",
 
   // Upload
   "upload.title": "上傳新影片",

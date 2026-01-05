@@ -38,6 +38,23 @@ const UploadPopup = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(75, 85, 99, 0.5);
+          border-radius: 20px;
+          border: 2px solid transparent;
+          background-clip: content-box;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(156, 163, 175, 0.8);
+        }
+      `}</style>
       <motion.div 
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -45,13 +62,13 @@ const UploadPopup = ({ onClose }) => {
         className="bg-gray-800 rounded-2xl w-full max-w-2xl shadow-2xl border border-gray-700 flex flex-col max-h-[90vh]"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-6 border-b border-gray-700">
+        <div className="flex justify-between items-center p-6 border-b border-gray-700 shrink-0">
           <h2 className="text-xl font-bold text-white">{locale('upload.title')}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><FaTimes size={20} /></button>
         </div>
 
-        <div className="p-6 overflow-y-auto custom-scrollbar">
-          <div className="space-y-5">
+        <div className="p-6 overflow-y-auto custom-scrollbar pr-2 mr-1">
+          <div className="space-y-5 pr-3">
             <div>
               <label className="block text-gray-400 text-sm mb-1.5 font-medium">{locale('upload.field_title')}</label>
               <input type="text" className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder={locale('upload.placeholder_title')} />

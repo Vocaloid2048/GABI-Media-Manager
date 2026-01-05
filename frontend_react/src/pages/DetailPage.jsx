@@ -4,7 +4,7 @@ import TitleHeader from '../components/TitleHeader';
 import DownloadResolutionPopup from '../components/DownloadResolutionPopup';
 import { FaDownload, FaInfoCircle } from 'react-icons/fa';
 import TitleFooter from '../components/TitleFooter';
-import TagClip from '../components/TagClip';
+import {TagClip} from '../components/TagClip';
 import { useLanguage } from '../lang/LanguageContext';
 
 const VideoItem = ({ video, onDownload }) => {
@@ -133,7 +133,7 @@ const DetailPage = () => {
   const groupAnimUrl = `/api/video/thumb?name=${groupData.group_thumb_name}_anim.webp`;
 
   const formats = getUniqueValues(videoList, 'video_format');
-  const frameRates = getUniqueValues(videoList, 'video_frame_rate', ' FPS');
+  const frameRates = getUniqueValues(videoList, 'video_frame_rate');
   const resolutions = getUniqueValues(videoList, 'video_resolution');
   const codecs = getUniqueValues(videoList, 'video_codec');
 
@@ -177,20 +177,20 @@ const DetailPage = () => {
 
             <div className="grid grid-cols-2 gap-3 mb-8">
               <div className="bg-gray-800/50 border border-gray-700 p-3 rounded-xl">
-                <span className="text-gray-500 block text-xs uppercase font-bold mb-1">{locale('detail.format')}</span>
+                <span className="text-gray-500 block text-s uppercase font-bold mb-1">{locale('detail.format')}</span>
                 <span className="text-gray-200 font-mono text-sm">{formats}</span>
               </div>
               <div className="bg-gray-800/50 border border-gray-700 p-3 rounded-xl">
-                <span className="text-gray-500 block text-xs uppercase font-bold mb-1">{locale('detail.frameRate')}</span>
-                <span className="text-gray-200 font-mono text-sm">{frameRates}</span>
+                <span className="text-gray-500 block text-s uppercase font-bold mb-1">{locale('detail.frame_rate')}</span>
+                <span className="text-gray-200 font-mono text-sm">{Number(frameRates).toFixed(2)} FPS</span>
               </div>
               <div className="bg-gray-800/50 border border-gray-700 p-3 rounded-xl">
-                <span className="text-gray-500 block text-xs uppercase font-bold mb-1">{locale('detail.resolution')}</span>
+                <span className="text-gray-500 block text-s uppercase font-bold mb-1">{locale('detail.resolution')}</span>
                 <span className="text-gray-200 font-mono text-sm">{resolutions}</span>
               </div>
               <div className="bg-gray-800/50 border border-gray-700 p-3 rounded-xl">
-                <span className="text-gray-500 block text-xs uppercase font-bold mb-1">{locale('detail.codec')}</span>
-                <span className="text-gray-200 font-mono text-sm">{codecs}</span>
+                <span className="text-gray-500 block text-s uppercase font-bold mb-1">{locale('detail.codec')}</span>
+                <span className="text-gray-200 font-mono text-sm">{codecs.toUpperCase()}</span>
               </div>
             </div>
 
@@ -199,14 +199,14 @@ const DetailPage = () => {
               className="mt-auto w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
             >
               <FaDownload className="text-lg" />
-              <span>{locale('detail.downloadCollection')}</span>
+              <span>{locale('detail.download_collection')}</span>
             </button>
           </div>
         </div>
 
         {/* Videos Table */}
         <div className="mb-6 flex items-center gap-2">
-          <h2 className="text-2xl font-bold text-white">{locale('detail.includedVideos')}</h2>
+          <h2 className="text-2xl font-bold text-white">{locale('detail.included_videos')}</h2>
           <span className="bg-gray-800 text-gray-400 text-xs px-2 py-1 rounded-full">{videoList.length}</span>
         </div>
 

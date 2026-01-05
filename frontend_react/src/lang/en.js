@@ -17,9 +17,7 @@ export default {
   "common.selectAll": "Select All",
   "common.selected": "Selected:",
   "common.processing": "Processing...",
-  
-  // Home
-  "home.included_videos": "Included Videos",
+  "common.refresh": "Refresh",
   
   // Detail Page
   "detail.format": "Format",
@@ -28,29 +26,21 @@ export default {
   "detail.codec": "Codec",
   "detail.download_full": "Download Full Collection",
   "detail.group_not_found": "Group not found",
+  "detail.download_collection": "Download Full Collection",
+  "detail.included_videos": "Included Videos",
   
   // Search
   "search.placeholder": "Search videos, tags, authors...",
   "search.recent": "Recent Searches",
   
   // Filter
-  "filter.title": "Filter Options",
-  "filter.advanced_title": "Advanced Filter",
+  "filter.title": "Filter",
   "filter.style": "Style",
-  "filter.speed": "Speed",
-  "filter.resolution": "Resolution",
-  "filter.apply": "Apply Filters",
-  
-  // Filter Options
-  "filter.opt_realistic": "Realistic",
-  "filter.opt_anime": "Anime",
-  "filter.opt_3d": "3D",
-  "filter.opt_sketch": "Sketch",
-  "filter.opt_abstract": "Abstract",
-  "filter.opt_slow": "Slow",
-  "filter.opt_normal": "Normal",
-  "filter.opt_fast": "Fast",
-  "filter.opt_timelapse": "Timelapse",
+  "filter.scenery": "Scenery",
+  "filter.weather": "Weather",
+  "filter.view": "View",
+  "filter.apply": "Apply Filter",
+  "filter.reset": "Reset",
 
   // Upload
   "upload.title": "Upload New Video",

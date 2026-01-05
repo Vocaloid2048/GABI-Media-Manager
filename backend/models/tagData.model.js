@@ -21,7 +21,6 @@ const {
       },
       tag_en_name: DataTypes.TEXT,
       tag_zh_name: DataTypes.TEXT,
-      tag_description: DataTypes.TEXT,
       tag_type: DataTypes.TEXT
     }, {
       sequelize,
