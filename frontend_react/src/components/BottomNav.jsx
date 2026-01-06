@@ -6,28 +6,60 @@ import { useLanguage } from '../lang/LanguageContext';
 const BottomNav = ({ onFilterClick, onSearchClick, onUploadClick, showSearch, onCloseSearch, onSearch, className }) => {
   const { locale } = useLanguage();
   const [inputValue, setInputValue] = useState('');
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
   const inputRef = useRef(null);
 
   useEffect(() => {
     if (showSearch && inputRef.current) {
       inputRef.current.focus();
+      // Load history
+      const history = localStorage.getItem('gabi_search_history');
+      if (history) {
+        try {
+          setRecentSearches(JSON.parse(history));
+        } catch (e) {}
+      }
+    } else {
+        setShowHistory(false);
     }
   }, [showSearch]);
 
-  const handleSearchSubmit = () => {
-    if (onSearch && inputValue.trim() !== '') {
-      onSearch(inputValue);
-    }
-    // Optional: Close search after submit or keep it open? 
-    // Usually keeping it open or showing results is better, but let's follow the popup behavior which closed.
-    // But here it's part of the nav. Let's close it for now to return to nav state.
+  const saveToHistory = (term) => {
+    const newHistory = [term, ...recentSearches.filter(t => t !== term)].slice(0, 10);
+    setRecentSearches(newHistory);
+    localStorage.setItem('gabi_search_history', JSON.stringify(newHistory));
+  };
+
+  const handleActiveSearch = (term) => {
+    // 儲存有內容的搜尋
+    if (term && term.trim() !== '') {
+        saveToHistory(term.trim());
+    } 
+    // 執行搜尋 (包含空值重置)
+    if (onSearch) onSearch(term);
+    
+    // 關閉浮動搜尋列
     if (onCloseSearch) onCloseSearch();
+    setShowHistory(false);
+  };
+
+  const handleSearchSubmit = () => {
+    handleActiveSearch(inputValue);
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleSearchSubmit();
     }
+  };
+
+  const handleInputFocus = () => {
+    if (!inputValue) setShowHistory(true);
+  };
+
+  const handleHistoryClick = (term) => {
+    handleActiveSearch(term);
   };
 
   return (
@@ -41,20 +73,48 @@ const BottomNav = ({ onFilterClick, onSearchClick, onUploadClick, showSearch, on
             animate={{ opacity: 1, y: -10, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute bottom-full left-0 right-0 mx-auto max-w-[320px] bg-gray-800 border border-gray-700 rounded-full shadow-xl flex items-center px-3 py-2 gap-2"
+            className={`absolute bottom-full left-4 right-4 mx-auto max-w-[400px] flex flex-col gap-2 ${showHistory && recentSearches.length > 0 ? 'items-stretch' : 'items-center'}`}
           >
-            <input 
-              ref={inputRef}
-              type="text" 
-              placeholder={locale('nav.search')} 
-              className="bg-transparent text-white flex-1 outline-none text-sm min-w-0"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <button onClick={handleSearchSubmit} className="text-blue-500 text-sm">
-                <FaArrowRight />
-            </button>
+            {/* History List Bubble */}
+            {showHistory && recentSearches.length > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    className="bg-gray-800 border border-gray-700 rounded-xl shadow-xl overflow-hidden mb-1 flex flex-col-reverse"
+                >
+                    {recentSearches.slice(0, 5).map(term => (
+                        <button
+                            key={term}
+                            onClick={() => handleHistoryClick(term)}
+                            className="text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700 hover:text-white border-b border-gray-700/50 last:border-0 truncate flex items-center gap-2"
+                        >
+                            <FaSearch className="text-gray-500 text-xs" />
+                            {term}
+                        </button>
+                    ))}
+                </motion.div>
+            )}
+
+            {/* Input Bar */}
+            <div className="bg-gray-800 border border-gray-700 rounded-full shadow-xl flex items-center px-4 py-3 gap-2 w-full">
+                <input 
+                ref={inputRef}
+                type="text" 
+                placeholder={locale('nav.search')} 
+                className="bg-transparent text-white flex-1 outline-none text-base min-w-0"
+                value={inputValue}
+                onChange={(e) => {
+                    setInputValue(e.target.value);
+                    if (e.target.value) setShowHistory(false);
+                    else setShowHistory(true);
+                }}
+                onFocus={handleInputFocus}
+                onKeyDown={handleKeyDown}
+                />
+                <button onClick={handleSearchSubmit} className="text-blue-500 p-1">
+                    <FaArrowRight />
+                </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

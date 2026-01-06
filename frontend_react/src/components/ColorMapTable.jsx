@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../lang/LanguageContext';
 
 export const COLOR_MAP = {
@@ -123,50 +123,130 @@ export const COLOR_CATEGORIES = [
     }
 ];
 
+// 簡單的 SVG ICON 組件
+const ChevronDown = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+);
+
+const ChevronRight = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
+);
+
+const CheckIcon = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className || "h-3 w-3 text-white drop-shadow-md"} viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+    </svg>
+);
+
 export const ColorMapTable = ({ selectedTags = [], onToggleColor }) => {
     const { locale } = useLanguage();
+    // 預設只展開前兩個分類 (黑白灰系 和 紅色系)
+    const [expandedCategories, setExpandedCategories] = useState(
+        COLOR_CATEGORIES.reduce((acc, cat, index) => ({ 
+            ...acc, 
+            [cat.name]: index < 1 
+        }), {})
+    );
+
+    const toggleCategory = (catName) => {
+        setExpandedCategories(prev => ({
+            ...prev,
+            [catName]: !prev[catName]
+        }));
+    };
+
+    // 處理全選/全取消邏輯
+    const handleBulkAction = (keys, isSelecting) => {
+        keys.forEach(key => {
+            const label = COLOR_MAP[key].label;
+            const isCurrentlySelected = selectedTags.includes(label);
+            // 如果是要選取且目前沒選，或者是要取消且目前有選，才觸發切換
+            if ((isSelecting && !isCurrentlySelected) || (!isSelecting && isCurrentlySelected)) {
+                onToggleColor(label);
+            }
+        });
+    };
 
     return (
-        <div className="mb-6">
+        <div className="mb-6 select-none">
             <h4 className="text-sm text-gray-400 mb-3 font-medium">{locale('filter.color')}</h4>
             <div className="space-y-4">
-                {COLOR_CATEGORIES.map((category) => (
-                    <div key={category.name} className="space-y-2">
-                        <h5 className="text-xs text-gray-500 font-medium ml-1">{locale(category.name)}</h5>
-                        <div 
-                            className="flex overflow-x-auto pb-2 gap-2 custom-scrollbar"
-                            onWheel={(e) => {
-                                if (e.deltaY !== 0) {
-                                    e.currentTarget.scrollLeft += e.deltaY;
-                                }
-                            }}
-                        >
-                            {category.keys.map((key) => {
-                                const { color, label } = COLOR_MAP[key];
-                                const isSelected = selectedTags.includes(label);
-                                return (
-                                    <button
-                                        key={key}
-                                        onClick={() => onToggleColor(label)}
-                                        className={`flex items-center px-3 py-1.5 rounded-full border transition-colors shrink-0 ${
-                                            isSelected 
-                                            ? 'bg-blue-600/20 border-blue-500' 
-                                            : 'bg-gray-700/50 border-transparent hover:bg-gray-700'
-                                        }`}
-                                    >
-                                        <span 
-                                            className="w-3 h-3 rounded-full mr-2 border border-gray-600 shrink-0"
-                                            style={{ backgroundColor: color }}
-                                        />
-                                        <span className={`text-xs whitespace-nowrap ${isSelected ? 'text-blue-200' : 'text-gray-300'}`}>
-                                            {locale(key)}
+                {COLOR_CATEGORIES.map((category) => {
+                    const isExpanded = expandedCategories[category.name];
+                    
+                    // 計算該分類下已選取的顏色數量
+                    const activeCount = category.keys.filter(k => selectedTags.includes(COLOR_MAP[k].label)).length;
+                    const isAllSelected = activeCount === category.keys.length;
+
+                    return (
+                        <div key={category.name} className="space-y-2 border-b border-gray-700/50 pb-2 last:border-0">
+                            {/* 分類標題列 (可點擊摺疊) */}
+                            <div className="flex items-center justify-between pr-2">
+                                <button 
+                                    onClick={() => toggleCategory(category.name)}
+                                    className="flex items-center text-xs text-gray-400 font-medium hover:text-white transition-colors"
+                                >
+                                    <span className="mr-1">
+                                        {isExpanded ? <ChevronDown /> : <ChevronRight />}
+                                    </span>
+                                    {locale(category.name)}
+                                    {activeCount > 0 && !isExpanded && (
+                                        <span className="ml-2 bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                                            {activeCount}
                                         </span>
+                                    )}
+                                </button>
+
+                                {/* 全選/清除 小按鈕 (僅在展開時顯示) */}
+                                {isExpanded && (
+                                    <button
+                                        onClick={() => handleBulkAction(category.keys, !isAllSelected)}
+                                        className="text-[10px] text-gray-500 hover:text-blue-400 transition-colors"
+                                    >
+                                        {isAllSelected ? "Clear" : "All"}
                                     </button>
-                                );
-                            })}
+                                )}
+                            </div>
+
+                            {/* 顏色列表 (動畫或條件渲染) */}
+                            {isExpanded && (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pl-1">
+                                    {category.keys.map((key) => {
+                                        const { color, label } = COLOR_MAP[key];
+                                        const isSelected = selectedTags.includes(label);
+                                        return (
+                                            <button
+                                                key={key}
+                                                onClick={() => onToggleColor(label)}
+                                                className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors border ${
+                                                    isSelected 
+                                                    ? 'bg-blue-600 text-white border-blue-500' 
+                                                    : 'bg-gray-700 text-gray-300 border-transparent hover:bg-gray-600'
+                                                }`}
+                                            >
+                                                <div className="flex items-center overflow-hidden">
+                                                    <span 
+                                                        className="w-3 h-3 rounded-full mr-2 border border-gray-400/50 shrink-0"
+                                                        style={{ backgroundColor: color }}
+                                                    />
+                                                    <span className="truncate text-xs">{locale(key)}</span>
+                                                </div>
+                                                
+                                                {isSelected && (
+                                                    <CheckIcon className="ml-2 w-3 h-3 text-white shrink-0" />
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );
