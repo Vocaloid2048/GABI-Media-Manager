@@ -16,6 +16,13 @@ const ChangePasswordPopup = ({ onClose, userId, locale }) => {
             setMsg(locale('user.password.empty') || "Password fields cannot be empty");
             return;
         }
+
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        if (!passwordRegex.test(newPass)) {
+            setMsg(locale('login.err.password_format'));
+            return;
+        }
+
         if (newPass !== confirmPass) {
             setMsg(locale('user.password.mismatch') || "Passwords do not match");
             return;
@@ -197,21 +204,46 @@ const UserPage = () => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const formData = new FormData();
-        formData.append('avatar', file);
+        // Validation
+        const validTypes = ['image/png', 'image/jpeg', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            alert(locale('user.err.avatar_format'));
+            return;
+        }
 
-        try {
-            const ds = generateDs(userInfo.user_id);
-            const res = await fetch('/api/user/avatar', {
-                method: 'POST',
-                headers: { 'ds': ds, 'user_id': userInfo.user_id },
-                body: formData
-            });
-            const json = await res.json();
-            if (json.retcode === 1) {
-                setUserInfo(prev => ({ ...prev, icon: json.data.icon }));
+        if (file.size > 5 * 1024 * 1024) {
+            alert(locale('user.err.avatar_size'));
+            return;
+        }
+
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = async () => {
+            const { width, height } = img;
+            URL.revokeObjectURL(img.src);
+            if (width < 64 || height < 64 || width > 1024 || height > 1024) {
+                alert(locale('user.err.avatar_dims'));
+                return;
             }
-        } catch (err) { console.error(err); }
+
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            try {
+                const ds = generateDs(userInfo.user_id);
+                const res = await fetch('/api/user/avatar', {
+                    method: 'POST',
+                    headers: { 'ds': ds, 'user_id': userInfo.user_id },
+                    body: formData
+                });
+                const json = await res.json();
+                if (json.retcode === 1) {
+                    setUserInfo(prev => ({ ...prev, icon: json.data.icon }));
+                } else {
+                    alert(json.message);
+                }
+            } catch (err) { console.error(err); }
+        };
     };
 
     const handleNameSave = async (newName) => {

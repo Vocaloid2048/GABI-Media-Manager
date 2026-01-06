@@ -67,7 +67,26 @@ export default {
   "user.password.mismatch": "Passwords do not match",
   "user.password.modify_success": "Password successfully changed",
   "user.password.empty": "Password cannot be empty",
+  "user.err.avatar_format": "Avatar must be .png, .jpg, or .webp.",
+  "user.err.avatar_size": "Avatar size must be within 5MB.",
+  "user.err.avatar_dims": "Avatar dimensions must be between 64x64 and 1024x1024.",
   "user.history.download": "Download History",
+
+  // Login
+  "login.welcome": "Welcome",
+  "login.create_account": "Create Account",
+  "login.username": "Username",
+  "login.password": "Password",
+  "login.invitation_code": "Invitation Code",
+  "login.register": "Register",
+  "login.sign_in": "Sign In",
+  "login.have_account": "Already have an account? Sign in",
+  "login.no_account": "Don't have an account? Register",
+  "login.or_continue": "Or continue with",
+  "login.err.username_format": "Username must be 3-20 characters long and can contain letters, numbers, and underscores.",
+  "login.err.password_format": "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, and one digit.",
+  "login.err.user_exists": "Username already exists.",
+  "login.err.invalid_invitation": "Invalid invitation code.",
 
   // Common
   "common.download": "Download",

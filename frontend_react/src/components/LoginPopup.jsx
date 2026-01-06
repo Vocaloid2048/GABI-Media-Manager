@@ -20,6 +20,23 @@ const LoginPopup = ({ onClose, allowClose = true }) => {
 
   const handleSubmit = async () => {
     setError('');
+
+    // Regex for username: 3-20 characters, letters, numbers, underscores
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    // Regex for password: at least 8 chars, one uppercase, one lowercase, one digit
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+    if (isRegistering) {
+      if (!usernameRegex.test(username)) {
+        setError(locale('login.err.username_format'));
+        return;
+      }
+      if (!passwordRegex.test(password)) {
+        setError(locale('login.err.password_format'));
+        return;
+      }
+    }
+
     const endpoint = isRegistering ? '/api/user/register' : '/api/user/login';
 
     // Hash password before sending
@@ -49,7 +66,10 @@ const LoginPopup = ({ onClose, allowClose = true }) => {
         onClose();
         window.location.reload(); // Reload to update UI state
       } else {
-        setError(data.message || 'Error occurred');
+        let msg = data.message;
+        if (data.retcode === -1006) msg = locale('login.err.user_exists');
+        else if (data.retcode === -1007) msg = locale('login.err.invalid_invitation');
+        setError(msg || 'Error occurred');
       }
     } catch (err) {
       setError('Network error');

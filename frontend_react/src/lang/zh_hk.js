@@ -67,7 +67,26 @@ export default {
   "user.password.mismatch": "密碼不符",
   "user.password.modify_success": "密碼已成功更改",
   "user.password.empty": "密碼不能為空",
+  "user.err.avatar_format": "頭像格式必須為 .png, .jpg 或 .webp。",
+  "user.err.avatar_size": "頭像檔案大小不能超過 5MB。",
+  "user.err.avatar_dims": "頭像尺寸必須在 64x64 到 1024x1024 之間。",
   "user.history.download": "下載紀錄",
+
+  // Login
+  "login.welcome": "歡迎回來",
+  "login.create_account": "創建帳戶",
+  "login.username": "用戶名",
+  "login.password": "密碼",
+  "login.invitation_code": "邀請碼",
+  "login.register": "註冊",
+  "login.sign_in": "登入",
+  "login.have_account": "已有帳戶？登入",
+  "login.no_account": "沒有帳戶？註冊",
+  "login.or_continue": "或使用以下方式繼續",
+  "login.err.username_format": "用戶名必須為 3-20 個字元，且只能包含字母、數字和下劃線。",
+  "login.err.password_format": "密碼必須至少 8 個字元，包含至少一個大寫字母、一個小寫字母和一個數字。",
+  "login.err.user_exists": "用戶名已存在。",
+  "login.err.invalid_invitation": "邀請碼無效。",
 
   // Common
   "common.download": "下載",

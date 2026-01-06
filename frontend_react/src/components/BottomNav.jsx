@@ -3,7 +3,7 @@ import { FaFilter, FaSearch, FaUser, FaTimes, FaArrowRight } from 'react-icons/f
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../lang/LanguageContext';
 
-const BottomNav = ({ onFilterClick, onSearchClick, onUserClick, showSearch, onCloseSearch, onSearch, className }) => {
+const BottomNav = ({ onFilterClick, onSearchClick, onUserClick, showSearch, onCloseSearch, onSearch, className, filterCount = 0, hasActiveSearch = false }) => {
   const { locale } = useLanguage();
   const [inputValue, setInputValue] = useState('');
   const [recentSearches, setRecentSearches] = useState([]);
@@ -125,7 +125,14 @@ const BottomNav = ({ onFilterClick, onSearchClick, onUserClick, showSearch, onCl
           onClick={onFilterClick} 
           className="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-500 active:scale-95 transition-all"
         >
-          <FaFilter className="text-xl mb-1" />
+          <div className="relative">
+            <FaFilter className="text-xl mb-1" />
+            {filterCount > 0 && (
+              <span className="absolute -top-2 -right-3 bg-blue-500 text-white text-[10px] font-bold min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full border border-gray-900 shadow-sm">
+                {filterCount > 99 ? '99+' : filterCount}
+              </span>
+            )}
+          </div>
           <span className="text-xs font-medium">{locale('nav.filter')}</span>
         </button>
         
@@ -133,9 +140,14 @@ const BottomNav = ({ onFilterClick, onSearchClick, onUserClick, showSearch, onCl
 
         <button 
           onClick={() => showSearch ? onCloseSearch() : onSearchClick()} 
-          className={`flex flex-col items-center justify-center w-full h-full active:scale-95 transition-all ${showSearch ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'}`}
+          className={`flex flex-col items-center justify-center w-full h-full active:scale-95 transition-all ${hasActiveSearch ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'}`}
         >
-          <FaSearch className="text-xl mb-1" />
+          <div className="relative">
+            <FaSearch className="text-xl mb-1" />
+            {hasActiveSearch && (
+              <span className="absolute -top-1 -right-1 bg-blue-500 w-2.5 h-2.5 rounded-full border border-gray-900 shadow-sm"></span>
+            )}
+          </div>
           <span className="text-xs font-medium">{locale('nav.search')}</span>
         </button>
 

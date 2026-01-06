@@ -53,6 +53,15 @@ exports.postRegisterRequest = async (req, res) => {
         return;
     }
 
+    // Validation
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+    if (!usernameRegex.test(username) || !passwordRegex.test(password)) {
+        raiseError(res, INVALID_REQUEST);
+        return;
+    }
+
     // Check Invitation Code
     const validCode = process.env.INVITATION_CODE || 'GABI2024';
     if (invitation_code !== validCode) {
@@ -219,6 +228,12 @@ exports.changePassword = async (req, res) => {
     if (!user_id || !new_password) {
         return errorByAPI(res, MISSING_REQUIRE_KEYS);
     }
+
+    // Password validation is tricky here because the client might have already hashed it?
+    // Looking at LoginPopup.jsx, it hashes with sha256 before sending.
+    // However, if we want to validate complexity, we should probably do it on the PLAIN password on the client side.
+    // If the server receives a hash, it can't validate the complexity (uppercase, digit etc) easily unless we trust the client.
+    // So I will rely on client-side validation for complexity and just do basic check here.
 
     try {
         const user = await db.VideoDb.userData.findByPk(user_id);

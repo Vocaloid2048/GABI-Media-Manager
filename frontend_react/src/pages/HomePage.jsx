@@ -264,6 +264,8 @@ const HomePage = () => {
         showSearch={showSearch}
         onCloseSearch={() => setShowSearch(false)}
         onSearch={handleSearch}
+        filterCount={selectedTags.length}
+        hasActiveSearch={!!searchWord}
       />
 
       <AnimatePresence>
