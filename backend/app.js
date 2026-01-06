@@ -8,6 +8,7 @@ require('dotenv').config();
 const app = express();
 const router = require('./routers/router');
 const { VideoDb, initDb } = require('./models');
+const { initBackupSchedule } = require('./utils/backup');
 
 const PORT = process.env.PORT || 3000
 
@@ -33,6 +34,9 @@ app.use(cors(corsOptions))
 
 // Check is Database Connected
 initDb();
+
+// Start Database Backup Schedule
+initBackupSchedule();
 
 // Check if the environment is production
 const isProduction = process.env.NODE_ENV === 'production'
