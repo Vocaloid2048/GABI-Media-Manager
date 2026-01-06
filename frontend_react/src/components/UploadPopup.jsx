@@ -184,7 +184,7 @@ const UploadPopup = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={handleClose}>
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 10px;
@@ -207,6 +207,7 @@ const UploadPopup = ({ onClose }) => {
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         className="bg-gray-800 rounded-2xl w-full max-w-2xl shadow-2xl border border-gray-700 flex flex-col max-h-[90vh]"
+        onClick={e => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-6 border-b border-gray-700 shrink-0">
           <h2 className="text-xl font-bold text-white">{locale('upload.title')}</h2>

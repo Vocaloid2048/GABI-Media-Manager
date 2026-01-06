@@ -22,6 +22,26 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
           xfwd: true, // Add X-Forwarded-For headers
+          configure: (proxy, _options) => {
+            proxy.on('error', (err, _req, _res) => {
+              console.log('Proxy error:', err);
+            });
+            proxy.on('proxyReq', (proxyReq, req, _res) => {
+              // Handle client disconnects (close, aborted, error)
+              const cleanup = () => {
+                if (!req.complete && !proxyReq.destroyed) {
+                   console.log('Client disconnected, destroying proxy request');
+                   proxyReq.destroy();
+                }
+              };
+              
+              req.on('close', cleanup);
+              req.on('aborted', cleanup);
+              req.on('error', cleanup);
+              // Listen to socket events for more reliable disconnect detection
+              if(req.socket) req.socket.on('close', cleanup);
+            });
+          },
         },
       },
     },
