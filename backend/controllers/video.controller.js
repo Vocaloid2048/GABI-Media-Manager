@@ -24,12 +24,14 @@ exports.getVideoGroupList = async (req, res) => {
         const tags = searchTags.split("|").map(t => t.trim()).filter(t => t.length > 0);
         if (tags.length > 0) {
             // Match any of the selected tags (OR logic)
-            const tagOrClauses = tags.map(tag => 
-                Sequelize.where(
-                    Sequelize.fn('LOWER', Sequelize.col('group_tags')),
-                    { [Sequelize.Op.like]: `%${tag.toLowerCase()}%` }
-                )
-            );
+            const tagOrClauses = tags.map(tag => ({
+                [Sequelize.Op.or]: [
+                    Sequelize.where(Sequelize.col('group_tags'), { [Sequelize.Op.eq]: tag }),
+                    Sequelize.where(Sequelize.col('group_tags'), { [Sequelize.Op.like]: `${tag},%` }),
+                    Sequelize.where(Sequelize.col('group_tags'), { [Sequelize.Op.like]: `%,${tag}` }),
+                    Sequelize.where(Sequelize.col('group_tags'), { [Sequelize.Op.like]: `%,${tag},%` })
+                ]
+            }));
             whereConditions.push({ [Sequelize.Op.or]: tagOrClauses });
         }
     }
@@ -37,18 +39,12 @@ exports.getVideoGroupList = async (req, res) => {
     // 2. Handle Search Words (Case Insensitive)
     if (searchWords.trim() !== "") {
         const needle = searchWords.trim().toLowerCase();
-        whereConditions.push({
-            [Sequelize.Op.or]: [
-                Sequelize.where(
-                    Sequelize.fn('LOWER', Sequelize.col('group_title')),
-                    { [Sequelize.Op.like]: `%${needle}%` }
-                ),
-                Sequelize.where(
-                    Sequelize.fn('LOWER', Sequelize.col('group_tags')),
-                    { [Sequelize.Op.like]: `%${needle}%` }
-                )
-            ]
-        });
+        whereConditions.push(
+            Sequelize.where(
+                Sequelize.fn('LOWER', Sequelize.col('group_title')),
+                { [Sequelize.Op.like]: `%${needle}%` }
+            )
+        );
     }
 
     const queryOptions = {

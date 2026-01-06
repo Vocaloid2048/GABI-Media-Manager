@@ -16,13 +16,6 @@ module.exports = {
                  (req.connection && req.connection.remoteAddress) || 
                  null;
 
-        console.log("Debug IP Extraction:", {
-             express_req_ip: req.ip,
-             x_forwarded: req.headers['x-forwarded-for'],
-             socket_remote: req.socket ? req.socket.remoteAddress : 'no-socket',
-             final_ip: ip
-        });
-
         // x-forwarded-for can be a list: "client, proxy1, proxy2"
         if (ip && typeof ip === 'string' && ip.includes(',')) {
             ip = ip.split(',')[0].trim();
