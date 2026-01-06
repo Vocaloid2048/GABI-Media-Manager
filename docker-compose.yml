@@ -1,0 +1,33 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gabi-backend
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - NODE_ISLOCAL=true
+      - VIDEO_DIR=/app/Videos
+      - THUMB_DIR=/app/Thumbs
+      - TEMP_DIR=/app/Temp
+      - AVATAR_DIR=/app/Avatars
+      - DS_SALT=thisIsASecretSaltValue # 建議在部署時透過 .env 更改
+    volumes:
+      - ./backend/db:/app/db
+      - ./backend/Videos:/app/Videos
+      - ./backend/Thumbs:/app/Thumbs
+      - ./backend/Avatars:/app/Avatars
+      - ./backend/logs:/app/logs
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend_react
+      dockerfile: Dockerfile
+    container_name: gabi-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: always

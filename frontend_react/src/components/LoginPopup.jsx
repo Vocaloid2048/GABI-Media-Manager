@@ -67,8 +67,12 @@ const LoginPopup = ({ onClose, allowClose = true }) => {
         window.location.reload(); // Reload to update UI state
       } else {
         let msg = data.message;
-        if (data.retcode === -1006) msg = locale('login.err.user_exists');
-        else if (data.retcode === -1007) msg = locale('login.err.invalid_invitation');
+        switch (data.retcode) {
+          case -1001: msg = locale('login.err.wrong_authization'); break;
+          case -1006: msg = locale('login.err.user_exists'); break;
+          case -1007: msg = locale('login.err.invalid_invitation'); break;
+          default: break;
+        }
         setError(msg || 'Error occurred');
       }
     } catch (err) {
