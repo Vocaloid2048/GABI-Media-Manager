@@ -7,6 +7,7 @@ import UserPage from './UserPage';
 import LoginPopup from '../components/LoginPopup';
 import UploadPopup from '../components/UploadPopup';
 import FilterPopup from '../components/FilterPopup';
+import { COLOR_MAP } from '../components/ColorMapTable';
 import SearchPopup from '../components/SearchPopup';
 import { AnimatePresence } from 'framer-motion';
 import TitleFooter from '../components/TitleFooter';
@@ -156,8 +157,28 @@ const HomePage = () => {
     try {
       let url = `/api/video/list?offset=${fetchOffset}`;
 
-      if (currentSearchTags.length > 0) {
-        url += `&tags=${currentSearchTags.join('|')}`;
+      // Separate tags (IDs) and colors (Hex Strings)
+      const apiTags = [];
+      const apiColors = [];
+      
+      currentSearchTags.forEach(t => {
+        if (typeof t === 'number') {
+          apiTags.push(t);
+        } else if (typeof t === 'string') {
+          if (t.startsWith('#')) {
+             apiColors.push(t);
+          } else if (COLOR_MAP && COLOR_MAP[t]) {
+             apiColors.push(COLOR_MAP[t].color);
+          }
+        }
+      });
+
+      if (apiTags.length > 0) {
+        url += `&tags=${apiTags.join('|')}`;
+      }
+
+      if (apiColors.length > 0) {
+        url += `&colors=${encodeURIComponent(apiColors.join('|'))}`;
       }
 
       if (currentSearchWord) {

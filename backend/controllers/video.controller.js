@@ -35,7 +35,25 @@ exports.getVideoGroupList = async (req, res) => {
         }
     }
 
-    // 2. Handle Search Words (Case Insensitive)
+    // 2. Handle Colors Filter (New)
+    const searchColors = req.query.colors || "";
+    if (searchColors.trim() !== "") {
+        const colors = searchColors.split("|").map(c => c.trim()).filter(c => c.length > 0);
+        if (colors.length > 0) {
+            // group_colors stores hex string like "#000000,#FFFFFF"
+            const colorOrClauses = colors.map(color => ({
+                [Sequelize.Op.or]: [
+                    Sequelize.where(Sequelize.col('group_colors'), { [Sequelize.Op.eq]: color }),
+                    Sequelize.where(Sequelize.col('group_colors'), { [Sequelize.Op.like]: `${color},%` }),
+                    Sequelize.where(Sequelize.col('group_colors'), { [Sequelize.Op.like]: `%,${color}` }),
+                    Sequelize.where(Sequelize.col('group_colors'), { [Sequelize.Op.like]: `%,${color},%` })
+                ]
+            }));
+            whereConditions.push({ [Sequelize.Op.or]: colorOrClauses });
+        }
+    }
+
+    // 3. Handle Search Words (Case Insensitive)
     if (searchWords.trim() !== "") {
         const needle = searchWords.trim().toLowerCase();
         whereConditions.push(

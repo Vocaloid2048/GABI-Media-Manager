@@ -5,6 +5,7 @@ import DownloadResolutionPopup from '../components/DownloadResolutionPopup';
 import { FaDownload, FaInfoCircle } from 'react-icons/fa';
 import TitleFooter from '../components/TitleFooter';
 import {TagClip} from '../components/TagClip';
+import { COLOR_MAP } from '../components/ColorMapTable'; // Import Color Map
 import { useLanguage } from '../lang/LanguageContext';
 import { generateDs } from '../utils/auth';
 
@@ -199,15 +200,43 @@ const DetailPage = () => {
               <span className="text-blue-400 text-xs font-bold tracking-wider bg-blue-500/10 px-2 py-1 rounded">{groupData.group_author}</span>
             </div>
 
-            <div className="flex flex-wrap">
+            <div className="flex flex-wrap mb-2">
               {groupData.group_tags && groupData.group_tags.slice(",").map((tag) => (
                 <TagClip key={tag.tag_id} tagData={tag} />
               ))}
             </div>
 
-            <p className="text-gray-400 mb-8 leading-relaxed text-sm md:text-base">{groupData.group_desc}</p>
+            {/* Color Tags */}
+            {groupData.group_colors && (
+              <div className="flex flex-wrap mb-2">
+                {groupData.group_colors.split(',').map((color, idx) => {
+                   // Clean hex string (remove # if exists, though data seems to include it or not)
+                   const safeColor = color.trim();
+                   const hexCode = safeColor.replace('#', '').toLowerCase();
+                   const translationKey = `color.${hexCode}`;
+                   
+                   // Try to get translation, fallback to the hex code itself 
+                   const colorName = locale(translationKey) !== translationKey ? locale(translationKey) : safeColor;
 
-            <div className="grid grid-cols-2 gap-3 mb-8">
+                   return (
+                    <div key={idx} className="group relative mr-2 mb-2">
+                      <div 
+                        className="w-5 h-5 rounded-full border border-gray-500 shadow-sm hover:scale-110 transition-transform cursor-help"
+                        style={{ backgroundColor: safeColor }}
+                      />
+                      {/* Simple Custom Tooltip */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 border border-gray-700 text-gray-200 text-xs rounded-md shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                        {colorName}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <p className="text-gray-400 mb-2 leading-relaxed text-sm md:text-base">{groupData.group_desc}</p>
+
+            <div className="grid grid-cols-2 gap-3 mb-2">
               <div className="bg-gray-800/50 border border-gray-700 p-3 rounded-xl">
                 <span className="text-gray-500 block text-s uppercase font-bold mb-1">{locale('detail.format')}</span>
                 <span className="text-gray-200 font-mono text-sm">{formats}</span>

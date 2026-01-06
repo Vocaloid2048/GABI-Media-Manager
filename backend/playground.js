@@ -145,5 +145,5 @@ async function generateColorTagsList(){
 }
 
 (async () => {
-
+await generateColorTagsList();
 })();

@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../lang/LanguageContext';
 import { TagTypeEnum } from './TagClip';
-import { ColorMapTable } from './ColorMapTable';
+import { ColorMapTable, COLOR_CATEGORIES } from './ColorMapTable';
 import { FaTimes } from 'react-icons/fa';
 
 
@@ -103,13 +103,10 @@ const FilterPopup = ({ tagList, selectedTags, onClose, onApply }) => {
 
               </div>
             ))}
+            {/* Color Categories */}
+            <ColorMapTable selectedTags={localSelectedTags} onToggleColor={toggleLocalTag} />
 
-            <div className="mt-6">
-              <ColorMapTable
-                selectedTags={localSelectedTags}
-                onToggleColor={toggleLocalTag}
-              />
-            </div>
+            
           </div>
         </div>
 
