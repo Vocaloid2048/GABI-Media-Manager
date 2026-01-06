@@ -16,7 +16,7 @@ const TitleHeader = ({isHomePage = false, onUploadClick}) => {
 
       {/* Center: Logo & Title */}
       <div onClick={() => window.location.href = '/'} className="flex-1 flex items-center justify-center gap-3 cursor-pointer overflow-hidden px-2">
-        <img src="/src/assets/gabi.webp" alt="GABI Media Manager Logo" className="h-10 w-10 rounded-full shrink-0" />
+        <img src="/gabi_icon.webp" alt="GABI Media Manager Logo" className="h-10 w-10 rounded-full shrink-0" />
         <h1 className="text-xl font-bold truncate whitespace-nowrap">{locale('app.title')}</h1>
       </div>
 

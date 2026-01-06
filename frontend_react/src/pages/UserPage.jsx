@@ -5,6 +5,7 @@ import { useLanguage } from '../lang/LanguageContext';
 import { FaUser, FaHistory, FaLock, FaGlobe, FaDownload, FaCamera, FaPen, FaTimes } from 'react-icons/fa';
 import { generateDs } from '../utils/auth';
 import { sha256 } from 'js-sha256';
+import TitleFooter from '../components/TitleFooter';
 
 const ChangePasswordPopup = ({ onClose, userId, locale }) => {
     const [newPass, setNewPass] = useState('');
@@ -109,7 +110,7 @@ const HistoryItem = ({ item, onDownload }) => {
                     src={`/api/video/thumb?name=${item.video_id || item.group_id}${isHovered ? '_anim.webp' : '.webp'}`}
                     alt={item.title}
                     className="w-full h-full object-cover transition-opacity"
-                    onError={(e) => { e.target.src = '/src/assets/no_preview.webp'; }}
+                    onError={(e) => { e.target.src = '/no_preview.webp'; }}
                 />
             ) : (
                 <div className="w-full h-full bg-gray-700 flex items-center justify-center text-gray-500">
@@ -313,7 +314,7 @@ const UserPage = () => {
     if (!isLoggedIn) return <div className="p-10 text-white">Loading...</div>;
 
     return (
-        <div className="flex-1 overflow-y-auto bg-gray-900 text-white p-4 pb-24">
+        <div className="flex-1 overflow-y-auto bg-gray-900 text-white p-4">
             <h2 className="text-2xl font-bold mb-6 px-2">{locale('user.profile')}</h2>
 
             <AnimatePresence>
@@ -397,8 +398,8 @@ const UserPage = () => {
             </div>
 
             {/* Download History Grid */}
-            <div className="mt-8">
-                <div className="flex items-center gap-2 mb-4 px-2 font-bold text-gray-400 text-sm uppercase">
+            <div className="mt-8 space-y-4">
+                <div className="flex items-center gap-2 px-2 font-bold text-gray-400 text-sm uppercase">
                     <FaHistory /> {locale('user.history.download')}
                 </div>
                 {downloadHistory.length > 0 ? (
@@ -415,6 +416,7 @@ const UserPage = () => {
                     </div>
                 )}
             </div>
+            <TitleFooter />
         </div>
     );
 };

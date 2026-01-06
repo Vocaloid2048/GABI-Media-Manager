@@ -28,7 +28,7 @@ const VideoItem = ({ video, onDownload }) => {
           src={isHovered ? animUrl : thumbUrl}
           alt={video.video_filename}
           className="w-full h-full object-cover transition-opacity duration-300"
-          onError={(e) => { e.target.src = '/src/assets/no_preview.webp'; }}
+          onError={(e) => { e.target.src = '/no_preview.webp'; }}
         />
 
         <div className="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-xs font-mono text-white">
@@ -187,7 +187,7 @@ const DetailPage = () => {
               src={isHovered ? groupAnimUrl : groupThumbUrl}
               alt={groupData.group_title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              onError={(e) => { e.target.src = '/src/assets/no_preview.webp'; }}
+              onError={(e) => { e.target.src = '/no_preview.webp'; }}
             />
 
           </div>
