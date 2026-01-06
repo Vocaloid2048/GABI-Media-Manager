@@ -23,8 +23,8 @@ RUN npm install
 # 複製其餘的程式碼
 COPY . .
 
-# 建立必要的資料夾 (如果不存在)
-RUN mkdir -p db logs Test/Thumbs Test/Videos Test/Avatars Test/Temp
+# 建立必要的資料夾
+RUN mkdir -p db logs backups/main backups/sub GABI/Videos GABI/Thumbs GABI/Avatars Temp
 
 # 設定環境變數 (可以在 docker-compose.yml 中覆寫)
 ENV PORT=3000

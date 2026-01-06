@@ -13,12 +13,11 @@ services:
       - TEMP_DIR=/app/Temp
       - AVATAR_DIR=/app/Avatars
       - DS_SALT=thisIsASecretSaltValue # 建議在部署時透過 .env 更改
+      - DB_BACKUP_MAIN=/app/backups/main
+      - DB_BACKUP_SUB=/app/backups/sub
     volumes:
-      - ./backend/db:/app/db
-      - ./backend/Videos:/app/Videos
-      - ./backend/Thumbs:/app/Thumbs
-      - ./backend/Avatars:/app/Avatars
-      - ./backend/logs:/app/logs
+      - ./backend/backups/main:/app/backups/main
+      - ./backend/backups/sub:/app/backups/sub
     restart: always
 
   frontend:
