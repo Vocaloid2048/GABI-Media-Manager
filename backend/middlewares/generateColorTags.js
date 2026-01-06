@@ -173,13 +173,14 @@ exports.generateColorTags = async function (videoGroupId) {
         // 獲取該影片組的所有影片
         const videos = await db.VideoDb.videoData.findAll(
             { where: { group_id: videoGroupId } }
-        ).then(async (result) => result.length == 0 ? [await db.VideoDb.videoData.findOne( { where: { video_id: videoGroupId}})] : result);
+        ).then(async (result) => result !== undefined && result.length == 0 ? [await db.VideoDb.videoData.findOne( { where: { video_id: videoGroupId}})] : result);
 
         const groupColorStats = {};
         const thumbDir = process.env.THUMB_DIR;
 
         // [優化 4] 並行處理所有圖片 (Promise.all)
         const promises = videos.map(async (video) => {
+            if (video === null) return {};
             let imagePath = null;
             const animPath = path.join(thumbDir, `${video.video_filename}_anim.webp`);
             const staticPath = path.join(thumbDir, `${video.video_filename}.webp`);
@@ -216,4 +217,8 @@ exports.generateColorTags = async function (videoGroupId) {
     } catch (err) {
         return Promise.reject(err);
     }
+}
+
+exports.rgbToHex = function(rgbArray) {
+    return '#' + ((1 << 24) + (rgbArray[0] << 16) + (rgbArray[1] << 8) + rgbArray[2]).toString(16).slice(1).toUpperCase();
 }

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "playground": "node --env-file=.env .\\playground.js"
+    "playground": "node playground.js"
   },
   "keywords": [],
   "author": "",

@@ -2,6 +2,9 @@ const { uploadVideoFile } = require("./controllers/upload.controller");
 const { generateColorTags } = require("./middlewares/generateColorTags");
 const { generateDs } = require("./middlewares/generateDs");
 const { generateThumbnail, generateThumbnailGroup } = require("./middlewares/generateThumb");
+const { VideoDb, initDb } = require('./models');
+
+require('dotenv').config();
 
 const fs = require('fs');
 const path = require('path');
@@ -90,6 +93,7 @@ async function generateAndPrintColorTags() {
             printColorBlock(colorRGB);
         });
         console.log(""); // 換行
+        console.log("Original Result:", result);
         const endTime = Date.now();
         console.log(`Execution Time: ${(endTime - startTime) / 1000} seconds`);
 
@@ -103,4 +107,43 @@ function generateDsTry() {
     console.log("Generated ds:", ds);
 }
 
-generateDsTry();
+async function generateColorTagsList(){
+    console.log("Initializing DB and generating Video Group Color Tags List...");
+    await initDb();
+
+    try {
+        const groups = await VideoDb.videoGroupData.findAll();
+        console.log(`Found ${groups.length} video groups. Processing...`);
+        console.log("---------------------------------------------------");
+        // CSV Header
+        console.log('"group_id","color_tags"'); 
+
+        // Then read them one by one and generate color tags
+        for (const group of groups) {
+            try {
+                // generateColorTags returns [[r,g,b], [r,g,b], ...]
+                const colors = await generateColorTags(group.group_id);
+
+                // Turn r,g,b arrays to hex strings for easier reading
+                for (let i = 0; i < colors.length; i++) {
+                    colors[i] = rgbToHex(colors[i]);
+                }
+                
+                console.log(`${group.group_id}!${colors}`);
+            } catch (err) {
+                console.error(`Error processing group ${group.group_id}:`, err.message);
+                // Print empty array in CSV on error
+                console.log(`"${group.group_id}"!"[]"`);
+            }
+        }
+        console.log("---------------------------------------------------");
+        console.log("Done generating list.");
+
+    } catch (error) {
+        console.error("Fatal error in generateColorTagsList:", error);
+    }
+}
+
+(async () => {
+
+})();

@@ -1,6 +1,5 @@
 const { raiseError, returnSuccess, checkParamsExisted, errorByAPI, USER_DOES_NOT_EXISTED, INVALID_REQUEST, WRONG_AUTHIZATION } = require("../middlewares/error");
 const db = require("../models");
-const { auth } = require("../middlewares/auth");
 const { actionRecord, UPLOAD_VIDEO } = require("../middlewares/actionRecord");
 const { Sequelize, where } = require("sequelize");
 const archiver = require('archiver');
@@ -11,6 +10,7 @@ const unzipper = require('unzipper');
 const { group } = require("console");
 const ffmpeg = require('fluent-ffmpeg');
 const crypto = require('crypto');
+const { generateColorTags, rgbToHex } = require("../middlewares/generateColorTags");
 
 const validExtensions = (process.env.VALID_VIDEO_EXTENSIONS || '.mp4,.mkv,.avi,.mov,.wmv,.flv,.webm').split(',');
 
@@ -189,6 +189,7 @@ async function processVideoFiles(videoFiles, videoInfo) {
                 });
 
                 await generateThumbnail(`${videoStorageName}${suffix}`);
+                
                 return true;
             } catch (error) {
                 console.error(`Failed to process video ${file}:`, error);
@@ -203,6 +204,16 @@ async function processVideoFiles(videoFiles, videoInfo) {
 
     if (successCount > 0) {
         await generateThumbnailGroup(groupId);
+        
+        // Create Video Group's Color Tag, and write the result back to DB
+        const colorTagResult = await generateColorTags(groupId);
+        
+        const colorTagsHex = colorTagResult.map(it => rgbToHex(it)).join(',');
+        await db.VideoDb.videoGroupData.update(
+            { group_colors: colorTagsHex },
+            { where: { group_id: groupId } }
+        );
+
     } else {
         console.error(`No videos were successfully processed for group ${groupId}. Skipping group thumbnail generation.`);
     }

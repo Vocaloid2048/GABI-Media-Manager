@@ -15,8 +15,7 @@ VideoDb.sequelize = new Sequelize({
     idle: 10000
   },
   dialectOptions: {
-    // Enable WAL mode for better concurrency
-    mode: 'WAL' 
+    // 移除無效的 mode 設定，改用 initDb 中的 PRAGMA 設定
   }
 });
 
@@ -37,18 +36,29 @@ VideoDb.historyData.belongsTo(VideoDb.videoData, { foreignKey: 'video_id', as: '
 
 
 // Initialize the database and create tables if they don't exist
-function initDb() {
-  if(VideoDb.sequelize.authenticate() == null) { return false; }
+async function initDb() {
+  try {
+    await VideoDb.sequelize.authenticate();
+    
+    // 配置 SQLite 優化與鎖定處理
+    // Journal Mode: WAL (Write-Ahead Logging) 提高並發性能
+    await VideoDb.sequelize.query('PRAGMA journal_mode=WAL;');
+    // Busy Timeout: 當資料庫鎖定時，等待 5000ms 而不是立即拋出 error
+    await VideoDb.sequelize.query('PRAGMA busy_timeout=5000;');
+    // Synchronous: NORMAL 在 WAL 模式下通常是安全的，且能提高寫入效能
+    await VideoDb.sequelize.query('PRAGMA synchronous=NORMAL;');
+    
+    // [選擇性] 如果之前崩潰導致 WAL 檔案殘留，嘗試 Checkpoint 清理
+    await VideoDb.sequelize.query('PRAGMA wal_checkpoint(TRUNCATE);');
 
-  // Create tables(actionRecord, tagData, ...) if they do not exist
-  VideoDb.sequelize.sync()
-    .then(() => {
-      console.log("Database & tables created!");
-    })
-    .catch((error) => {
-      console.error("Error creating database tables:", error);
-    });
-  return true;
+    // Sync models
+    await VideoDb.sequelize.sync();
+    console.log("Database & tables created & WAL configured!");
+    return true;
+  } catch (error) {
+    console.error("Error initializing database:", error);
+    return false;
+  }
 }
 
 module.exports = {VideoDb, initDb};

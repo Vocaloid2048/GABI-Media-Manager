@@ -1,5 +1,4 @@
 const { actionRecord, LOGIN } = require("../middlewares/actionRecord");
-const { auth } = require("../middlewares/auth");
 const { raiseError, returnSuccess, checkParamsExisted, errorByAPI, USER_DOES_NOT_EXISTED, INVALID_REQUEST, WRONG_AUTHIZATION, MISSING_REQUIRE_KEYS, USER_ALREADY_EXISTED, INVALID_INVITATION_CODE } = require("../middlewares/error");
 const db = require("../models");
 const sha256 = require('js-sha256');

@@ -1,6 +1,5 @@
 const { raiseError, returnSuccess, checkParamsExisted, errorByAPI, USER_DOES_NOT_EXISTED, INVALID_REQUEST, WRONG_AUTHIZATION, MISSING_REQUIRE_KEYS } = require("../middlewares/error");
 const db = require("../models");
-const { auth } = require("../middlewares/auth");
 const { actionRecord, SEARCH_RESULT, VIEW_RESULT, DOWNLOAD_VIDEO } = require("../middlewares/actionRecord");
 const { Sequelize, where } = require("sequelize");
 const archiver = require('archiver');
@@ -165,19 +164,16 @@ exports.getVideoTagsList = async (req, res) => {
  */
 exports.getDownloadableVideo = async (req, res) => {
     const user_id = req.query.user_id;
-    const ds_key = req.query.ds || req.get("ds");
     const options = req.query.options || null;
     const reqId = req.query.id || null;
-
-    // Check Auth
-    const authResult = auth(ds_key, user_id);
-    if (!authResult) { raiseError(res, WRONG_AUTHIZATION); return; }
 
     // Check Mode
     if (req.query.check === 'true') {
         returnSuccess(res, { message: "Auth Valid" });
         return;
     }
+
+    // Options Parsing, not used currently
 
     // Check Required Params
     if (!checkParamsExisted(reqId)) { raiseError(res, MISSING_REQUIRE_KEYS); return; }
