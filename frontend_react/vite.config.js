@@ -7,15 +7,20 @@ import path from 'path'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
+  // 檢查憑證是否存在 (主要用於本地開發)
+  const httpsConfig = fs.existsSync('./cert/key.pem') && fs.existsSync('./cert/cert.pem')
+    ? {
+        key: fs.readFileSync('./cert/key.pem', 'utf8'),
+        cert: fs.readFileSync('./cert/cert.pem', 'utf8'),
+      }
+    : false
+
   return {
     plugins: [react()],
     server: {
       host: true,
       port: parseInt(env.PORT) || 5173,
-      https: {
-        key: fs.readFileSync('./cert/key.pem', 'utf8'),
-        cert: fs.readFileSync('./cert/cert.pem', 'utf8'),
-      },
+      https: httpsConfig,
       proxy: {
         '/api': {
           target: env.VITE_API_BASE_URL,
