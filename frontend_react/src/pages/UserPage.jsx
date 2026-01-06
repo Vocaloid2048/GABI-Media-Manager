@@ -1,9 +1,86 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../lang/LanguageContext';
-import { FaUser, FaHistory, FaLock, FaGlobe, FaDownload } from 'react-icons/fa';
+import { FaUser, FaHistory, FaLock, FaGlobe, FaDownload, FaCamera, FaPen, FaTimes } from 'react-icons/fa';
 import { generateDs } from '../utils/auth';
+import { sha256 } from 'js-sha256';
+
+const ChangePasswordPopup = ({ onClose, userId, locale }) => {
+    const [newPass, setNewPass] = useState('');
+    const [confirmPass, setConfirmPass] = useState('');
+    const [msg, setMsg] = useState('');
+
+    const handleSubmit = async () => {
+        if (newPass === '' || confirmPass === '') {
+            setMsg(locale('user.password.empty') || "Password fields cannot be empty");
+            return;
+        }
+        if (newPass !== confirmPass) {
+            setMsg(locale('user.password.mismatch') || "Passwords do not match");
+            return;
+        }
+        
+        const ds = generateDs(userId);
+        try {
+            const res = await fetch('/api/user/password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'ds': ds, 'user_id': userId },
+                body: JSON.stringify({ 
+                    new_password: sha256(newPass) 
+                })
+            });
+            const json = await res.json();
+            if (json.retcode === 1) {
+                onClose();
+
+                // Show success alert
+                alert(locale('user.password.modify_success'));
+            } else {
+                setMsg(json.message);
+            }
+        } catch (err) {
+            setMsg("Network Error");
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-gray-800 rounded-xl p-6 w-full max-w-sm space-y-4">
+                <h3 className="text-xl font-bold">{locale('user.settings.change_password')}</h3>
+                {msg && <p className="text-red-400 text-sm">{msg}</p>}
+                
+                <input type="password" placeholder={locale('user.password.new')} className="w-full bg-gray-700 p-3 rounded-lg outline-none" value={newPass} onChange={e => setNewPass(e.target.value)} />
+                <input type="password" placeholder={locale('user.password.confirm')} className="w-full bg-gray-700 p-3 rounded-lg outline-none" value={confirmPass} onChange={e => setConfirmPass(e.target.value)} />
+
+                <div className="flex gap-2 justify-end pt-2">
+                    <button onClick={onClose} className="px-4 py-2 text-gray-400">{locale('common.cancel')}</button>
+                    <button onClick={handleSubmit} className="px-4 py-2 bg-blue-600 rounded-lg">{locale('common.confirm')}</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+const EditNamePopup = ({ currentName, onClose, onSave, locale }) => {
+    const [name, setName] = useState(currentName);
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-gray-800 rounded-xl p-6 w-full max-w-sm">
+                <h3 className="text-xl font-bold mb-4">{locale('user.settings.edit_name') || "Edit Name"}</h3>
+                <input
+                    className="w-full bg-gray-700 text-white p-3 rounded-lg mb-4 outline-none focus:ring-2 ring-blue-500"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                />
+                <div className="flex gap-2 justify-end">
+                    <button onClick={onClose} className="px-4 py-2 text-gray-400 hover:text-white">{locale('common.cancel')}</button>
+                    <button onClick={() => onSave(name)} className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-500">{locale('common.confirm')}</button>
+                </div>
+            </div>
+        </div>
+    )
+}
 
 const HistoryItem = ({ item }) => {
     const [isHovered, setIsHovered] = useState(false);
@@ -20,18 +97,18 @@ const HistoryItem = ({ item }) => {
             onMouseLeave={() => setIsHovered(false)}
             onClick={() => navigate(`/group/${item.group_id}`)}
         >
-             {item.video_id || item.group_id ? (
+            {item.video_id || item.group_id ? (
                 <img
                     src={`/api/video/thumb?name=${item.video_id || item.group_id}${isHovered ? '_anim.webp' : '.webp'}`}
                     alt={item.title}
                     className="w-full h-full object-cover transition-opacity"
                 />
-             ) : (
+            ) : (
                 <div className="w-full h-full bg-gray-700 flex items-center justify-center text-gray-500">
                     <FaDownload />
                 </div>
-             )}
-            
+            )}
+
             {/* Overlay */}
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 pt-8">
                 <h4 className="text-white font-bold text-sm truncate shadow-black drop-shadow-md">{item.title}</h4>
@@ -46,22 +123,40 @@ const HistoryItem = ({ item }) => {
 const UserPage = () => {
     const { locale, toggleLanguage, language } = useLanguage();
     const [downloadHistory, setDownloadHistory] = useState([]);
-    const [userInfo, setUserInfo] = useState({ localeName: 'Guest', username: 'guest' });
+    const [userInfo, setUserInfo] = useState({ localeName: '', username: '', user_id: '', icon: null });
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [showPassPopup, setShowPassPopup] = useState(false);
+    const [showNamePopup, setShowNamePopup] = useState(false);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         const userId = localStorage.getItem('user_id');
-        const username = localStorage.getItem('username');
-        const userLocaleName = localStorage.getItem('locale_name');
 
-        if (userId && username) {
+        if (userId) {
             setIsLoggedIn(true);
-            setUserInfo({ localeName: userLocaleName, username: username }); // Mock email for now
+            fetchUserInfo(userId);
             fetchHistory(userId);
         } else {
             window.location.href = '/';
         }
     }, []);
+
+    const fetchUserInfo = async (userId) => {
+        try {
+            const ds = generateDs(userId);
+            const res = await fetch(`/api/user/info?user_id=${userId}`, { headers: { 'ds': ds } });
+            const json = await res.json();
+            if (json.retcode === 1) {
+                setUserInfo({
+                    user_id: json.data.user_id,
+                    username: json.data.username,
+                    localeName: json.data.locale_name,
+                    icon: json.data.icon
+                });
+            }
+            console.log(json);
+        } catch (err) { console.error(err); }
+    };
 
     const fetchHistory = async (userId) => {
         try {
@@ -83,18 +178,93 @@ const UserPage = () => {
         }
     };
 
+    const handleAvatarClick = () => fileInputRef.current?.click();
+
+    const handleAvatarChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        try {
+            const ds = generateDs(userInfo.user_id);
+            const res = await fetch('/api/user/avatar', {
+                method: 'POST',
+                headers: { 'ds': ds, 'user_id': userInfo.user_id },
+                body: formData
+            });
+            const json = await res.json();
+            if (json.retcode === 1) {
+                setUserInfo(prev => ({ ...prev, icon: json.data.icon }));
+            }
+        } catch (err) { console.error(err); }
+    };
+
+    const handleNameSave = async (newName) => {
+        const ds = generateDs(userInfo.user_id);
+        try {
+            const res = await fetch('/api/user/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'ds': ds, 'user_id': userInfo.user_id },
+                body: JSON.stringify({ locale_name: newName })
+            });
+            const json = await res.json();
+            if (json.retcode === 1) {
+                setUserInfo(prev => ({ ...prev, localeName: json.data.locale_name }));
+                setShowNamePopup(false);
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    if (!isLoggedIn) return <div className="p-10 text-white">Loading...</div>;
+
     return (
         <div className="flex-1 overflow-y-auto bg-gray-900 text-white p-4 pb-24">
             <h2 className="text-2xl font-bold mb-6 px-2">{locale('user.profile')}</h2>
 
+            <AnimatePresence>
+                {showNamePopup && (
+                    <EditNamePopup
+                        currentName={userInfo.localeName || userInfo.username}
+                        onClose={() => setShowNamePopup(false)}
+                        onSave={handleNameSave}
+                        locale={locale}
+                    />
+                )}
+                {showPassPopup && (
+                    <ChangePasswordPopup
+                        userId={userInfo.user_id}
+                        onClose={() => setShowPassPopup(false)}
+                        locale={locale}
+                    />
+                )}
+            </AnimatePresence>
+
             {/* Profile Card */}
             <div className="bg-gray-800 rounded-2xl p-6 mb-6 shadow-lg flex items-center gap-4">
-                <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-2xl font-bold">
-                    <FaUser />
+                <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+
+                    {userInfo.icon ? (
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold overflow-hidden border-2 border-gray-700">
+                            <img src={`/api/user/avatar?id=${userInfo.user_id}&v=${userInfo.icon}`} className="w-full h-full object-cover" />
+                        </div>
+                        ) : (
+                        <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-2xl font-bold overflow-hidden border-2 border-gray-700">
+                            <FaUser />
+                        </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <FaCamera className="text-white text-sm" />
+                    </div>
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleAvatarChange} />
                 </div>
                 <div>
-                    <h3 className="text-xl font-bold">{userInfo.localeName || userInfo.username}</h3>
-                    <p className="text-gray-400 text-sm">{userInfo.username}</p>
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-bold">{userInfo.localeName || userInfo.username}</h3>
+                        <button onClick={() => setShowNamePopup(true)} className="p-1 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"><FaPen className="text-xs" /></button>
+                    </div>
+                    <p className="text-gray-400 text-sm">@{userInfo.username}</p>
                 </div>
             </div>
 
@@ -120,7 +290,10 @@ const UserPage = () => {
                     <div className="p-4 border-b border-gray-700 font-bold text-gray-400 text-sm uppercase flex items-center gap-2">
                         <FaLock /> {locale('user.settings.security')}
                     </div>
-                    <button className="w-full p-4 flex items-center justify-between hover:bg-gray-700 transition-colors text-left">
+                    <button
+                        onClick={() => setShowPassPopup(true)}
+                        className="w-full p-4 flex items-center justify-between hover:bg-gray-700 transition-colors text-left"
+                    >
                         <span>{locale('user.settings.change_password')}</span>
                     </button>
                 </div>

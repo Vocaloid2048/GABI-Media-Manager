@@ -89,17 +89,6 @@ exports.postRegisterRequest = async (req, res) => {
 
 exports.getUserInfo = async (req, res) => {
     const user_id = req.query.user_id;
-    const ds =  req.get("ds");
-
-    if(!checkParamsExisted(user_id) || !checkParamsExisted(ds)) {
-        raiseError(res, MISSING_REQUIRE_KEYS);
-        return;
-    }
-
-    if(!auth(user_id, ds)) {
-        raiseError(res, WRONG_AUTHIZATION);
-        return;
-    }
 
     // Else, fetch user info
     const user = await db.VideoDb.userData.findOne({ where: { user_id: user_id } });
@@ -198,5 +187,99 @@ exports.getDownloadHistory = async (req, res) => {
     } catch (err) {
         console.error(err);
         return errorByAPI(res, err, true);
+    }
+};
+
+
+exports.updateProfile = async (req, res) => {
+    const user_id = req.get("user_id") || req.query.user_id;
+    const { locale_name } = req.body;
+
+    if (!user_id || !locale_name) {
+        return errorByAPI(res, MISSING_REQUIRE_KEYS);
+    }
+
+    try {
+        const user = await db.VideoDb.userData.findByPk(user_id);
+        if (!user) return errorByAPI(res, USER_DOES_NOT_EXISTED);
+
+        user.locale_name = locale_name;
+        await user.save();
+
+        return returnSuccess(res, { locale_name: user.locale_name });
+    } catch (err) {
+        return errorByAPI(res, err);
+    }
+};
+
+exports.changePassword = async (req, res) => {
+    const user_id = req.get("user_id") || req.query.user_id;
+    const { new_password } = req.body; // Expecting hashed passwords or plain? usually hashed from client as per existing login
+
+    if (!user_id || !new_password) {
+        return errorByAPI(res, MISSING_REQUIRE_KEYS);
+    }
+
+    try {
+        const user = await db.VideoDb.userData.findByPk(user_id);
+        if (!user) return errorByAPI(res, USER_DOES_NOT_EXISTED);
+
+        const newHash = hashPassword(new_password);
+        user.password_hash = newHash;
+        await user.save();
+
+        return returnSuccess(res, { message: "Password updated" });
+    } catch (err) {
+        return errorByAPI(res, err);
+    }
+};
+
+const fs = require('fs');
+const path = require('path');
+
+exports.updateAvatar = async (req, res) => {
+    const user_id = req.get("user_id") || req.query.user_id;
+    if (!req.file) return errorByAPI(res, INVALID_REQUEST);
+
+    try {
+        const user = await db.VideoDb.userData.findByPk(user_id);
+        if (!user) return errorByAPI(res, USER_DOES_NOT_EXISTED);
+
+        // Delete old avatar if exists and not default?
+        // For simplicity, just update reference.
+        
+        user.icon = req.file.filename;
+        await user.save();
+
+        return returnSuccess(res, { icon: user.icon });
+    } catch (err) {
+        return errorByAPI(res, err);
+    }
+};
+
+exports.getAvatar = async (req, res) => {
+    // If user_id is provided, get that user's avatar.
+    // If not, maybe current user?
+    const target_id = req.query.id || req.get("user_id") || req.query.user_id;
+    
+    if (!target_id) return errorByAPI(res, MISSING_REQUIRE_KEYS);
+    
+    try {
+        const user = await db.VideoDb.userData.findByPk(target_id);
+        if (!user || !user.icon) {
+            // Return default avatar or 404
+            return res.sendStatus(404);
+        }
+        
+        const avatarDir = process.env.AVATAR_DIR;
+        const filePath = path.join(avatarDir, user.icon);
+        
+        if (fs.existsSync(filePath)) {
+            res.sendFile(filePath);
+        } else {
+            res.sendStatus(404);
+        }
+    } catch (err) {
+        res.sendStatus(500);
     }
 };

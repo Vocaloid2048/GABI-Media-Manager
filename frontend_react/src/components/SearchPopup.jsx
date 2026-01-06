@@ -59,13 +59,12 @@ const SearchPopup = ({ onClose, onSearch }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/60 backdrop-blur-sm pt-24 px-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/60 backdrop-blur-sm pt-24 px-4">
       <motion.div 
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: -50, opacity: 0 }}
         className="bg-gray-800 w-full max-w-2xl rounded-2xl p-4 border border-gray-700 shadow-2xl"
-        onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 bg-gray-900 rounded-xl px-4 py-3 border border-gray-700 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
           <FaSearch 

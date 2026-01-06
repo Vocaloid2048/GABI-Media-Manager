@@ -57,13 +57,12 @@ const LoginPopup = ({ onClose, allowClose = true }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={handleClose}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <motion.div 
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         className="bg-gray-800 rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-700"
-        onClick={e => e.stopPropagation()}
       >
         <h2 className="text-2xl font-bold text-white mb-8 text-center">
           {isRegistering ? locale('login.create_account') : locale('login.welcome')}

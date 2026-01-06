@@ -15,6 +15,13 @@ export default {
   "user.settings.current_language": "目前語言",
   "user.settings.security": "安全",
   "user.settings.change_password": "更改密碼",
+  "user.settings.edit_name": "更改顯示名稱",
+  "user.password.old": "舊密碼",
+  "user.password.new": "新密碼",
+  "user.password.confirm": "確認新密碼",
+  "user.password.mismatch": "密碼不符",
+  "user.password.modify_success": "密碼已成功更改",
+  "user.password.empty": "密碼不能為空",
   "user.history.download": "下載紀錄",
 
   // Common

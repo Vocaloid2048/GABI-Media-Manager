@@ -15,6 +15,13 @@ export default {
   "user.settings.current_language": "Current Language",
   "user.settings.security": "Security",
   "user.settings.change_password": "Change Password",
+  "user.settings.edit_name": "Edit Display Name",
+  "user.password.old": "Old Password",
+  "user.password.new": "New Password",
+  "user.password.confirm": "Confirm Password",
+  "user.password.mismatch": "Passwords do not match",
+  "user.password.modify_success": "Password successfully changed",
+  "user.password.empty": "Password cannot be empty",
   "user.history.download": "Download History",
 
   // Common
