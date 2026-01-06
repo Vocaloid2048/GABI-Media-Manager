@@ -82,7 +82,7 @@ const EditNamePopup = ({ currentName, onClose, onSave, locale }) => {
     )
 }
 
-const HistoryItem = ({ item }) => {
+const HistoryItem = ({ item, onDownload }) => {
     const [isHovered, setIsHovered] = useState(false);
     const navigate = useNavigate();
 
@@ -102,6 +102,7 @@ const HistoryItem = ({ item }) => {
                     src={`/api/video/thumb?name=${item.video_id || item.group_id}${isHovered ? '_anim.webp' : '.webp'}`}
                     alt={item.title}
                     className="w-full h-full object-cover transition-opacity"
+                    onError={(e) => { e.target.src = '/src/assets/no_preview.webp'; }}
                 />
             ) : (
                 <div className="w-full h-full bg-gray-700 flex items-center justify-center text-gray-500">
@@ -116,12 +117,24 @@ const HistoryItem = ({ item }) => {
                     <span className="opacity-70">{item.date}</span>
                 </p>
             </div>
+
+            {/* Download Button */}
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onDownload(item);
+                }}
+                className={`absolute bottom-2 right-2 z-10 bg-gray-900 hover:bg-gray-500 text-white p-2 rounded-full shadow-lg transition-all duration-200 opacity-100 scale-100`}
+                title="Download"
+            >
+                <FaDownload size={12} />
+            </button>
         </motion.div>
     );
 };
 
 const UserPage = () => {
-    const { locale, toggleLanguage, language } = useLanguage();
+    const { locale, setLanguage, language } = useLanguage();
     const [downloadHistory, setDownloadHistory] = useState([]);
     const [userInfo, setUserInfo] = useState({ localeName: '', username: '', user_id: '', icon: null });
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -217,6 +230,54 @@ const UserPage = () => {
         } catch (err) { console.error(err); }
     }
 
+    const handleDownload = async (itemData) => {
+        const userId = localStorage.getItem('user_id');
+        const ds = generateDs(userId);
+    
+        if (!ds) {
+          alert('Authentication error. Please login again.');
+          return;
+        }
+    
+        // 1. Check Auth First
+        try {
+          const checkUrl = `/api/video/download?check=true&user_id=${userId}&ds=${encodeURIComponent(ds)}`;
+          const res = await fetch(checkUrl);
+          const json = await res.json();
+    
+          if (json.retcode === -1001) {
+            alert('Session expired. Please login again.');
+            localStorage.clear();
+            window.location.reload();
+            return;
+          } else if (json.retcode !== 1) {
+            alert('Download error: ' + (json.message || 'Unknown error'));
+            return;
+          }
+        } catch (e) {
+          console.error("Auth check failed", e);
+          return;
+        }
+    
+        // 2. Proceed to Download
+        // Use video_id if available (file download), otherwise assume group download if only group_id present (though history usually records video downloads)
+        // If it's a history item, it might be a specific file or a zip. 
+        // Let's assume generic download endpoint handles both based on ID.
+        // Actually DetailPage differentiates.
+        // History items from DB usually have video_id if it was a single file. 
+        // Let's rely on what we have. history API usually returns video_id for single files.
+        const targetId = itemData.video_id || itemData.group_id;
+        const downloadUrl = `/api/video/download?id=${targetId}&user_id=${userId}&ds=${encodeURIComponent(ds)}`;
+    
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        // Ideally we should have the original intent (zip or direct) but let's assume default behavior of the API
+        link.setAttribute('download', itemData.title || 'download');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     if (!isLoggedIn) return <div className="p-10 text-white">Loading...</div>;
 
     return (
@@ -276,13 +337,17 @@ const UserPage = () => {
                     <div className="p-4 border-b border-gray-700 font-bold text-gray-400 text-sm uppercase flex items-center gap-2">
                         <FaGlobe /> {locale('user.settings.language')}
                     </div>
-                    <button
-                        onClick={toggleLanguage}
-                        className="w-full p-4 flex items-center justify-between hover:bg-gray-700 transition-colors text-left"
-                    >
+                    <div className="w-full p-4 flex items-center justify-between">
                         <span>{locale('user.settings.current_language')}</span>
-                        <span className="text-blue-400 font-bold">{locale('app.lang_curr')}</span>
-                    </button>
+                        <select
+                            value={language}
+                            onChange={(e) => setLanguage(e.target.value)}
+                            className="bg-gray-700 text-blue-400 font-bold px-3 py-1.5 rounded-xl outline-none cursor-pointer border border-transparent focus:border-blue-500 transition-colors"
+                        >
+                            <option value="zh">繁體中文</option>
+                            <option value="en">EN</option>
+                        </select>
+                    </div>
                 </div>
 
                 {/* Password / Security */}
@@ -308,7 +373,7 @@ const UserPage = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-1">
                         <AnimatePresence>
                             {downloadHistory.map(item => (
-                                <HistoryItem key={item.id} item={item} />
+                                <HistoryItem key={item.id} item={item} onDownload={handleDownload} />
                             ))}
                         </AnimatePresence>
                     </div>

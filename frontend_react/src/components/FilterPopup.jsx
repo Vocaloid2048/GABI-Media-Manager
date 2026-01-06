@@ -21,7 +21,8 @@ const FilterPopup = ({ tagList, selectedTags, onClose, onApply }) => {
   };
 
   const handleReset = () => {
-    setLocalSelectedTags([]);
+    onApply([]);
+    onClose();
   };
 
   const handleApply = () => {

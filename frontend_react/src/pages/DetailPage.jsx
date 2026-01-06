@@ -41,7 +41,7 @@ const VideoItem = ({ video, onDownload }) => {
             e.stopPropagation();
             onDownload(video);
           }}
-          className={`absolute bottom-2 right-2 bg-gray-900 hover:bg-gray-500 text-white p-2 rounded-full shadow-lg transition-all duration-200 ${isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}
+          className={`absolute bottom-2 right-2 bg-gray-900 hover:bg-gray-500 text-white p-2 rounded-full shadow-lg transition-all duration-200 opacity-100 scale-100`}
           title={locale('common.download')}
         >
           <FaDownload size={12} />
