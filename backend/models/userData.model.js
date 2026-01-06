@@ -21,6 +21,7 @@ module.exports = (sequelize, DataTypes, uid) => {
     },
     username: DataTypes.TEXT,
     locale_name: DataTypes.TEXT,
+    icon: DataTypes.TEXT,
     password_hash: DataTypes.TEXT,
     role: DataTypes.TEXT,
     last_login_at: {

@@ -25,6 +25,16 @@ VideoDb.tagData = require("./tagData.model")(VideoDb.sequelize,Sequelize)
 VideoDb.videoData = require("./videoData.model")(VideoDb.sequelize,Sequelize)
 VideoDb.userData = require("./userData.model")(VideoDb.sequelize,Sequelize)
 VideoDb.videoGroupData = require("./videoGroupData.model")(VideoDb.sequelize,Sequelize)
+VideoDb.historyData = require("./historyData.model")(VideoDb.sequelize, Sequelize)
+
+// Define Associations
+// HistoryData belongs to User
+VideoDb.historyData.belongsTo(VideoDb.userData, { foreignKey: 'user_id' });
+// HistoryData belongs to VideoGroup (for display title/thumb)
+VideoDb.historyData.belongsTo(VideoDb.videoGroupData, { foreignKey: 'group_id', as: 'groupInfo' });
+// HistoryData belongs to VideoData (if specific video downloaded)
+VideoDb.historyData.belongsTo(VideoDb.videoData, { foreignKey: 'video_id', as: 'videoInfo' });
+
 
 // Initialize the database and create tables if they don't exist
 function initDb() {

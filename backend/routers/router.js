@@ -1,7 +1,7 @@
 const timeRouter = require('./time.route')
 const videoRouter = require('./video.route')
 const uploadRouter = require('./upload.route')
-const loginRouter = require('./login.route')
+const userRouter = require('./user.route')
 
 const router = require('express').Router()
 
@@ -15,6 +15,6 @@ router.use('/video', videoRouter)
 
 router.use('/upload', uploadRouter)
 
-router.use('/login', loginRouter)
+router.use('/user', userRouter)
 
 module.exports = router

@@ -1,8 +1,8 @@
 import React from 'react';
-import { FaArrowCircleLeft, FaBackward, FaPlayCircle, FaGlobe, FaArrowLeft } from 'react-icons/fa';
+import { FaArrowCircleLeft, FaBackward, FaPlayCircle, FaGlobe, FaArrowLeft, FaCloudUploadAlt } from 'react-icons/fa';
 import { useLanguage } from '../lang/LanguageContext';
 
-const TitleHeader = ({isHomePage = false}) => {
+const TitleHeader = ({isHomePage = false, onUploadClick}) => {
   const { locale, toggleLanguage, language } = useLanguage();
 
   return (
@@ -20,11 +20,10 @@ const TitleHeader = ({isHomePage = false}) => {
         <h1 className="text-xl font-bold truncate whitespace-nowrap">{locale('app.title')}</h1>
       </div>
 
-      {/* Right: Language Toggle */}
-      <div className="w-auto shrink-0 flex justify-end">
-        <button onClick={toggleLanguage} className="text-gray-400 hover:text-white transition-colors font-bold text-xs flex items-center gap-1">
-            <FaGlobe size={16} />
-            <span className="text-xs">{locale('app.lang_curr')}</span>
+      {/* Right: Upload Button (Moved from BottomNav) */}
+      <div className="w-10 shrink-0 flex justify-end">
+        <button onClick={onUploadClick} className="text-gray-400 hover:text-white transition-colors">
+            <FaCloudUploadAlt size={24} />
         </button>
       </div>
     </header>

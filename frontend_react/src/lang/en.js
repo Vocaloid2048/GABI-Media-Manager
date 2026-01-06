@@ -7,6 +7,15 @@ export default {
   "nav.filter": "Filter",
   "nav.search": "Search",
   "nav.upload": "Upload",
+  "nav.user": "User",
+
+  // User
+  "user.profile": "User Profile",
+  "user.settings.language": "Language",
+  "user.settings.current_language": "Current Language",
+  "user.settings.security": "Security",
+  "user.settings.change_password": "Change Password",
+  "user.history.download": "Download History",
 
   // Common
   "common.download": "Download",
@@ -82,6 +91,7 @@ export default {
   "login.have_account": "Already have an account?",
   "login.no_account": "Don't have an account?",
   "login.create_account": "Create Account",
+  "login.pls_login_view_profile": "Please login to view profile",
 
   // Download
   "download.options_title": "Download Options",

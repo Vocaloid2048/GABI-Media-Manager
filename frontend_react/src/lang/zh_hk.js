@@ -7,6 +7,15 @@ export default {
   "nav.filter": "篩選",
   "nav.search": "搜尋",
   "nav.upload": "上傳",
+  "nav.user": "用戶",
+
+  // User
+  "user.profile": "用戶資料",
+  "user.settings.language": "語言",
+  "user.settings.current_language": "目前語言",
+  "user.settings.security": "安全",
+  "user.settings.change_password": "更改密碼",
+  "user.history.download": "下載紀錄",
 
   // Common
   "common.download": "下載",
@@ -81,8 +90,7 @@ export default {
   "login.invitation_code": "邀請碼",
   "login.have_account": "已有帳號？",
   "login.no_account": "還沒有帳號？",
-  "login.create_account": "建立帳號",
-
+  "login.create_account": "建立帳號",  "login.pls_login_view_profile": "請先登入以查看個人資料",
   // Download
   "download.options_title": "下載選項",
   "download.quality_source": "原始畫質",

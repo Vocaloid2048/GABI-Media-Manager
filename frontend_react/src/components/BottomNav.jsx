@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaFilter, FaSearch, FaCloudUploadAlt, FaTimes, FaArrowRight } from 'react-icons/fa';
+import { FaFilter, FaSearch, FaUser, FaTimes, FaArrowRight } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../lang/LanguageContext';
 
-const BottomNav = ({ onFilterClick, onSearchClick, onUploadClick, showSearch, onCloseSearch, onSearch, className }) => {
+const BottomNav = ({ onFilterClick, onSearchClick, onUserClick, showSearch, onCloseSearch, onSearch, className }) => {
   const { locale } = useLanguage();
   const [inputValue, setInputValue] = useState('');
   const [recentSearches, setRecentSearches] = useState([]);
@@ -142,11 +142,11 @@ const BottomNav = ({ onFilterClick, onSearchClick, onUploadClick, showSearch, on
         <div className="w-px h-8 bg-gray-800"></div>
 
         <button 
-          onClick={onUploadClick} 
+          onClick={onUserClick} 
           className="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-500 active:scale-95 transition-all"
         >
-          <FaCloudUploadAlt className="text-xl mb-1" />
-          <span className="text-xs font-medium">{locale('nav.upload')}</span>
+          <FaUser className="text-xl mb-1" />
+          <span className="text-xs font-medium">{locale('nav.user')}</span>
         </button>
       </div>
     </div>

@@ -1,5 +1,6 @@
 const { uploadVideoFile } = require("./controllers/upload.controller");
 const { generateColorTags } = require("./middlewares/generateColorTags");
+const { generateDs } = require("./middlewares/generateDs");
 const { generateThumbnail, generateThumbnailGroup } = require("./middlewares/generateThumb");
 
 const fs = require('fs');
@@ -79,7 +80,7 @@ function rgbToHex(rgbArray) {
     return '#' + ((1 << 24) + (rgbArray[0] << 16) + (rgbArray[1] << 8) + rgbArray[2]).toString(16).slice(1).toUpperCase();
 }
 
-(async () => {
+async function generateAndPrintColorTags() {
     try {
         const startTime = Date.now();
         const result = await generateColorTags("9b849765-4b41-44c7-9193-f6836b4958e7");
@@ -95,4 +96,11 @@ function rgbToHex(rgbArray) {
     } catch (error) {
         console.error("Error generating color tags:", error);
     }
-})();
+}
+
+function generateDsTry() {
+    const ds = generateDs(1);
+    console.log("Generated ds:", ds);
+}
+
+generateDsTry();

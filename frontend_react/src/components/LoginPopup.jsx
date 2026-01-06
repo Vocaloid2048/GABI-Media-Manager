@@ -20,7 +20,7 @@ const LoginPopup = ({ onClose, allowClose = true }) => {
 
   const handleSubmit = async () => {
     setError('');
-    const endpoint = isRegistering ? '/api/login/register' : '/api/login';
+    const endpoint = isRegistering ? '/api/user/register' : '/api/user/login';
     
     // Hash password before sending
     const passwordHash = sha256(password);

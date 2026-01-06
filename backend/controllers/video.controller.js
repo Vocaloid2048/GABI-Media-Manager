@@ -213,6 +213,18 @@ exports.getDownloadableVideo = async (req, res) => {
         // Rename those video files to meaningful names, E.g. TitleName_XX.mp4
         // Add video files to the zip
         let index = 1;
+
+        // Log to HistoryData
+        try {
+            db.VideoDb.historyData.create({
+                user_id: user_id, 
+                group_id: reqId, 
+                action_type: 'DOWNLOAD'
+            });
+        } catch (logErr) {
+            console.error("Failed to log download history", logErr);
+        }
+
         for (const video of videoQuery) {
             const ext = video.video_format.toLowerCase();
             const safeName = generateSafeName(video.video_filename + "." + ext);
@@ -266,6 +278,18 @@ exports.getDownloadableVideo = async (req, res) => {
             const index = allVideos.findIndex(v => v.video_id === video.video_id) + 1;
             const safeTitle = group.group_title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_');
             downloadName = `${safeTitle}_${String(index).padStart(2, '0')}.${ext}`;
+        }
+        
+        // Log to HistoryData
+        try {
+            db.VideoDb.historyData.create({
+                user_id: user_id,
+                group_id: video.group_id,
+                video_id: video.video_id,
+                action_type: 'DOWNLOAD'
+            });
+        } catch (logErr) {
+            console.error("Failed to log download history", logErr);
         }
 
         return res.download(filePath, downloadName);

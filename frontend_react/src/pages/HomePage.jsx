@@ -3,6 +3,7 @@ import TitleHeader from '../components/TitleHeader';
 import TagBar from '../components/TagBar';
 import VideoGrid from '../components/VideoGrid';
 import BottomNav from '../components/BottomNav';
+import UserPage from './UserPage';
 import LoginPopup from '../components/LoginPopup';
 import UploadPopup from '../components/UploadPopup';
 import FilterPopup from '../components/FilterPopup';
@@ -31,6 +32,7 @@ const HomePage = () => {
   const scrollContainerRef = React.useRef(null);
   const lastScrollTopRef = React.useRef(0);
   const [isTagBarVisible, setIsTagBarVisible] = useState(true);
+  const [isUserPage, setIsUserPage] = useState(false);
 
   // Website initial data fetch
   React.useEffect(() => {
@@ -188,6 +190,7 @@ const HomePage = () => {
   }
 
   const handleSearch = (word) => {
+    setIsUserPage(false);
     setSearchWord(word);
     setOffset(0);
     setHasMore(true);
@@ -201,27 +204,42 @@ const HomePage = () => {
 
   return (
     <div className="bg-gray-900 h-[100dvh] flex flex-col text-white font-sans overflow-hidden">
-      <TitleHeader isHomePage={true} />
-      <TagBar 
-        tags={tagsList} 
-        selectedTags={selectedTags} 
-        onToggleTag={toggleTag} 
-        onRefreshTags={handleRefreshTags} 
-        isVisible={isTagBarVisible}
-      />
+      <TitleHeader isHomePage={true} onUploadClick={() => setShowUpload(true)} />
+      
+      <div className="h-16 shrink-0" />
+
+      {!isUserPage && (
+        <TagBar 
+            tags={tagsList} 
+            selectedTags={selectedTags} 
+            onToggleTag={toggleTag} 
+            onRefreshTags={handleRefreshTags} 
+            isVisible={isTagBarVisible}
+        />
+      )}
 
       <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto no-scrollbar relative"
       >
-        <VideoGrid groups={videoGroupData} />
+        {isUserPage ? (
+            <UserPage />
+        ) : (
+            <VideoGrid groups={videoGroupData} />
+        )}
       </div>
 
       <BottomNav
         className="w-full z-50"
-        onFilterClick={() => setShowFilter(true)}
-        onSearchClick={() => setShowSearch(true)}
-        onUploadClick={() => setShowUpload(true)}
+        onFilterClick={() => {
+            setIsUserPage(false); 
+            setShowFilter(true);
+        }}
+        onSearchClick={() => {
+            setIsUserPage(false);
+            setShowSearch(true);
+        }}
+        onUserClick={() => setIsUserPage(!isUserPage)}
         showSearch={showSearch}
         onCloseSearch={() => setShowSearch(false)}
         onSearch={handleSearch}
