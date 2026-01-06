@@ -44,7 +44,7 @@ const VideoItem = React.forwardRef(({ group }, ref) => {
 
 const VideoGrid = ({ groups }) => {
   return (
-    <div className="relative grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 pt-32 pb-24 ">
+    <div className="relative grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 pt-18 pb-4 ">
       <AnimatePresence mode="popLayout">
         {groups.map(group => (
           <VideoItem key={group.group_id} group={group} />

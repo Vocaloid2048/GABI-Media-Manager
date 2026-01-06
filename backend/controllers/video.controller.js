@@ -1,6 +1,7 @@
 const { raiseError, returnSuccess, checkParamsExisted, errorByAPI, USER_DOES_NOT_EXISTED, INVALID_REQUEST, WRONG_AUTHIZATION, MISSING_REQUIRE_KEYS } = require("../middlewares/error");
 const db = require("../models");
 const { auth } = require("../middlewares/auth");
+const { actionRecord, SEARCH_RESULT, VIEW_RESULT, DOWNLOAD_VIDEO } = require("../middlewares/actionRecord");
 const { Sequelize, where } = require("sequelize");
 const archiver = require('archiver');
 const fs = require('fs');
@@ -63,6 +64,17 @@ exports.getVideoGroupList = async (req, res) => {
 
     const data = await db.VideoDb.videoGroupData.findAll(queryOptions);
 
+    // Filter out user_id if multiple searches are happening? 
+    // Usually SEARCH is just "user searched X", so we log it.
+    // If no search words/tags, maybe just listing -> skip log to avoid spam?
+    // Let's log only if there's a search occurring.
+    if ((searchWords && searchWords.trim() !== "") || (searchTags && searchTags.trim() !== "")) {
+        const userId = req.get("user_id") || req.query.user_id || null;
+        if (userId) {
+            actionRecord(req, res, userId, SEARCH_RESULT, `Search: "${searchWords}" Tags: "${searchTags}"`);
+        }
+    }
+
     return returnSuccess(res, data);
 }
 
@@ -110,6 +122,12 @@ exports.getVideoGroupInfo = async (req, res) => {
             }
         } else {
             groupData.dataValues.group_tags = [];
+        }
+
+        // Action Record
+        const userId = req.get("user_id") || req.query.user_id || null;
+        if(userId){
+             actionRecord(req, res, userId, VIEW_RESULT, `View Group: ${groupData.group_title} (${group_id})`);
         }
 
         returnSuccess(res, { groupData, videoData });
@@ -221,6 +239,7 @@ exports.getDownloadableVideo = async (req, res) => {
                 group_id: reqId, 
                 action_type: 'DOWNLOAD'
             });
+            actionRecord(req, res, user_id, DOWNLOAD_VIDEO, `Download Zip: ${videoGroupName} (${reqId})`);
         } catch (logErr) {
             console.error("Failed to log download history", logErr);
         }
@@ -288,6 +307,7 @@ exports.getDownloadableVideo = async (req, res) => {
                 video_id: video.video_id,
                 action_type: 'DOWNLOAD'
             });
+            actionRecord(req, res, user_id, DOWNLOAD_VIDEO, `Download File: ${downloadName} (${video.video_id})`);
         } catch (logErr) {
             console.error("Failed to log download history", logErr);
         }

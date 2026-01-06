@@ -1,6 +1,7 @@
 const { raiseError, returnSuccess, checkParamsExisted, errorByAPI, USER_DOES_NOT_EXISTED, INVALID_REQUEST, WRONG_AUTHIZATION } = require("../middlewares/error");
 const db = require("../models");
 const { auth } = require("../middlewares/auth");
+const { actionRecord, UPLOAD_VIDEO } = require("../middlewares/actionRecord");
 const { Sequelize, where } = require("sequelize");
 const archiver = require('archiver');
 const fs = require('fs');
@@ -55,6 +56,12 @@ exports.uploadVideoFile = async (req, res) => {
         // Let's log and continue with what we have
     }
     
+    // Action Record
+    const user_id = req.get("user_id") || req.query.user_id;
+    if(user_id) {
+        actionRecord(req, res, user_id, UPLOAD_VIDEO, `Upload: ${videoInfo.group_title}`);
+    }
+
     // Return Success Response
     returnSuccess(res, null);    
 

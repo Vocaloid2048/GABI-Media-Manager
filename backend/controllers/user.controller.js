@@ -206,6 +206,7 @@ exports.updateProfile = async (req, res) => {
         user.locale_name = locale_name;
         await user.save();
 
+        actionRecord(req, res, user_id, 'UPDATE_PROFILE', locale_name);
         return returnSuccess(res, { locale_name: user.locale_name });
     } catch (err) {
         return errorByAPI(res, err);
@@ -228,6 +229,7 @@ exports.changePassword = async (req, res) => {
         user.password_hash = newHash;
         await user.save();
 
+        actionRecord(req, res, user_id, 'CHANGE_PASSWORD', 'Password changed');
         return returnSuccess(res, { message: "Password updated" });
     } catch (err) {
         return errorByAPI(res, err);
@@ -251,6 +253,7 @@ exports.updateAvatar = async (req, res) => {
         user.icon = req.file.filename;
         await user.save();
 
+        actionRecord(req, res, user_id, 'UPDATE_AVATAR', user.icon);
         return returnSuccess(res, { icon: user.icon });
     } catch (err) {
         return errorByAPI(res, err);
