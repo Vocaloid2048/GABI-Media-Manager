@@ -17,6 +17,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    define: {
+      __BUILD_TIME__: JSON.stringify(new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }))
+    },
     server: {
       host: true,
       port: parseInt(env.PORT) || 5173,
