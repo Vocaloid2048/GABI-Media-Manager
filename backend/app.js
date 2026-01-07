@@ -33,7 +33,7 @@ const origins = [
 const corsOptions = {
   origin: origins.length > 0 ? origins : true, // 如果沒設定則預設允許
   credentials: true,
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'username', 'password_hash', 'Authorization', 'user_id', 'ds']
 }
 app.use(cors(corsOptions))

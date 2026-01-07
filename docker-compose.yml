@@ -19,7 +19,7 @@ services:
       - DB_BACKUP_SUB=/app/backups/sub
       - VALID_VIDEO_EXTENSIONS=.mp4,.mkv,.avi,.mov,.wmv,.flv,.webm
       - INVITATION_CODE=youtrInvitationCodeHere
-      - FRONTEND_ORIGIN=https://yourdomain.com,http://localhost:8443
+      - FRONTEND_ORIGIN=https://yourdomain.com,https://upload.yourdomain.com,http://localhost:8443
       - BACKEND_USE_HTTPS=true
     volumes:
       - ./backend/db:/app/db
@@ -42,6 +42,6 @@ services:
       - backend
     environment:
       - PORT=8443
-      - VITE_API_BASE_URL=http://localhost:8443
-      - VITE_UPLOAD_API_URL=https://upload.yourdomain.com/api/upload
+      - VITE_API_BASE_URL=http://localhost:8443 
+      # VITE_UPLOAD_API_URL please navigate to frontend_react/src/config.js to set this value
     restart: always
