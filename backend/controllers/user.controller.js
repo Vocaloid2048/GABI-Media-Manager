@@ -53,17 +53,8 @@ exports.postRegisterRequest = async (req, res) => {
         return;
     }
 
-    // Validation
-    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-
-    if (!usernameRegex.test(username) || !passwordRegex.test(password)) {
-        raiseError(res, INVALID_REQUEST);
-        return;
-    }
-
     // Check Invitation Code
-    const validCode = process.env.INVITATION_CODE || 'GABI2024';
+    const validCode = process.env.INVITATION_CODE;
     if (invitation_code !== validCode) {
         raiseError(res, INVALID_INVITATION_CODE);
         return;

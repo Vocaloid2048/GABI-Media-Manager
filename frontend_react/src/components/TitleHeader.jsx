@@ -1,10 +1,11 @@
 import React from 'react';
 import { FaArrowCircleLeft, FaBackward, FaPlayCircle, FaGlobe, FaArrowLeft, FaCloudUploadAlt } from 'react-icons/fa';
 import { useLanguage } from '../lang/LanguageContext';
+import { ENABLE_USER_UPLOAD } from '../config';
 
 const TitleHeader = ({isHomePage = false, onUploadClick}) => {
   const { locale, toggleLanguage, language } = useLanguage();
-
+  
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-gray-900 text-white flex items-center justify-between px-4 z-50 shadow-md border-b border-gray-800 shadow-black/20">
       {/* Left: Back Button */}
@@ -21,6 +22,7 @@ const TitleHeader = ({isHomePage = false, onUploadClick}) => {
       </div>
 
       {/* Right: Upload Button (Moved from BottomNav) */}
+      { ENABLE_USER_UPLOAD === true ? (
       <div className="w-10 shrink-0 flex justify-end">
         <button 
           onClick={isHomePage ? onUploadClick : undefined} 
@@ -29,6 +31,7 @@ const TitleHeader = ({isHomePage = false, onUploadClick}) => {
             <FaCloudUploadAlt size={24} />
         </button>
       </div>
+      ) : <div className="w-10 shrink-0 flex justify-end"></div> }
     </header>
   );
 };
