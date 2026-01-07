@@ -134,7 +134,7 @@ export default {
   "upload.field_author": "Author / Source",
   "upload.placeholder_author": "Original author or source URL",
   "upload.drag_drop": "Drag & Drop or Click to Select File",
-  "upload.supports": "Supports .zip, .mp4, .avi",
+  "upload.supports": "Support formats: .zip,.mp4,.mkv,.avi,.mov,.wmv,.flv,.webm",
   "upload.uploading": "Uploading...",
   "upload.speed": "Speed:",
   "upload.complete": "Upload Complete!",
@@ -142,16 +142,6 @@ export default {
 
   // Login
   "login.title": "Login",
-  "login.welcome": "Welcome Back",
-  "login.username": "Username",
-  "login.password": "Password",
-  "login.sign_in": "Sign In",
-  "login.or_continue": "Or continue with",
-  "login.register": "Register",
-  "login.invitation_code": "Invitation Code",
-  "login.have_account": "Already have an account?",
-  "login.no_account": "Don't have an account?",
-  "login.create_account": "Create Account",
   "login.pls_login_view_profile": "Please login to view profile",
 
   // Download

@@ -134,7 +134,7 @@ export default {
   "upload.field_author": "作者 / 來源",
   "upload.placeholder_author": "原始作者或來源網址",
   "upload.drag_drop": "拖放或點擊選擇檔案",
-  "upload.supports": "支援 .zip, .mp4, .avi",
+  "upload.supports": "支援格式：.zip,.mp4,.mkv,.avi,.mov,.wmv,.flv,.webm",
   "upload.uploading": "上傳中...",
   "upload.speed": "速度:",
   "upload.complete": "上傳完成！",
@@ -142,16 +142,7 @@ export default {
 
   // Login
   "login.title": "登入",
-  "login.welcome": "歡迎回來",
-  "login.username": "使用者名稱",
-  "login.password": "密碼",
-  "login.sign_in": "登入",
-  "login.or_continue": "或透過以下方式繼續",
-  "login.register": "註冊",
-  "login.invitation_code": "邀請碼",
-  "login.have_account": "已有帳號？",
-  "login.no_account": "還沒有帳號？",
-  "login.create_account": "建立帳號",  "login.pls_login_view_profile": "請先登入以查看個人資料",
+  "login.pls_login_view_profile": "請先登入以查看個人資料",
   // Download
   "download.options_title": "下載選項",
   "download.quality_source": "原始畫質",

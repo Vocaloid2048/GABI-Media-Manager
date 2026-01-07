@@ -4,7 +4,7 @@ import { FaCloudUploadAlt, FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
 import { useLanguage } from '../lang/LanguageContext';
 import { generateDs } from '../utils/auth';
 import { TagTypeEnum } from './TagClip';
-import { API_URL } from '../config';
+import { API_URL, VALID_VIDEO_EXTENSIONS } from '../config';
 
 const UploadPopup = ({ onClose }) => {
   const { locale, language } = useLanguage();
@@ -328,7 +328,7 @@ const UploadPopup = ({ onClose }) => {
                 {file ? file.name : locale('upload.drag_drop')}
               </p>
               <p className="text-gray-500 text-xs mt-1">{locale('upload.supports')}</p>
-              <input type="file" id="fileInput" className="hidden" onChange={e => setFile(e.target.files[0])} accept=".zip,.mp4,.avi" />
+              <input type="file" id="fileInput" className="hidden" onChange={e => setFile(e.target.files[0])} accept={`.zip,${VALID_VIDEO_EXTENSIONS}`} />
             </div>
 
             {/* Progress Bar */}
