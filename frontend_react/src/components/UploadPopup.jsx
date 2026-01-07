@@ -4,6 +4,7 @@ import { FaCloudUploadAlt, FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
 import { useLanguage } from '../lang/LanguageContext';
 import { generateDs } from '../utils/auth';
 import { TagTypeEnum } from './TagClip';
+import { API_URL } from '../config';
 
 const UploadPopup = ({ onClose }) => {
   const { locale, language } = useLanguage();
@@ -130,12 +131,8 @@ const UploadPopup = ({ onClose }) => {
       xhrRef.current = xhr;
       
       // 讀取環境變數，如果設定了 VITE_UPLOAD_API_URL 則使用它來繞過 Cloudflare
-      const uploadUrl = import.meta.env.VITE_UPLOAD_API_URL || '/api/upload';
-      xhr.open('POST', uploadUrl);
-      
-      // Set Auth Headers
-      xhr.setRequestHeader('user_id', userId);
-      xhr.setRequestHeader('ds', ds);
+      const uploadUrl = API_URL || '/api/upload';
+      xhr.open('POST', `${uploadUrl}?user_id=${userId}&ds=${encodeURIComponent(ds)}`);
 
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
@@ -159,14 +156,14 @@ const UploadPopup = ({ onClose }) => {
             alert('Upload failed: ' + response.message);
           }
         } else {
-          alert('Upload failed');
+          alert('Upload failed: Server error ' + xhr.status +" | uploadUrl: " + uploadUrl);
         }
         setUploading(false);
         xhrRef.current = null;
       };
 
       xhr.onerror = () => {
-        alert('Network error');
+        alert('Network error: '+ xhr.status);
         setUploading(false);
         xhrRef.current = null;
       };

@@ -9,3 +9,4 @@ backend/.env
 *.env
 /backend/Test
 /backend/Backups
+/frontend_react/src/config.js

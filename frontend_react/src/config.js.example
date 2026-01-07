@@ -1,0 +1,3 @@
+const API_URL = "https://upload.yourdomain.com/api/upload";
+
+export { API_URL };
