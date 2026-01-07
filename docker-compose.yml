@@ -10,16 +10,20 @@ services:
       - PORT=3000
       - NODE_ENV=production
       - NODE_ISLOCAL=true
-      - VIDEO_DIR=/app/Videos
-      - THUMB_DIR=/app/Thumbs
+      - VIDEO_DIR=/app/GABI/Videos
+      - THUMB_DIR=/app/GABI/Thumbs
       - TEMP_DIR=/app/Temp
-      - AVATAR_DIR=/app/Avatars
+      - AVATAR_DIR=/app/GABI/Avatars
       - DS_SALT=thisIsASecretSaltValue # 建議在部署時透過 .env 更改
       - DB_BACKUP_MAIN=/app/backups/main
       - DB_BACKUP_SUB=/app/backups/sub
     volumes:
-      - ./backend/backups/main:/app/backups/main
-      - ./backend/backups/sub:/app/backups/sub
+      - ./backend/db:/app/db
+      - ./backend/logs:/app/logs
+      - ./backend/Temp:/app/Temp
+      - ./backend/Backups:/app/backups/main
+      - /path/to/your/ext/folder:/app/GABI
+      - /path/to/your/ext/backup/folder:/app/backups/sub
     restart: always
 
   frontend:
