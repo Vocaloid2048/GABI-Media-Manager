@@ -2,8 +2,8 @@ const express = require('express');
 const session = require('express-session')
 const fs = require('fs')
 const https = require('https')
+const path = require('path');
 const cors = require('cors')
-require('dotenv').config();
 
 const app = express();
 const router = require('./routers/router');
@@ -44,13 +44,15 @@ initDb();
 // Start Database Backup Schedule
 initBackupSchedule();
 
-// Check if the environment is production
-const isProduction = process.env.NODE_ENV === 'production'
-
 // HTTPS configuration
 const useHttps = process.env.BACKEND_USE_HTTPS === 'true';
-const certPath = './cert/cert.pem';
-const keyPath = './cert/key.pem';
+// use path.resolve(__dirname, ...) if certs are stored relative to this file
+const certPath = path.resolve(__dirname, './cert/cert.pem');
+const keyPath = path.resolve(__dirname, './cert/key.pem');
+
+console.log("useHttps:", useHttps);
+console.log("certPath:", fs.existsSync(certPath), certPath);
+console.log("keyPath:", fs.existsSync(keyPath), keyPath);
 
 if (useHttps && fs.existsSync(certPath) && fs.existsSync(keyPath)) {
   const credentials = { 

@@ -14,14 +14,19 @@ services:
       - THUMB_DIR=/app/GABI/Thumbs
       - TEMP_DIR=/app/Temp
       - AVATAR_DIR=/app/GABI/Avatars
-      - DS_SALT=thisIsASecretSaltValue # 建議在部署時透過 .env 更改
+      - DS_SALT=thisIsASecretSaltValue
       - DB_BACKUP_MAIN=/app/backups/main
       - DB_BACKUP_SUB=/app/backups/sub
+      - VALID_VIDEO_EXTENSIONS=.mp4,.mkv,.avi,.mov,.wmv,.flv,.webm
+      - INVITATION_CODE=youtrInvitationCodeHere
+      - FRONTEND_ORIGIN=https://yourdomain.com,http://localhost:8443
+      - BACKEND_USE_HTTPS=true
     volumes:
       - ./backend/db:/app/db
       - ./backend/logs:/app/logs
       - ./backend/Temp:/app/Temp
       - ./backend/Backups:/app/backups/main
+      - ./backend/cert:/app/cert:ro
       - /path/to/your/ext/folder:/app/GABI
       - /path/to/your/ext/backup/folder:/app/backups/sub
     restart: always
@@ -35,4 +40,8 @@ services:
       - "8080:80"
     depends_on:
       - backend
+    environment:
+      - PORT=8443
+      - VITE_API_BASE_URL=http://localhost:8443
+      - VITE_UPLOAD_API_URL=https://upload.yourdomain.com/api/upload
     restart: always
