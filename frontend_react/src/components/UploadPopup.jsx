@@ -11,6 +11,7 @@ const UploadPopup = ({ onClose }) => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [speed, setSpeed] = useState(0);
   
   // Form Fields
   const [title, setTitle] = useState('');
@@ -99,6 +100,8 @@ const UploadPopup = ({ onClose }) => {
   const handleUpload = async () => {
     if (!file || !title) return;
     setUploading(true);
+    setProgress(0);
+    setSpeed(0);
 
     const userId = localStorage.getItem('user_id');
     const ds = generateDs(userId);
@@ -127,6 +130,7 @@ const UploadPopup = ({ onClose }) => {
         xhrRef.current.abort();
       }
 
+      const startTime = Date.now();
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
       
@@ -138,6 +142,12 @@ const UploadPopup = ({ onClose }) => {
         if (event.lengthComputable) {
           const percentComplete = (event.loaded / event.total) * 100;
           setProgress(Math.floor(percentComplete));
+
+          const timeElapsed = (Date.now() - startTime) / 1000;
+          if (timeElapsed > 0) {
+            const mbps = (event.loaded / (1024 * 1024)) / timeElapsed;
+            setSpeed(mbps.toFixed(2));
+          }
         }
       };
 
@@ -325,7 +335,10 @@ const UploadPopup = ({ onClose }) => {
             {uploading && (
               <div className="w-full bg-gray-700 rounded-full h-2.5">
                 <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
-                <p className="text-right text-xs text-gray-400 mt-1">{progress}%</p>
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-xs text-gray-400">{speed} MB/s</p>
+                  <p className="text-xs text-gray-400">{progress}%</p>
+                </div>
               </div>
             )}
           </div>
