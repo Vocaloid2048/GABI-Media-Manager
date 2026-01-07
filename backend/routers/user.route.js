@@ -16,7 +16,7 @@ const storage = multer.diskStorage({
     cb(null, avatarDir);
   },
   filename: (req, file, cb) => {
-    const user_id = req.get("user_id") || "unknown";
+    const user_id = req.query.user_id || "unknown";
     const ext = path.extname(file.originalname);
     cb(null, `avatar_${user_id}_${Date.now()}${ext}`);
   }

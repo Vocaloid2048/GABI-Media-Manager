@@ -31,9 +31,9 @@ const ChangePasswordPopup = ({ onClose, userId, locale }) => {
         
         const ds = generateDs(userId);
         try {
-            const res = await fetch('/api/user/password', {
+            const res = await fetch(`/api/user/password?user_id=${userId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'ds': ds, 'user_id': userId },
+                headers: { 'Content-Type': 'application/json', 'ds': ds },
                 body: JSON.stringify({ 
                     new_password: sha256(newPass) 
                 })
@@ -232,9 +232,9 @@ const UserPage = () => {
 
             try {
                 const ds = generateDs(userInfo.user_id);
-                const res = await fetch('/api/user/avatar', {
+                const res = await fetch(`/api/user/avatar?user_id=${userInfo.user_id}`, {
                     method: 'POST',
-                    headers: { 'ds': ds, 'user_id': userInfo.user_id },
+                    headers: { 'ds': ds },
                     body: formData
                 });
                 const json = await res.json();
@@ -250,9 +250,9 @@ const UserPage = () => {
     const handleNameSave = async (newName) => {
         const ds = generateDs(userInfo.user_id);
         try {
-            const res = await fetch('/api/user/update', {
+            const res = await fetch(`/api/user/update?user_id=${userInfo.user_id}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'ds': ds, 'user_id': userInfo.user_id },
+                headers: { 'Content-Type': 'application/json', 'ds': ds },
                 body: JSON.stringify({ locale_name: newName })
             });
             const json = await res.json();

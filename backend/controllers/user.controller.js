@@ -191,7 +191,7 @@ exports.getDownloadHistory = async (req, res) => {
 
 
 exports.updateProfile = async (req, res) => {
-    const user_id = req.get("user_id") || req.query.user_id;
+    const user_id = req.query.user_id;
     const { locale_name } = req.body;
 
     if (!user_id || !locale_name) {
@@ -213,7 +213,7 @@ exports.updateProfile = async (req, res) => {
 };
 
 exports.changePassword = async (req, res) => {
-    const user_id = req.get("user_id") || req.query.user_id;
+    const user_id = req.query.user_id;
     const { new_password } = req.body; // Expecting hashed passwords or plain? usually hashed from client as per existing login
 
     if (!user_id || !new_password) {
@@ -245,7 +245,7 @@ const fs = require('fs');
 const path = require('path');
 
 exports.updateAvatar = async (req, res) => {
-    const user_id = req.get("user_id") || req.query.user_id;
+    const user_id = req.query.user_id;
     if (!req.file) return errorByAPI(res, INVALID_REQUEST);
 
     try {
