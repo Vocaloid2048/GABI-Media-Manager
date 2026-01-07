@@ -9,6 +9,7 @@ const app = express();
 const router = require('./routers/router');
 const { VideoDb, initDb } = require('./models');
 const { initBackupSchedule } = require('./utils/backup');
+require('dotenv').config();
 
 const PORT = process.env.PORT || 3000
 

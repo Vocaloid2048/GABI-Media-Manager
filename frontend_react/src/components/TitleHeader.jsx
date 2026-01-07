@@ -15,14 +15,17 @@ const TitleHeader = ({isHomePage = false, onUploadClick}) => {
       </div>
 
       {/* Center: Logo & Title */}
-      <div onClick={() => window.location.href = '/'} className="flex-1 flex items-center justify-center gap-3 cursor-pointer overflow-hidden px-2">
+      <div onClick={() => window.location.href = '/'} className="flex items-center justify-center gap-3 cursor-pointer overflow-hidden px-2">
         <img src="/gabi_icon.webp" alt="GABI Media Manager Logo" className="h-10 w-10 rounded-full shrink-0" />
         <h1 className="text-xl font-bold truncate whitespace-nowrap">{locale('app.title')}</h1>
       </div>
 
       {/* Right: Upload Button (Moved from BottomNav) */}
       <div className="w-10 shrink-0 flex justify-end">
-        <button onClick={onUploadClick} className="text-gray-400 hover:text-white transition-colors">
+        <button 
+          onClick={isHomePage ? onUploadClick : undefined} 
+          className={`transition-colors ${isHomePage ? 'text-gray-400 hover:text-white' : 'invisible'}`}
+        >
             <FaCloudUploadAlt size={24} />
         </button>
       </div>
