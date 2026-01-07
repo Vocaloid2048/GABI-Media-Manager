@@ -48,7 +48,7 @@ const cleanZombieRequests = (userId, activeSet) => {
 };
 
 module.exports = (req, res, next) => {
-    const userId = req.get('user_id') || req.ip;
+    const userId = req.get('user_id') || req.query.user_id;
     const activeSet = getActiveSet(userId);
 
     // Initial Zombie Cleanup

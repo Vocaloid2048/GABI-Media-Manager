@@ -38,10 +38,13 @@ services:
     container_name: gabi-frontend
     ports:
       - "8080:80"
+      - "8443:443"
     depends_on:
       - backend
     environment:
-      - PORT=8443
-      - VITE_API_BASE_URL=http://localhost:8443 
+      - PORT=8080
+      - VITE_API_BASE_URL=https://upload.yourdomain.com/api
+    volumes:
+      - ./frontend_react/cert:/etc/nginx/certs:ro
       # VITE_UPLOAD_API_URL please navigate to frontend_react/src/config.js to set this value
     restart: always
