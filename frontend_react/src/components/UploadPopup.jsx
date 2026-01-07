@@ -129,7 +129,9 @@ const UploadPopup = ({ onClose }) => {
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
       
-      xhr.open('POST', '/api/upload');
+      // 讀取環境變數，如果設定了 VITE_UPLOAD_API_URL 則使用它來繞過 Cloudflare
+      const uploadUrl = import.meta.env.VITE_UPLOAD_API_URL || '/api/upload';
+      xhr.open('POST', uploadUrl);
       
       // Set Auth Headers
       xhr.setRequestHeader('user_id', userId);

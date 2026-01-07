@@ -12,7 +12,8 @@ const { initBackupSchedule } = require('./utils/backup');
 
 const PORT = process.env.PORT || 3000
 
-app.use(express.json({ limit: '10mb' }))
+app.use(express.json({ limit: '50mb' }))
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.enable('trust proxy');
 app.use(
   session({
@@ -22,13 +23,18 @@ app.use(
   })
 )
 
-// CORS (allow front-end dev server and custom headers for login)
-const allowedOrigin = process.env.VITE_DEV_SERVER_ORIGIN || process.env.FRONTEND_ORIGIN || 'http://localhost:5173'
+// CORS 設定：允許前端開發伺服器、生產環境域名以及繞過 Cloudflare 的自訂域名
+const origins = [
+  process.env.FRONTEND_ORIGIN,
+  process.env.VITE_DEV_SERVER_ORIGIN,
+  'http://localhost:5173'
+].filter(Boolean).flatMap(o => o.split(',').map(s => s.trim()));
+
 const corsOptions = {
-  origin: allowedOrigin,
+  origin: origins.length > 0 ? origins : true, // 如果沒設定則預設允許
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'username', 'password_hash', 'Authorization']
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'username', 'password_hash', 'Authorization', 'user_id', 'ds']
 }
 app.use(cors(corsOptions))
 
@@ -41,19 +47,24 @@ initBackupSchedule();
 // Check if the environment is production
 const isProduction = process.env.NODE_ENV === 'production'
 
-// Set up HTTPS only in production
-if (isProduction && !process.env.NODE_ISLOCAL) {
-  const privateKey = fs.readFileSync('./cert/key.pem', 'utf8')
-  const certificate = fs.readFileSync('./cert/cert.pem', 'utf8')
-  const credentials = { key: privateKey, cert: certificate }
+// HTTPS configuration
+const useHttps = process.env.BACKEND_USE_HTTPS === 'true';
+const certPath = './cert/cert.pem';
+const keyPath = './cert/key.pem';
+
+if (useHttps && fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+  const credentials = { 
+    key: fs.readFileSync(keyPath, 'utf8'), 
+    cert: fs.readFileSync(certPath, 'utf8') 
+  }
 
   https.createServer(credentials, app).listen(PORT, () => {
-    console.log(`Server is running on https://localhost:${PORT}`)
+    console.log(`[Backend] Server is running on https://localhost:${PORT} (SSL Enabled)`)
   })
 } else {
-  // Run the app with HTTP in non-production environments
+  // Run the app with HTTP
   app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`)
+    console.log(`[Backend] Server is running on http://localhost:${PORT}`)
   })
 }
 
