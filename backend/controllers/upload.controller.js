@@ -19,13 +19,39 @@ exports.uploadVideoFile = async (req, res) => {
     
     // Handle File Upload
     const file = req.file;
+
+    // --- Cancellation Handling ---
+    // If request closes prematurely, delete the uploaded file/chunk
+    req.on('close', async () => {
+        if (!res.headersSent) {
+            console.log('Request cancelled by user. Cleaning up...');
+            if (file && file.path) {
+                try {
+                    await fs.promises.access(file.path);
+                    await fs.promises.unlink(file.path);
+                    console.log(`Deleted temp file: ${file.path}`);
+                } catch (e) { /* ignore if already gone */ }
+            }
+            // If processing a chunk set, we might want to cleanup the chunk folder too if needed?
+            // But usually we just delete the current partial/complete chunk.
+        }
+    });
+
     if (file === undefined
         || !validExtensions.includes(path.extname(file.originalname).toLowerCase()) 
         && !path.extname(file.originalname).toLowerCase().includes('.zip')
+        // Allow temporary generic uploads if using chunking (might not have extension yet or split)
+        // But multer uses originalname.
     ) { return raiseError(res, INVALID_REQUEST); }
 
     // Check is video info params existed
     let videoInfo = JSON.parse(req.body.videoInfo || '{}')
+
+    // --- Chunked Upload Handling ---
+    if (req.body.chunkIndex !== undefined && req.body.totalChunks !== undefined && req.body.fileId) {
+        return await handleChunkedUpload(req, res, file, videoInfo);
+    }
+
     if (videoInfo.group_title === undefined || videoInfo.group_title === null || videoInfo.group_title === '') {
         return raiseError(res, INVALID_REQUEST);
     }
@@ -229,3 +255,102 @@ const getVideoMetadata = (filePath) => {
         });
     });
 };
+
+async function handleChunkedUpload(req, res, file, videoInfo) {
+    const { chunkIndex, totalChunks, fileId, fileName } = req.body;
+    const index = parseInt(chunkIndex);
+    const total = parseInt(totalChunks);
+    const tempDir = process.env.TEMP_DIR || '/tmp';
+    const chunksDir = path.join(tempDir, 'chunks', fileId);
+
+    // Ensure chunks directory exists
+    await fs.promises.mkdir(chunksDir, { recursive: true });
+
+    // Move current chunk to correct location
+    const chunkPath = path.join(chunksDir, `${index}`);
+    
+    try {
+        await fs.promises.rename(file.path, chunkPath);
+    } catch (err) {
+        if (err.code === 'EXDEV') {
+            await fs.promises.copyFile(file.path, chunkPath);
+            await fs.promises.unlink(file.path);
+        } else {
+            console.error(err);
+            return raiseError(res, errorByAPI(null, "Chunk move failed", false));
+        }
+    }
+
+    // Check if we have all chunks
+    const files = await fs.promises.readdir(chunksDir);
+    if (files.length !== total) {
+        return returnSuccess(res, { status: 'chunk_received', index });
+    }
+
+    console.log(`All ${total} chunks received for ${fileId}, merging...`);
+    const finalFilename = fileName || `upload_${fileId}${path.extname(file.originalname)}`;
+    const finalPath = path.join(tempDir, finalFilename);
+    const writeStream = fs.createWriteStream(finalPath);
+
+    try {
+        for (let i = 0; i < total; i++) {
+            const chunkP = path.join(chunksDir, `${i}`);
+            const data = await fs.promises.readFile(chunkP);
+            writeStream.write(data);
+        }
+        writeStream.end();
+    } catch (err) {
+        console.error("Merge error:", err);
+        return raiseError(res, errorByAPI(null, "Merge failed", false));
+    }
+
+    await new Promise((resolve, reject) => {
+        writeStream.on('finish', resolve);
+        writeStream.on('error', reject);
+    });
+
+    try {
+        await fs.promises.rm(chunksDir, { recursive: true, force: true });
+    } catch (e) { console.error("Error cleaning chunks:", e); }
+
+    if (videoInfo.group_title) {
+        try {
+            const finalTags = new Set(videoInfo.selectedTags || []);
+            if (videoInfo.newTags && Array.isArray(videoInfo.newTags)) {
+                for (const newTag of videoInfo.newTags) {
+                    if (newTag.tag_zh_name && newTag.tag_type) {
+                        const createdTag = await db.VideoDb.tagData.create({
+                            tag_zh_name: newTag.tag_zh_name,
+                            tag_en_name: newTag.tag_en_name || newTag.tag_zh_name,
+                            tag_type: newTag.tag_type
+                        });
+                        finalTags.add(createdTag.tag_id);
+                    }
+                }
+            }
+            videoInfo.group_tags = Array.from(finalTags);
+        } catch (err) {
+            console.error("Error processing tags:", err);
+        }
+
+        const user_id = req.get("user_id") || req.query.user_id;
+        if(user_id) {
+            actionRecord(req, res, user_id, UPLOAD_VIDEO, `Upload Merged: ${videoInfo.group_title}`);
+        }
+        
+        returnSuccess(res, { status: 'completed', path: finalPath });
+
+        try {
+            if (path.extname(finalFilename).toLowerCase() === '.zip') {
+                await exports.uploadVideoZipImpl(finalPath, videoInfo);
+            } else {
+                await exports.uploadVideoFileImpl(finalPath, videoInfo);
+            }
+        } catch (error) {
+            console.error("Processing error:", error);
+        }
+
+    } else {
+         return raiseError(res, INVALID_REQUEST);
+    }
+}

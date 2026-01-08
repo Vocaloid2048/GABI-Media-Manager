@@ -31,13 +31,15 @@ const UploadPopup = ({ onClose }) => {
   
   // Use useRef for XHR to ensure immediate access without re-renders
   const xhrRef = useRef(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     const fetchTags = async () => {
       try {
         const res = await fetch('/api/video/tags');
         const json = await res.json();
-        if (json.retcode === 1 && Array.isArray(json.data)) {
+        if (mountedRef.current && json.retcode === 1 && Array.isArray(json.data)) {
           setFullTagList(json.data);
         }
       } catch (error) {
@@ -48,6 +50,7 @@ const UploadPopup = ({ onClose }) => {
 
     // Cleanup on unmount
     return () => {
+      mountedRef.current = false;
       if (xhrRef.current) {
         console.log('Unmounting: Aborting active upload');
         xhrRef.current.abort();
@@ -120,75 +123,128 @@ const UploadPopup = ({ onClose }) => {
       newTags: newTags.map(({ temp_id, ...rest }) => rest) // Remove temp_id
     };
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('videoInfo', JSON.stringify(videoInfo));
+    const CHUNK_SIZE = 85 * 1024 * 1024; // 85MB
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const fileId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const uploadUrl = API_URL || '/api/upload';
+    
+    // Cancel any existing request
+    if (xhrRef.current) {
+      xhrRef.current.abort();
+    }
+
+    const startTime = Date.now();
 
     try {
-      // Cancel any existing request before starting a new one
-      if (xhrRef.current) {
-        xhrRef.current.abort();
-      }
+        for (let i = 0; i < totalChunks; i++) {
+            const start = i * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, file.size);
+            const chunk = file.slice(start, end);
+            
+            const formData = new FormData();
+            formData.append('file', chunk, file.name);
+            formData.append('chunkIndex', i);
+            formData.append('totalChunks', totalChunks);
+            formData.append('fileId', fileId);
+            formData.append('fileName', file.name);
+            formData.append('videoInfo', JSON.stringify(videoInfo)); 
 
-      const startTime = Date.now();
-      const xhr = new XMLHttpRequest();
-      xhrRef.current = xhr;
-      
-      // 讀取環境變數，如果設定了 VITE_UPLOAD_API_URL 則使用它來繞過 Cloudflare
-      const uploadUrl = API_URL || '/api/upload';
-      xhr.open('POST', `${uploadUrl}?user_id=${userId}&ds=${encodeURIComponent(ds)}`);
+            let attempts = 0;
+            let success = false;
 
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = (event.loaded / event.total) * 100;
-          setProgress(Math.floor(percentComplete));
+            while (!success && attempts < 3) {
+                 if (!mountedRef.current) return;
 
-          const timeElapsed = (Date.now() - startTime) / 1000;
-          if (timeElapsed > 0) {
-            const mbps = (event.loaded / (1024 * 1024)) / timeElapsed;
-            setSpeed(mbps.toFixed(2));
-          }
+                 try {
+                     await new Promise((resolve, reject) => {
+                         const xhr = new XMLHttpRequest();
+                         xhrRef.current = xhr;
+                         
+                         xhr.open('POST', `${uploadUrl}?user_id=${userId}&ds=${encodeURIComponent(ds)}`);
+                         
+                         xhr.upload.onprogress = (event) => {
+                            if (event.lengthComputable && mountedRef.current) {
+                                 const currentChunkLoaded = event.loaded;
+                                 const totalLoadedSoFar = (i * CHUNK_SIZE) + currentChunkLoaded;
+                                 const percentComplete = Math.min((totalLoadedSoFar / file.size) * 100, 100);
+                                 setProgress(Math.floor(percentComplete));
+
+                                 const timeElapsed = (Date.now() - startTime) / 1000;
+                                 if (timeElapsed > 0) {
+                                     const mbps = (totalLoadedSoFar / (1024 * 1024)) / timeElapsed;
+                                     setSpeed(mbps.toFixed(2));
+                                 }
+                            }
+                         };
+
+                         xhr.onload = () => {
+                             if (xhr.status === 200) {
+                                 try {
+                                     const response = JSON.parse(xhr.responseText);
+                                     if (response.retcode === 1) {
+                                         resolve(response);
+                                     } else if (response.retcode === -1001) {
+                                         reject(new Error('SessionExpired'));
+                                     } else {
+                                         reject(new Error(response.message || 'Upload failed'));
+                                     }
+                                 } catch (e) {
+                                     reject(e);
+                                 }
+                             } else {
+                                 reject(new Error(`Server error ${xhr.status}`));
+                             }
+                         };
+
+                         xhr.onerror = () => reject(new Error('Network error'));
+                         xhr.onabort = () => reject(new Error('Aborted'));
+
+                         xhr.send(formData);
+                     });
+                     success = true;
+                 } catch (error) {
+                     if (error.message === 'Aborted') {
+                         throw error;
+                     }
+                     if (error.message === 'SessionExpired') {
+                         throw error;
+                     }
+                     
+                     attempts++;
+                     console.warn(`Chunk ${i} attempt ${attempts} failed:`, error);
+                     
+                     if (attempts >= 3) {
+                         throw new Error(`Failed to upload chunk ${i} after 3 attempts: ${error.message}`);
+                     }
+                     // Retry delay
+                     await new Promise(r => setTimeout(r, 1000 * attempts));
+                 }
+            }
         }
-      };
 
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          const response = JSON.parse(xhr.responseText);
-          if (response.retcode === 1) {
+        if (mountedRef.current) {
             alert(locale('upload.complete'));
             onClose();
-          } else if (response.retcode === -1001) {
-            // Auth failed
+        }
+
+    } catch (error) {
+        if (error.message === 'Aborted') {
+            console.log('Upload aborted by user');
+        } else if (error.message === 'SessionExpired') {
             alert('Session expired. Please login again.');
             localStorage.clear();
             window.location.reload();
-          } else {
-            alert('Upload failed: ' + response.message);
-          }
         } else {
-          alert('Upload failed: Server error ' + xhr.status +" | uploadUrl: " + uploadUrl);
+            console.error(error);
+            if (mountedRef.current) {
+                alert('Upload failed: ' + error.message);
+            }
         }
-        setUploading(false);
+    } finally {
+        if (mountedRef.current) {
+            setUploading(false);
+        }
         xhrRef.current = null;
-      };
-
-      xhr.onerror = () => {
-        alert('Network error: '+ xhr.status);
-        setUploading(false);
-        xhrRef.current = null;
-      };
-
-      xhr.onabort = () => {
-        console.log('Upload aborted');
-        setUploading(false);
-        xhrRef.current = null;
-      };
-
-      xhr.send(formData);
-    } catch (error) {
-      console.error(error);
-      setUploading(false);
-      xhrRef.current = null;
     }
   };
 

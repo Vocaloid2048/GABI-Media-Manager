@@ -3,7 +3,7 @@ const session = require('express-session')
 const fs = require('fs')
 const https = require('https')
 const path = require('path');
-const cors = require('cors')
+// const cors = require('cors')  // 移除 CORS 依賴，因為不再需要
 
 const app = express();
 const router = require('./routers/router');
@@ -13,8 +13,8 @@ require('dotenv').config();
 
 const PORT = process.env.PORT || 3000
 
-app.use(express.json({ limit: '50gb' }))
-app.use(express.urlencoded({ limit: '50gb', extended: true }));
+app.use(express.json({ limit: '120mb' }))
+app.use(express.urlencoded({ limit: '120mb', extended: true }));
 app.enable('trust proxy');
 app.use(
   session({
@@ -24,7 +24,8 @@ app.use(
   })
 )
 
-// CORS 設定：允許前端開發伺服器、生產環境域名以及繞過 Cloudflare 的自訂域名
+// CORS 設定：由於前端通過 Nginx 反向代理，請求為同源，故移除 CORS 以簡化配置
+/*
 const origins = [
   process.env.FRONTEND_ORIGIN,
   process.env.VITE_DEV_SERVER_ORIGIN,
@@ -38,6 +39,7 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'username', 'password_hash', 'Authorization', 'user_id', 'ds']
 }
 app.use(cors(corsOptions))
+*/
 
 // Check is Database Connected
 initDb();

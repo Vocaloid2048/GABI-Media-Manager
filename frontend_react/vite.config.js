@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       host: true,
-      port: parseInt(env.PORT) || 5173,
+      port: parseInt(env.PORT) || 2096,
       https: httpsConfig,
       proxy: {
         '/api': {

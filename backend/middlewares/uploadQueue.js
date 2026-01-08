@@ -2,7 +2,7 @@ const activeUploads = new Map(); // userId -> Set<req>
 const requestQueue = []; // Array of { userId, run }
 
 const MAX_CONCURRENT_UPLOADS = 1;
-const IDLE_TIMEOUT_MS = 10000;
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 Minutes
 
 /**
  * Checks for available slots and processes the next request in queue for the user.
