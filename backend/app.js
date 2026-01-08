@@ -44,8 +44,9 @@ app.use(cors(corsOptions))
 // Check is Database Connected
 initDb();
 
-// Start Database Backup Schedule
-initBackupSchedule();
+if (process.env.NODE_ISLOCAL !== 'true') {
+  initBackupSchedule();
+}
 
 // HTTPS configuration
 const useHttps = process.env.BACKEND_USE_HTTPS === 'true';

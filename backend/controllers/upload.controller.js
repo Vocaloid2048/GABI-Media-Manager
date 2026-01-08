@@ -288,8 +288,24 @@ async function handleChunkedUpload(req, res, file, videoInfo) {
     }
 
     console.log(`All ${total} chunks received for ${fileId}, merging...`);
-    const finalFilename = fileName || `upload_${fileId}${path.extname(file.originalname)}`;
-    const finalPath = path.join(tempDir, finalFilename);
+    // Determine token if possible to name the merged file
+    const token16 = req.body.token16 || fileId; // fileId is now likely the token16
+
+    const finalFilename = fileName && fileName !== 'undefined' 
+        ? fileName 
+        : `${token16}-${Date.now()}${path.extname(file.originalname)}`;
+    
+    // If we are strictly following "<16chars>-unixTime.zip" for zips:
+    // and if the original file was indeed a zip, we can force it.
+    // The user requirement said: "zip命名為<16位>-unixTime.zip"
+    // We try to respect that if we detect it's likely a zip or if token16 is present.
+    
+    let targetFilename = finalFilename;
+    if (token16 && token16.length === 16 && path.extname(file.originalname).toLowerCase().includes('.zip')) {
+        targetFilename = `${token16}-${Date.now()}.zip`;
+    }
+
+    const finalPath = path.join(tempDir, targetFilename);
     const writeStream = fs.createWriteStream(finalPath);
 
     try {
@@ -341,7 +357,7 @@ async function handleChunkedUpload(req, res, file, videoInfo) {
         returnSuccess(res, { status: 'completed', path: finalPath });
 
         try {
-            if (path.extname(finalFilename).toLowerCase() === '.zip') {
+            if (path.extname(targetFilename).toLowerCase() === '.zip') {
                 await exports.uploadVideoZipImpl(finalPath, videoInfo);
             } else {
                 await exports.uploadVideoFileImpl(finalPath, videoInfo);
@@ -354,3 +370,36 @@ async function handleChunkedUpload(req, res, file, videoInfo) {
          return raiseError(res, INVALID_REQUEST);
     }
 }
+
+exports.cancelUpload = async (req, res) => {
+    const { fileId, token16 } = req.body;
+    const targetToken = token16 || fileId;
+
+    if (!targetToken) {
+        return raiseError(res, INVALID_REQUEST);
+    }
+
+    const tempDir = process.env.TEMP_DIR || '/tmp';
+    const chunksDir = path.join(tempDir, 'chunks', targetToken);
+
+    console.log(`[Upload] User cancelled upload ${targetToken}, cleaning up...`);
+
+    try {
+        // 1. Remove chunks directory
+        await fs.promises.rm(chunksDir, { recursive: true, force: true });
+        
+        // 2. Remove any files in Temp dir that contain the token in their name
+        const tempFiles = await fs.promises.readdir(tempDir);
+        for (const file of tempFiles) {
+            if (file.includes(targetToken)) {
+                await fs.promises.unlink(path.join(tempDir, file)).catch(e => console.warn("Failed to delete temp file:", e));
+                console.log(`[Upload] Deleted cancelled temp file: ${file}`);
+            }
+        }
+        
+        returnSuccess(res, { message: 'Upload cancelled and cleaned' });
+    } catch (err) {
+        console.error(`[Upload] Failed to clean up cancelled upload ${targetToken}:`, err);
+        returnSuccess(res, { message: 'Cleanup attempted' });
+    }
+};

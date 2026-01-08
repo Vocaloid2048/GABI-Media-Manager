@@ -32,6 +32,7 @@ const UploadPopup = ({ onClose }) => {
   // Use useRef for XHR to ensure immediate access without re-renders
   const xhrRef = useRef(null);
   const mountedRef = useRef(true);
+  const activeFileIdRef = useRef(null);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -63,6 +64,21 @@ const UploadPopup = ({ onClose }) => {
       console.log('User Cancelled: Aborting upload');
       xhrRef.current.abort();
       xhrRef.current = null;
+
+      // Trigger backend cleanup
+      if (activeFileIdRef.current) {
+        const userId = localStorage.getItem('user_id');
+        const ds = generateDs(userId);
+        const fid = activeFileIdRef.current;
+        const cancelUrl = (API_URL || '/api/upload') + '/cancel';
+
+        fetch(`${cancelUrl}?user_id=${userId}&ds=${encodeURIComponent(ds)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileId: fid, token16: fid }),
+          keepalive: true // Ensure request survives page unload if needed
+        }).catch(err => console.error('Cleanup request failed', err));
+      }
     }
     onClose();
   };
@@ -125,7 +141,13 @@ const UploadPopup = ({ onClose }) => {
 
     const CHUNK_SIZE = 85 * 1024 * 1024; // 85MB
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-    const fileId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Generate 16-char random token for fileId
+    const array = new Uint8Array(8);
+    window.crypto.getRandomValues(array);
+    const fileId = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+    
+    activeFileIdRef.current = fileId;
     const uploadUrl = API_URL || '/api/upload';
     
     // Cancel any existing request
@@ -142,6 +164,7 @@ const UploadPopup = ({ onClose }) => {
             const chunk = file.slice(start, end);
             
             const formData = new FormData();
+            formData.append('token16', fileId);
             formData.append('file', chunk, file.name);
             formData.append('chunkIndex', i);
             formData.append('totalChunks', totalChunks);
@@ -160,7 +183,8 @@ const UploadPopup = ({ onClose }) => {
                          const xhr = new XMLHttpRequest();
                          xhrRef.current = xhr;
                          
-                         xhr.open('POST', `${uploadUrl}?user_id=${userId}&ds=${encodeURIComponent(ds)}`);
+                         // Pass token16 (fileId) in query params for Multer to access immediately
+                         xhr.open('POST', `${uploadUrl}?user_id=${userId}&ds=${encodeURIComponent(ds)}&token16=${fileId}`);
                          
                          xhr.upload.onprogress = (event) => {
                             if (event.lengthComputable && mountedRef.current) {
@@ -245,6 +269,7 @@ const UploadPopup = ({ onClose }) => {
             setUploading(false);
         }
         xhrRef.current = null;
+        activeFileIdRef.current = null;
     }
   };
 
