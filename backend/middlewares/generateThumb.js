@@ -118,7 +118,7 @@ exports.generateThumbnailGroup = async (groupId, videoGroupThumbName) => {
     const sourceInputs = videos.map(v => {
         const ext = v.video_format ? `.${v.video_format.toLowerCase()}` : '';
         return path.join(videoDir, `${v.video_filename}${ext}`);
-    }).filter(p => fs.existsSync(p));
+    }).filter(p => fs.existsSync(p)).slice(0, 8);
 
     const firstWebp = videos
         .map(v => path.join(thumbDir, `${(v.video_thumb_name || v.video_filename)}.webp`))
