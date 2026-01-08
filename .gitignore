@@ -8,5 +8,15 @@
 backend/.env
 *.env
 /backend/Test
+
+# Local configuration files (user-specific)
+docker-compose.yml
+frontend_react/nginx.conf
+backend/cert/
+frontend_react/cert/
+
+# Temporary files
+Temp/
+*.tmp
 /backend/Backups
 /frontend_react/src/config.js

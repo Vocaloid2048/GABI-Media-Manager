@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   backend:
     build:
@@ -14,12 +16,12 @@ services:
       - THUMB_DIR=/app/GABI/Thumbs
       - TEMP_DIR=/app/Temp
       - AVATAR_DIR=/app/GABI/Avatars
-      - DS_SALT=thisIsASecretSaltValue
+      - DS_SALT=dummy_salt
       - DB_BACKUP_MAIN=/app/backups/main
       - DB_BACKUP_SUB=/app/backups/sub
       - VALID_VIDEO_EXTENSIONS=.mp4,.mkv,.avi,.mov,.wmv,.flv,.webm
-      - INVITATION_CODE=youtrInvitationCodeHere
-      - FRONTEND_ORIGIN=https://yourdomain.com,https://upload.yourdomain.com,http://localhost:8443
+      - INVITATION_CODE=dummy_code
+      - FRONTEND_ORIGIN=https://dummy.domain.com
       - BACKEND_USE_HTTPS=true
     volumes:
       - ./backend/db:/app/db
@@ -27,8 +29,8 @@ services:
       - ./backend/Temp:/app/Temp
       - ./backend/Backups:/app/backups/main
       - ./backend/cert:/app/cert:ro
-      - /path/to/your/ext/folder:/app/GABI
-      - /path/to/your/ext/backup/folder:/app/backups/sub
+      - /dummy/path:/app/GABI
+      - /dummy/path:/app/backups/sub
     restart: always
 
   frontend:
@@ -37,14 +39,13 @@ services:
       dockerfile: Dockerfile
     container_name: gabi-frontend
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "80:80"
+      - "443:443"
     depends_on:
       - backend
     environment:
-      - PORT=8080
-      - VITE_API_BASE_URL=https://upload.yourdomain.com/api
+      - PORT=80
+      - VITE_API_BASE_URL=https://dummy.domain.com/api
     volumes:
       - ./frontend_react/cert:/etc/nginx/certs:ro
-      # VITE_UPLOAD_API_URL please navigate to frontend_react/src/config.js to set this value
     restart: always

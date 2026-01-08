@@ -6,6 +6,37 @@
 
 [![wakatime](https://wakatime.com/badge/user/ca727ba5-9112-4612-b454-d5e407277a51/project/e28f1bcd-fef9-4905-b8d0-761aee8acb80.svg)](https://wakatime.com/badge/user/ca727ba5-9112-4612-b454-d5e407277a51/project/e28f1bcd-fef9-4905-b8d0-761aee8acb80)
 
+## Setup Instructions
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd GABI-Media-Manager-Test
+   ```
+
+2. Configure your local settings:
+   - Copy the example configuration files:
+     ```bash
+     cp docker-compose.yml.example docker-compose.yml
+     cp frontend_react/nginx.conf.example frontend_react/nginx.conf
+     ```
+   - Edit `docker-compose.yml` and `frontend_react/nginx.conf` with your specific settings (ports, domains, paths, etc.).
+
+3. Install dependencies:
+   - Backend: `cd backend && npm install`
+   - Frontend: `cd frontend_react && npm install`
+
+4. Start the services:
+   ```bash
+   docker-compose up --build
+   ```
+
+## Important Notes
+
+- The `docker-compose.yml` and `frontend_react/nginx.conf` files are ignored by Git to prevent overwriting your local configurations.
+- Use the `.example` files as templates for your setup.
+- Ensure SSL certificates are placed in the appropriate `cert/` directories.
+
 ## 資料庫結構
 
 ### video_data (影片資料表)
