@@ -9,6 +9,7 @@ const app = express();
 const router = require('./routers/router');
 const { VideoDb, initDb } = require('./models');
 const { initBackupSchedule } = require('./utils/backup');
+const { initCleanupSchedule } = require('./utils/cleanup');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3000
@@ -44,9 +45,12 @@ app.use(cors(corsOptions))
 // Check is Database Connected
 initDb();
 
+// Initialize backup schedule if not in local （dev) mode
 if (process.env.NODE_ISLOCAL !== 'true') {
   initBackupSchedule();
 }
+
+initCleanupSchedule();
 
 // HTTPS configuration
 const useHttps = process.env.BACKEND_USE_HTTPS === 'true';
