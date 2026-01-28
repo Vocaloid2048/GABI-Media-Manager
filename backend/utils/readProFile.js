@@ -153,17 +153,24 @@ async function extractSongData(proFilePath) {
 
     const content = [];
 
-    // 建立群組映射（如果有的話）
-    const groupMap = {};
-    if (presentation.groups) {
-      presentation.groups.forEach(group => {
-        groupMap[group.uuid] = group.name;
+    // 建立 cue UUID 到群組名稱的映射
+    const cueToGroupMap = {};
+    if (presentation.cueGroups) {
+      presentation.cueGroups.forEach(group => {
+        const groupName = group.group.name;
+        if (group.cueIdentifiers) {
+          group.cueIdentifiers.forEach(cueId => {
+            cueToGroupMap[cueId.string] = groupName;
+          });
+        }
       });
     }
 
     // 遍歷 cues
     if (presentation.cues && presentation.cues.length > 0) {
       presentation.cues.forEach((cue, cueIndex) => {
+        // 取得群組名稱作為 tag
+        const tag = cueToGroupMap[cue.uuid.string] || 'verse';
         if (cue.actions && cue.actions.length > 0) {
           cue.actions.forEach((action, actionIndex) => {
             if (action.slide && action.slide.presentation && action.slide.presentation.baseSlide) {
@@ -172,16 +179,25 @@ async function extractSongData(proFilePath) {
                 slide.elements.forEach((elementWrapper, elementIndex) => {
                   if (elementWrapper.element && elementWrapper.element.text && elementWrapper.element.text.rtfData) {
                     const rtfData = elementWrapper.element.text.rtfData;
-                    const textContent = rtfToText(rtfData);
+                    const decodedText = rtfToText(rtfData);
+                    // 只保留包含實際文字內容的元素，過濾掉只有字體信息的空元素
+                    const cleanText = decodedText.split('\nd')
+                      .filter(line => {
+                        const trimmed = line.trim();
+                        // 移除只包含字體信息和分號的行（至少3個分號）
+                        if (/^[A-Za-z\s]*;{3,}/.test(trimmed)) {
+                          return false; // 移除字體信息行
+                        }
+                        return true; // 保留其他行
+                      })
+                      .join('\n')
+                      .trim();
+                    // 移除 RTF 殘留字符和字體信息前綴，但保留英文內容
+                    const textContent = cleanText.replace(/;+/g, '').trim();
 
                     if (textContent.trim()) {
-                      // 使用元素名稱或預設標籤
-                      let tag = elementWrapper.element.name || 'verse';
-
-                      // 如果有群組信息，嘗試使用群組名稱
-                      if (cue.groupUuid && groupMap[cue.groupUuid]) {
-                        tag = groupMap[cue.groupUuid];
-                      }
+                      // 取得群組名稱作為 tag
+                      const tag = cueToGroupMap[cue.uuid.string] || 'verse';
 
                       content.push({
                         page: content.length + 1,
