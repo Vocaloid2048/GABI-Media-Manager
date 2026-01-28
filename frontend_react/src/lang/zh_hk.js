@@ -123,6 +123,10 @@ export default {
   "filter.apply": "套用",
   "filter.reset": "重置",
 
+  // Song Tags
+  "song.filter.worship": "敬拜讚美",
+  "song.filter.other": "其他",
+
   // Upload
   "upload.title": "上傳新影片",
   "upload.field_title": "標題",

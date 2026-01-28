@@ -10,11 +10,13 @@ import FilterPopup from '../components/FilterPopup';
 import { COLOR_MAP } from '../components/ColorMapTable';
 import SearchPopup from '../components/SearchPopup';
 import { AnimatePresence } from 'framer-motion';
+import SongUploadPopup from '../components/SongUploadPopup';
 
 const HomePage = () => {
   const [currentPage, setCurrentPage] = useState('video'); // 'video', 'song', 'user'
   const [showLogin, setShowLogin] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [showSongUpload, setShowSongUpload] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
 
@@ -224,7 +226,19 @@ const HomePage = () => {
 
   return (
     <div className="bg-gray-900 h-[100dvh] flex flex-col text-white font-sans overflow-hidden">
-      <TitleHeader isHomePage={true} onUploadClick={() => setShowUpload(true)} />
+      <TitleHeader 
+        isHomePage={true} 
+        isRightButtonVisible={currentPage === 'song' || currentPage === 'video'} 
+        onUploadClick={() => {
+          switch (currentPage) {
+          case 'song':
+            setShowSongUpload(true);
+            break;
+          case 'video':
+            setShowUpload(true);
+          break;
+        }
+      }} />
       
       <div className="h-16 shrink-0" />
 
@@ -251,6 +265,7 @@ const HomePage = () => {
       <BottomNav currentPage={currentPage} onPageChange={setCurrentPage} />
 
       <AnimatePresence>
+        {showSongUpload && <SongUploadPopup onClose={() => setShowSongUpload(false)} />}
         {showUpload && <UploadPopup onClose={() => setShowUpload(false)} />}
         {showFilter && <FilterPopup tagList={fullTagList} selectedTags={selectedTags} onClose={() => setShowFilter(false)} onApply={handleApplyFilter} />}
         {showLogin && <LoginPopup onClose={() => setShowLogin(false)} />}

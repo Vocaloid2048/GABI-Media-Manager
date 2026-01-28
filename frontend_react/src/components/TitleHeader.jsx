@@ -3,7 +3,7 @@ import { FaArrowCircleLeft, FaBackward, FaPlayCircle, FaGlobe, FaArrowLeft, FaCl
 import { useLanguage } from '../lang/LanguageContext';
 import { ENABLE_USER_UPLOAD } from '../config';
 
-const TitleHeader = ({isHomePage = false, onUploadClick}) => {
+const TitleHeader = ({isHomePage = false, isRightButtonVisible = isHomePage, onUploadClick}) => {
   const { locale, toggleLanguage, language } = useLanguage();
   
   return (
@@ -26,7 +26,7 @@ const TitleHeader = ({isHomePage = false, onUploadClick}) => {
       <div className="w-10 shrink-0 flex justify-end">
         <button 
           onClick={isHomePage ? onUploadClick : undefined} 
-          className={`transition-colors ${isHomePage ? 'text-gray-400 hover:text-white' : 'invisible'}`}
+          className={`transition-colors ${isRightButtonVisible ? 'text-gray-400 hover:text-white' : 'invisible'}`}
         >
             <FaCloudUploadAlt size={24} />
         </button>

@@ -123,6 +123,10 @@ export default {
   "filter.apply": "Apply Filter",
   "filter.reset": "Reset",
 
+  // Song Tags
+  "song.filter.worship": "Worship & Praise",
+  "song.filter.other": "Other",
+
   // Upload
   "upload.title": "Upload New Video",
   "upload.field_title": "Title",
