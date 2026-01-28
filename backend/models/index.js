@@ -25,6 +25,8 @@ VideoDb.videoData = require("./videoData.model")(VideoDb.sequelize,Sequelize)
 VideoDb.userData = require("./userData.model")(VideoDb.sequelize,Sequelize)
 VideoDb.videoGroupData = require("./videoGroupData.model")(VideoDb.sequelize,Sequelize)
 VideoDb.historyData = require("./historyData.model")(VideoDb.sequelize, Sequelize)
+VideoDb.songData = require("./songData.model")(VideoDb.sequelize, Sequelize)
+VideoDb.songTagData = require("./songTagData.model")(VideoDb.sequelize, Sequelize)
 
 // Define Associations
 // HistoryData belongs to User
