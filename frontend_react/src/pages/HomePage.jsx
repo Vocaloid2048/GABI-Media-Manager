@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import TitleHeader from '../components/TitleHeader';
-import TagBar from '../components/TagBar';
-import VideoGrid from '../components/VideoGrid';
 import BottomNav from '../components/BottomNav';
 import UserPage from './UserPage';
+import VideoPage from './VideoPage';
+import SongPage from './SongPage';
 import LoginPopup from '../components/LoginPopup';
 import UploadPopup from '../components/UploadPopup';
 import FilterPopup from '../components/FilterPopup';
 import { COLOR_MAP } from '../components/ColorMapTable';
 import SearchPopup from '../components/SearchPopup';
 import { AnimatePresence } from 'framer-motion';
-import TitleFooter from '../components/TitleFooter';
 
 const HomePage = () => {
+  const [currentPage, setCurrentPage] = useState('video'); // 'video', 'song', 'user'
   const [showLogin, setShowLogin] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
@@ -33,7 +33,6 @@ const HomePage = () => {
   const scrollContainerRef = React.useRef(null);
   const lastScrollTopRef = React.useRef(0);
   const [isTagBarVisible, setIsTagBarVisible] = useState(true);
-  const [isUserPage, setIsUserPage] = useState(false);
 
   // Website initial data fetch
   React.useEffect(() => {
@@ -211,7 +210,7 @@ const HomePage = () => {
   }
 
   const handleSearch = (word) => {
-    setIsUserPage(false);
+    setCurrentPage('video');
     setSearchWord(word);
     setOffset(0);
     setHasMore(true);
@@ -229,44 +228,27 @@ const HomePage = () => {
       
       <div className="h-16 shrink-0" />
 
-      {!isUserPage && (
-        <TagBar 
-            tags={tagsList} 
-            selectedTags={selectedTags} 
-            onToggleTag={toggleTag} 
-            onRefreshTags={handleRefreshTags} 
-            isVisible={isTagBarVisible}
-        />
-      )}
-
-      <div
-        ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto no-scrollbar relative"
-      >
-        {isUserPage ? (
-            <UserPage />
-        ) : (
-            <VideoGrid groups={videoGroupData} />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {currentPage === 'video' && (
+          <VideoPage
+            tagsList={tagsList}
+            selectedTags={selectedTags}
+            onToggleTag={toggleTag}
+            onRefreshTags={handleRefreshTags}
+            isTagBarVisible={isTagBarVisible}
+            videoGroupData={videoGroupData}
+            onSearch={handleSearch}
+            filterCount={selectedTags.length}
+            hasActiveSearch={!!searchWord}
+            onFilterClick={() => setShowFilter(true)}
+            scrollContainerRef={scrollContainerRef}
+          />
         )}
+        {currentPage === 'song' && <SongPage />}
+        {currentPage === 'user' && <UserPage />}
       </div>
 
-      <BottomNav
-        className="w-full z-50"
-        onFilterClick={() => {
-            setIsUserPage(false); 
-            setShowFilter(true);
-        }}
-        onSearchClick={() => {
-            setIsUserPage(false);
-            setShowSearch(true);
-        }}
-        onUserClick={() => setIsUserPage(!isUserPage)}
-        showSearch={showSearch}
-        onCloseSearch={() => setShowSearch(false)}
-        onSearch={handleSearch}
-        filterCount={selectedTags.length}
-        hasActiveSearch={!!searchWord}
-      />
+      <BottomNav currentPage={currentPage} onPageChange={setCurrentPage} />
 
       <AnimatePresence>
         {showUpload && <UploadPopup onClose={() => setShowUpload(false)} />}

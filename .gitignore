@@ -20,3 +20,4 @@ Temp/
 *.tmp
 /backend/Backups
 /frontend_react/src/config.js
+*.proto
