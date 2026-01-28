@@ -144,6 +144,29 @@ async function generateColorTagsList(){
     }
 }
 
+// --- ProPresenter .pro 檔案解析測試 ---
+async function testReadProFile() {
+    const { extractSongDataFromJSON } = require('./utils/readProFile');
+    const fs = require('fs');
+    const path = require('path');
+
+    // 測試檔案路徑（使用 doc_output.json）
+    const jsonFilePath = path.join(__dirname, 'doc_output.json');
+    if (!fs.existsSync(jsonFilePath)) {
+        console.error('找不到測試檔案:', jsonFilePath);
+        return;
+    }
+    const jsonContent = fs.readFileSync(jsonFilePath, 'utf8');
+    const jsonData = JSON.parse(jsonContent);
+
+    try {
+        const songData = extractSongDataFromJSON(jsonData);
+        console.log('解析結果:', JSON.stringify(songData, null, 2));
+    } catch (err) {
+        console.error('解析失敗:', err);
+    }
+}
+
 (async () => {
-await generateColorTagsList();
+await testReadProFile();
 })();

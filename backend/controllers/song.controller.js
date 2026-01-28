@@ -69,43 +69,47 @@ exports.getAllSongs = async (req, res) => {
 
 exports.uploadSong = async (req, res) => {
   try {
-    if (!req.file) {
+    const file = req.body.file || req.file;
+
+    if (file === undefined) { return raiseError(res, INVALID_REQUEST); }
+
+    // Check is video info params existed
+    const { song_copyright, song_tags, song_language } = req.body;
+    if (!song_copyright || !song_tags || !song_language) {
       return raiseError(res, MISSING_REQUIRE_KEYS);
     }
 
-    const { composer, lyricist, arranger, album, publisher, year, song_tags, song_language } = req.body;
+    // 讀取檔案內容
+    // 將 base64 字串轉回 XML 內容
+    let xmlContent;
+    if (typeof file === 'string') {
+      const buffer = Buffer.from(file, 'base64');
+      xmlContent = buffer.toString('utf-8');
+    } else {
+      xmlContent = file;
+    }
 
-    // Parse .pro file
-    const filePath = req.file.path;
-    const fileContent = fs.readFileSync(filePath, 'utf8');
+    // 將 XML 內容寫入暫存檔案
+    const tempDir = process.env.TEMP_DIR || path.join(__dirname, '../tmp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    const tempPath = path.join(tempDir, `upload_${Date.now()}.pro`);
+    fs.writeFileSync(tempPath, xmlContent, 'utf-8');
 
-    const parser = new xml2js.Parser();
-    const result = await parser.parseStringPromise(fileContent);
+    // 解析暫存檔案取得歌曲資料
+    const songData = extractSongData(tempPath);
 
-    // Extract song data from ProPresenter XML
-    const songData = extractSongData(result);
-
-    // Create song record
-    const songCopyright = {
-      composer: composer || null,
-      lyricist: lyricist || null,
-      arranger: arranger || null,
-      album: album || null,
-      publisher: publisher || null,
-      year: year ? parseInt(year) : null
-    };
-
+    // 這裡 songData 需包含所有欄位，或可根據需要自行擴充
     const song = await db.VideoDb.songData.create({
       song_name: songData.name,
       content: songData.content,
-      song_copyright: songCopyright,
-      song_tags: song_tags ? JSON.parse(song_tags) : [],
-      song_language: song_language ? JSON.parse(song_language) : []
+      song_copyright: JSON.stringify(song_copyright || "{}"),
+      song_tags: song_tags || "",
+      song_language: song_language || "",
     });
 
-    // Clean up uploaded file
-    fs.unlinkSync(filePath);
-
+    fs.unlinkSync(tempPath);
     returnSuccess(res, song);
   } catch (error) {
     console.error('Error uploading song:', error);
@@ -170,12 +174,12 @@ exports.downloadSongProFile = async (req, res) => {
 };
 
 exports.getSongTags = async (req, res) => {
-    const typeOption = req.query.type || null;
+  const typeOption = req.query.type || null;
 
-    // Fetch All Video Tags
-    const data = await db.VideoDb.songTagData.findAll(
-        typeOption ? { where: { tag_type: typeOption } } : {}
-    );
+  // Fetch All Video Tags
+  const data = await db.VideoDb.songTagData.findAll(
+    typeOption ? { where: { tag_type: typeOption } } : {}
+  );
 
-    returnSuccess(res, data);
+  returnSuccess(res, data);
 }
