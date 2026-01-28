@@ -24,7 +24,7 @@ const LyricPopup = ({ lyric, onClose, onDownloadLyrics, onMakeProBundle }) => {
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-white mb-2">標籤</h3>
             <div className="flex flex-wrap gap-2">
-              {lyric.tags.map((tag, index) => (
+              {(Array.isArray(lyric.tags) ? lyric.tags : []).map((tag, index) => (
                 <span
                   key={index}
                   className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm"
@@ -39,7 +39,7 @@ const LyricPopup = ({ lyric, onClose, onDownloadLyrics, onMakeProBundle }) => {
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-white mb-3">歌詞分頁</h3>
             <div className="space-y-3">
-              {lyric.slides.map((slide) => (
+              {(Array.isArray(lyric.slides) ? lyric.slides : []).map((slide) => (
                 <div
                   key={slide.page}
                   className="bg-gray-700 rounded-lg p-4"
@@ -105,7 +105,7 @@ const LyricPopup = ({ lyric, onClose, onDownloadLyrics, onMakeProBundle }) => {
               {lyric.song_language && lyric.song_language.length > 0 && (
                 <div className="flex">
                   <span className="text-gray-400 w-16">語言：</span>
-                  <span className="text-white">{lyric.song_language.map(lang => SongLanguageLabels[lang] || lang).join(', ')}</span>
+                  <span className="text-white">{(Array.isArray(lyric.song_language) ? lyric.song_language : [lyric.song_language]).filter(Boolean).map(lang => SongLanguageLabels[lang] || lang).join(', ')}</span>
                 </div>
               )}
             </div>

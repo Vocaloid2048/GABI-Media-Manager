@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FaCloudUploadAlt } from 'react-icons/fa';
-import { API_URL } from '../config';
+import { generateDs } from '../utils/auth';
 import { SongLanguageLabels, SongTagTypeEnum } from '../utils/songLang';
 import { useLanguage } from '../lang/LanguageContext';
 
 const SongUploadPopup = ({ onClose }) => {
   const { locale, language } = useLanguage();
   const [file, setFile] = useState(null);
+  const [songName, setSongName] = useState("");
   const [composer, setComposer] = useState('');
   const [lyricist, setLyricist] = useState('');
   const [arranger, setArranger] = useState('');
@@ -75,15 +76,27 @@ const SongUploadPopup = ({ onClose }) => {
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile && selectedFile.name.endsWith('.pro')) {
+    if (selectedFile) {
+      if (!selectedFile.name.endsWith('.pro')) {
+        alert('請選擇 .pro 檔案');
+        e.target.value = '';
+        return;
+      }
+      if (selectedFile.size > 1024 * 1024) {
+        alert('檔案大小不能超過 1MB');
+        e.target.value = '';
+        return;
+      }
       setFile(selectedFile);
-    } else {
-      alert('請選擇 .pro 檔案');
-      e.target.value = '';
     }
   };
 
   const handleUpload = async () => {
+
+    if (!songName.trim()) {
+      alert('請輸入詩歌名稱');
+      return;
+    }
     if (!file) {
       alert('請選擇檔案');
       return;
@@ -91,31 +104,41 @@ const SongUploadPopup = ({ onClose }) => {
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('proFile', file);
-      formData.append('composer', composer);
-      formData.append('lyricist', lyricist);
-      formData.append('arranger', arranger);
-      formData.append('album', album);
-      formData.append('publisher', publisher);
-      formData.append('year', year);
-      formData.append('song_tags', JSON.stringify(songTags));
-      formData.append('song_language', JSON.stringify(songLanguage));
+      // 讀取檔案內容為 base64
+      const fileContent = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
-      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('user_id');
+      const ds = generateDs(userId);
+
+
+      const payload = {
+        song_name: songName,
+        fileName: file.name,
+        file: fileContent,
+        song_copyright: {composer, lyricist, arranger, album, publisher, year},
+        song_tags: songTags.join(','),
+        song_language: songLanguage.join(',')
+      };
+
       const response = await fetch(`/api/song/upload`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json',
+          'user_id': userId,
+          'ds': ds
         },
-        body: formData
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json();
       if (data.retcode === 1) {
         alert('詩歌上載成功');
         onClose();
-        // 重新載入頁面或觸發父組件更新
         window.location.reload();
       } else {
         alert('上載失敗: ' + data.message);
@@ -185,28 +208,19 @@ const SongUploadPopup = ({ onClose }) => {
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-2 pr-2 mr-1">
+          {/* 新增詩歌名稱欄位 */}
           <div className="mb-4">
             <label className="block text-white text-sm font-medium mb-2">
-              選擇 .pro 檔案
+              詩歌名稱
             </label>
-            <div
-              className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${file ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 bg-gray-900/50 hover:bg-gray-900 hover:border-gray-500'}`}
-              onDragOver={e => e.preventDefault()}
-              onDrop={handleDrop}
-              onClick={() => document.getElementById('proFileInput').click()}
-            >
-              <FaCloudUploadAlt className={`text-4xl mb-3 ${file ? 'text-blue-400' : 'text-gray-500'}`} />
-              <p className="text-gray-300 text-sm text-center font-medium">
-                {file ? file.name : '拖放或點擊選擇 .pro 檔案'}
-              </p>
-              <input
-                type="file"
-                id="proFileInput"
-                className="hidden"
-                onChange={handleFileChange}
-                accept=".pro"
-              />
-            </div>
+            <input
+              type="text"
+              value={songName}
+              onChange={e => setSongName(e.target.value)}
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+              placeholder="請輸入詩歌名稱"
+              maxLength={100}
+            />
           </div>
 
           <div className="mb-4">
@@ -340,6 +354,30 @@ const SongUploadPopup = ({ onClose }) => {
                 </div>
               ))}
 
+            </div>
+          </div>
+          {/* 將選擇 .pro 檔案移到最底 */}
+          <div className="mb-4">
+            <label className="block text-white text-sm font-medium mb-2">
+              選擇 .pro 檔案 (最大 1MB)
+            </label>
+            <div
+              className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${file ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 bg-gray-900/50 hover:bg-gray-900 hover:border-gray-500'}`}
+              onDragOver={e => e.preventDefault()}
+              onDrop={handleDrop}
+              onClick={() => document.getElementById('proFileInput').click()}
+            >
+              <FaCloudUploadAlt className={`text-4xl mb-3 ${file ? 'text-blue-400' : 'text-gray-500'}`} />
+              <p className="text-gray-300 text-sm text-center font-medium">
+                {file ? file.name : '拖放或點擊選擇 .pro 檔案'}
+              </p>
+              <input
+                type="file"
+                id="proFileInput"
+                className="hidden"
+                onChange={handleFileChange}
+                accept=".pro"
+              />
             </div>
           </div>
         </div>
