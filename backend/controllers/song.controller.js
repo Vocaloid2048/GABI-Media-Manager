@@ -49,7 +49,7 @@ exports.getAllSongs = async (req, res) => {
     const queryOptions = {
       offset: offset,
       limit: limit,
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', 'DESC']],
     };
 
     if (whereConditions.length > 0) {
@@ -74,39 +74,40 @@ exports.uploadSong = async (req, res) => {
     if (file === undefined) { return raiseError(res, INVALID_REQUEST); }
 
     // Check is video info params existed
-    const { song_copyright, song_tags, song_language } = req.body;
-    if (!song_copyright || !song_tags || !song_language) {
+    const { song_name, song_copyright, song_tags, song_language } = req.body;
+    if (!song_name || !song_copyright || !song_tags || !song_language) {
       return raiseError(res, MISSING_REQUIRE_KEYS);
     }
 
+
     // 讀取檔案內容
-    // 將 base64 字串轉回 XML 內容
-    let xmlContent;
+    // 將 base64 字串轉回 buffer（二進位）
+    let fileBuffer;
     if (typeof file === 'string') {
-      const buffer = Buffer.from(file, 'base64');
-      xmlContent = buffer.toString('utf-8');
+      fileBuffer = Buffer.from(file, 'base64');
     } else {
-      xmlContent = file;
+      fileBuffer = Buffer.isBuffer(file) ? file : Buffer.from(file);
     }
 
-    // 將 XML 內容寫入暫存檔案
+    // 將 buffer 寫入暫存檔案
     const tempDir = process.env.TEMP_DIR || path.join(__dirname, '../tmp');
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
     const tempPath = path.join(tempDir, `upload_${Date.now()}.pro`);
-    fs.writeFileSync(tempPath, xmlContent, 'utf-8');
+    fs.writeFileSync(tempPath, fileBuffer);
 
     // 解析暫存檔案取得歌曲資料
-    const songData = extractSongData(tempPath);
+    const songData = await extractSongData(tempPath);
 
     // 這裡 songData 需包含所有欄位，或可根據需要自行擴充
     const song = await db.VideoDb.songData.create({
-      song_name: songData.name,
+      song_name: song_name,
       content: songData.content,
       song_copyright: JSON.stringify(song_copyright || "{}"),
       song_tags: song_tags || "",
       song_language: song_language || "",
+      uploader_id: req.get("user_id"),
     });
 
     fs.unlinkSync(tempPath);

@@ -10,7 +10,6 @@ const {
        * The `models/index` file will call this method automatically.
        */
       static associate(models) {
-        // define association here
       }
     }
     SongData.init({
@@ -40,6 +39,14 @@ const {
         type: DataTypes.JSON,
         allowNull: true,
         defaultValue: {}
+      },
+      uploader_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'user_data',
+          key: 'user_id'
+        }
       }
     }, {
       sequelize,
