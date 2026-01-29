@@ -147,7 +147,7 @@ const SongPage = () => {
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto no-scrollbar relative p-6"
       >
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[90rem] mx-auto">
           <SongGrid songs={filteredSongs} songTagList={tagsData} onSongClick={handleSongClick} />
         </div>
       </div>

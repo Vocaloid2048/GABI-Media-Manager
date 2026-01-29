@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaDownload, FaPen, FaShare } from 'react-icons/fa';
 import TitleHeader from '../components/TitleHeader';
 import TitleFooter from '../components/TitleFooter';
+import LyricItem from '../components/LyricItem';
 import { getSongTagListLocale, SongLanguageLabels, SongTagTypeEnum } from '../utils/songLang';
 import { generateDs } from '../utils/auth';
 import { useLanguage } from '../lang/LanguageContext';
@@ -63,6 +64,16 @@ const LyricPage = () => {
 
   const [songTagsData, setSongTagsData] = useState([]);
   const { language, locale } = useLanguage();
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -117,7 +128,7 @@ const LyricPage = () => {
       fetchTags();
       fetchSong();
     }
-  }, [id, songTagsData]);
+  }, [id, songTagsData, language, locale]);
 
   // 獲取Label的顯示名稱和顏色
   const getLabelDisplay = (label) => {
@@ -177,39 +188,42 @@ const LyricPage = () => {
       </div>
     );
   }
+  
+  const copyright = song.song_copyright || {};
 
-  const copyright = song.song_copyright;
-  return (
+  return(
     <div className="min-h-screen bg-gray-900 text-white">
       <TitleHeader />
 
       {/* Main Content */}
       <div className="pt-16 pb-8"> {/* Account for fixed header */}
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="max-w-[90rem] mx-auto px-6 py-8">
           {/* Header with title and actions */}
           <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-0">{song.song_name}</h1>
-            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
-              <button
-                onClick={handleMakeProBundle}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
-              >
-                <FaPen size={16} />
-                製作 .proBundle 檔案
-              </button>
-              <button
-                onClick={handleDownloadLyrics}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
-              >
-                <FaDownload size={16} />
-                下載 .pro 檔案 (僅歌詞)
-              </button>
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+              <h1 className="text-2xl md:text-3xl font-bold">{song.song_name}</h1>
+              <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+                <button
+                  onClick={handleMakeProBundle}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
+                >
+                  <FaPen size={16} />
+                  製作 .proBundle 檔案
+                </button>
+                <button
+                  onClick={handleDownloadLyrics}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
+                >
+                  <FaDownload size={16} />
+                  下載 .pro 檔案 (僅歌詞)
+                </button>
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             {/* Left Column - Song Info */}
-            <div className="xl:col-span-1 space-y-6">
+            <div className="xl:col-span-1 space-y-6"> 
               {/* Tags */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-2">標籤</h3>
@@ -230,7 +244,7 @@ const LyricPage = () => {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-2">版權資訊</h3>
                 <div className="bg-gray-800 rounded-lg p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     {copyright.composer && (
                       <div className="flex flex-col">
                         <span className="text-gray-400 text-sm mb-1">作曲</span>
@@ -274,34 +288,19 @@ const LyricPage = () => {
 
             {/* Right Column - Lyrics Grid */}
             <div className="xl:col-span-2">
-              <h3 className="text-lg font-semibold text-white mb-4">歌詞分頁</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-white">歌詞分頁</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {(Array.isArray(song.content) ? song.content : []).map((slide) => {
                   const tagInfo = getLabelDisplay(slide.tag);
-                  return (
-                    <div
-                      key={slide.page}
-                      className="bg-gray-800 rounded-lg overflow-hidden"
-                      style={{ border: `2px solid ${tagInfo.colorHex}` }}
-                    >
-                      {/* Page content */}
-                      <div className="p-4 min-h-[200px] flex flex-col">
-                        <div className="flex-1 flex items-center justify-center">
-                          <p className="text-white leading-relaxed whitespace-pre-line text-center">
-                            {slide.content}
-                          </p>
-                        </div>
-                      </div>
 
-                      {/* Bottom bar with page number and tag */}
-                      <div
-                        className="px-3 py-2 text-white text-sm font-medium flex justify-between items-center"
-                        style={{ backgroundColor: tagInfo.colorHex }}
-                      >
-                        <span>{slide.page}</span>
-                        <span>{tagInfo.labelName}</span>
-                      </div>
-                    </div>
+                  return (
+                    <LyricItem
+                      key={slide.page}
+                      slide={slide}
+                      tagInfo={tagInfo}
+                    />
                   );
                 })}
               </div>
@@ -312,7 +311,7 @@ const LyricPage = () => {
 
       <TitleFooter />
     </div>
-  );
+  )
 };
 
 export default LyricPage;

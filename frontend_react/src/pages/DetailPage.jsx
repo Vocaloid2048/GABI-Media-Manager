@@ -174,7 +174,7 @@ const DetailPage = () => {
     <div className="bg-gray-900 min-h-screen text-white pb-10 font-sans">
       <TitleHeader />
 
-      <div className="pt-24 px-4 max-w-7xl mx-auto">
+      <div className="pt-24 px-4 max-w-[90rem] mx-auto">
         {/* Top Section */}
         <div className="flex flex-col lg:flex-row gap-8 mb-12">
           {/* Thumbnail */}
