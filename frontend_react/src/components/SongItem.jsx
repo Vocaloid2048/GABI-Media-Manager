@@ -3,10 +3,11 @@ import { getSongTagListLocale, SongLanguageLabels } from '../utils/songLang';
 import { useLanguage } from '../lang/LanguageContext';
 
 const SongItem = ({ song, songTagList, onClick }) => {
-  const { locale } = useLanguage();
+  console.log("songTagList in SongItem:", songTagList);
+  const { locale, language } = useLanguage();
   const copyright = JSON.parse(song.song_copyright || '{}');
-  const chipList = [...getSongTagListLocale(song.song_tags, songTagList), ...getSongTagListLocale(song.song_language, songTagList)];
-
+  const chipList = [...getSongTagListLocale(song.song_tags, songTagList, language, locale), ...getSongTagListLocale(song.song_language, songTagList, language, locale)];
+  
   // Generate a simple text-based thumbnail
   const generateThumbnail = (songName) => {
     const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];

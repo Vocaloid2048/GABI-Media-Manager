@@ -16,11 +16,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.get('/', checkAuth, songController.getAllSongs);
+router.get('/', songController.getAllSongs);
+router.get('/tags', songController.getSongTags);
 router.post('/upload', checkAuth, upload.single('file'), songController.uploadSong);
 router.get('/download', checkAuth, songController.downloadSongProFile);
-
-// Song tag routes
-router.get('/tags', songController.getSongTags);
+router.get('/:id', songController.getSongById);
 
 module.exports = router;

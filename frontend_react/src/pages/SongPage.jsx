@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaDownload, FaArchive } from 'react-icons/fa';
-import LyricPopup from '../components/LyricPopup';
 import SongUploadPopup from '../components/SongUploadPopup';
 import TagBar from '../components/TagBar';
 import HoverNav from '../components/HoverNav';
@@ -9,6 +9,7 @@ import { generateDs } from '../utils/auth';
 import { SongLanguageLabels, SongTagTypeEnum } from '../utils/songLang';
 
 const SongPage = () => {
+  const navigate = useNavigate();
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSong, setSelectedSong] = useState(null);
@@ -28,12 +29,7 @@ const SongPage = () => {
     try {
       const userId = localStorage.getItem('user_id');
       const ds = generateDs(userId);
-      const response = await fetch(`/api/song`, {
-        headers: {
-          'user_id': userId,
-          'ds': ds
-        }
-      });
+      const response = await fetch(`/api/song`);
 
       const data = await response.json();
       if (data.retcode === 1) {
@@ -50,47 +46,21 @@ const SongPage = () => {
     try {
       const userId = localStorage.getItem('user_id');
       const ds = generateDs(userId);
-      const response = await fetch(`/api/song/tags`, {
-        headers: {
-          'user_id': userId,
-          'ds': ds
-        }
-      });
+      const response = await fetch(`/api/song/tags`);
       const data = await response.json();
       if (data.retcode === 1) {
         setTagsData(data.data);
       }
+      console.log("Fetched tags data:", data);
     } catch (error) {
       console.error('Error fetching tags:', error);
     }
   };
 
-  const getTagNames = (tagIds) => {
-    // tagIds is 1,2,3 string
-    if (!tagIds) return [];
-    return tagIds.split(',').map(id => {
-      const tag = tagsData.find(t => t.tag_id.toString() === id);
-      console.log(tag);
-      return tag ? tag.tag_zh_name : id;
-    });
-  };
 
   const handleSongClick = (song) => {
-    // Format song data for LyricPopup
-    const copyright = JSON.parse(song.song_copyright) || {};
-    const formattedSong = {
-      title: song.song_name,
-      slides: song.content || [],
-      composer: copyright.composer,
-      lyricist: copyright.lyricist,
-      arranger: copyright.arranger,
-      album: copyright.album,
-      publisher: copyright.publisher,
-      year: copyright.year,
-      song_tags: getTagNames(song.song_tags),
-      song_language: song.song_language
-    };
-    setSelectedSong(formattedSong);
+    // Navigate to lyric page
+    navigate(`/song/${song.song_id}`);
   };
 
   const handleDownloadLyrics = async (song) => {
@@ -188,16 +158,6 @@ const SongPage = () => {
         filterCount={selectedTags.length}
         hasActiveSearch={searchTerm.length > 0}
       />
-
-      {/* Lyric Popup */}
-      {selectedSong && (
-        <LyricPopup
-          lyric={selectedSong}
-          onClose={() => setSelectedSong(null)}
-          onDownloadLyrics={handleDownloadLyrics}
-          onMakeProBundle={handleMakeProBundle}
-        />
-      )}
 
       {/* Upload Popup */}
       {showUploadPopup && (

@@ -188,10 +188,34 @@ exports.downloadSongProFile = async (req, res) => {
 exports.getSongTags = async (req, res) => {
   const typeOption = req.query.type || null;
 
-  // Fetch All Video Tags
+  // Fetch All Song Tags
   const data = await db.VideoDb.songTagData.findAll(
     typeOption ? { where: { tag_type: typeOption } } : {}
   );
 
   returnSuccess(res, data);
-}
+};
+
+exports.getSongById = async (req, res) => {
+  try {
+    const songId = req.params.id;
+
+    if (!checkParamsExisted({ songId })) {
+      return raiseError(res, MISSING_REQUIRE_KEYS);
+    }
+
+    // 從資料庫獲取歌曲資料
+    const song = await db.VideoDb.songData.findOne({
+      where: { song_id: songId }
+    });
+
+    if (!song) {
+      return raiseError(res, INVALID_REQUEST);
+    }
+
+    returnSuccess(res, song);
+  } catch (error) {
+    console.error('Error fetching song:', error);
+    errorByAPI(res, error);
+  }
+};

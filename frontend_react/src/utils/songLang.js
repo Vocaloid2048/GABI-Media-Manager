@@ -13,13 +13,12 @@ const SongTagTypeEnum = {
   '其他類別': { color: "#5585bf", localeKey: 'song.filter.other' },
 };
 
-const getSongTagListLocale = (tagList, songTagList) => {
-  const { language } = useLanguage();
+const getSongTagListLocale = (tagList, songTagList, language,locale) => {
   if (tagList == null || tagList.length === 0) return [];
   return tagList.split(",").map(tagId => {
     const tagInfo = songTagList.find(t => t.tag_id.toString() === tagId);
     const langInfo = SongLanguageLabels[tagId];
-    return tagInfo ? { tag: language === 'zh' ? tagInfo.tag_zh_name : (tagInfo.tag_en_name || tagInfo.tag_zh_name), color: SongTagTypeEnum[tagInfo.tag_type]?.color || '#777777' } : langInfo ? { tag: langInfo.localeKey, color: langInfo.color } : { tag: tagId, color: '#777777' };
+    return tagInfo ? { tag: language === 'zh' ? tagInfo.tag_zh_name : tagInfo.tag_en_name, color: SongTagTypeEnum[tagInfo.tag_type]?.color || '#777777' } : langInfo ? { tag: locale(langInfo.localeKey), color: langInfo.color } : { tag: tagId, color: '#777777' };
   });
 }
 
