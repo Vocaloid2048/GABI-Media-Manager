@@ -94,12 +94,10 @@ async function loadTheme(themePath) {
 }
 
 // 將純文本轉換為簡單的 RTF 格式，使用主題 RTF 作為模板
-function textToRTF(text, fontName = "MicrosoftJhengHeiUI", fontSize = 72, bold = false) {
-  // 從主題獲取 RTF 模板
-  const theme = JSON.parse(fs.readFileSync(path.join(__dirname, "default_theme_export.json"), 'utf8'));
-  const titleSlide = theme.data.slides.find(s => s.name === "詩歌名字");
-  const titleElement = titleSlide.baseSlide.elements.find(e => e.info === 2);
-  const templateRtf = Buffer.from(titleElement.element.text.rtfData, 'base64').toString('utf8');
+function textToRTF(text, baseSlide, fontName = "MicrosoftJhengHeiUI", fontSize = 72, bold = false) {
+  const textElement = baseSlide.elements.find(e => e.info === 2);
+  if (!textElement) throw new Error("No text element found in baseSlide");
+  const templateRtf = Buffer.from(textElement.element.text.rtfData, 'base64').toString('utf8');
 
   // 替換文字部分
   // 找到文字部分：從 \cb3 之後到 }
@@ -144,7 +142,8 @@ function cloneBaseSlide(baseSlide) {
       ...e,
       element: {
         ...e.element,
-        uuid: { string: elementUuidMap.get(e.element.uuid.string) }
+        uuid: { string: elementUuidMap.get(e.element.uuid.string) },
+        text: e.element.text ? { ...e.element.text } : undefined
       }
     })),
     elementBuildOrder: baseSlide.elementBuildOrder ? baseSlide.elementBuildOrder.map(uuid => ({
@@ -212,58 +211,33 @@ async function generateProFile(songData, themePath = path.join(__dirname, "defau
     };
 
     // 生成 cues
-    // 第一個 cue 是標題頁
-    const titleCue = {
-      uuid: {
-        string: generateUUID()
-      },
-      name: "Title",
-      isEnabled: true,
-      completionTargetUuid: {
-        string: "00000000-0000-0000-0000-000000000000"
-      },
-      completionActionUuid: {
-        string: "00000000-0000-0000-0000-000000000000"
-      },
-      triggerTime: {},
-      actions: [
-        {
-          uuid: {
-            string: generateUUID()
-          },
-          name: "Presentation Slide",
-          label: {
-            text: "Title"
-          },
-          isEnabled: true,
-          type: 11,
-          slide: {
-            presentation: {
-              baseSlide: cloneBaseSlide(titleSlide.baseSlide)
-            }
-          }
-        }
-      ]
-    };
-
-    // 更新標題頁的文字內容
-    const titleElement = titleCue.actions[0].slide.presentation.baseSlide.elements.find(e => e.info === 2);
-    if (titleElement) {
-      titleElement.element.text.rtfData = textToRTF(songData.song_name, "MicrosoftJhengHeiUIBold", 130, true);
-    }
-
-    presentation.cues.push(titleCue);
-
-    // 添加標題到分組
     const cuesByGroup = {};
-    cuesByGroup['TITLE'] = [titleCue.uuid.string];
 
-    // 生成歌詞頁 cues（每個 content 項目對應一個 cue）
     if (songData.content && Array.isArray(songData.content)) {
       songData.content.forEach((slide, index) => {
-        const tagKey = mapTagToKey(slide.tag) || 'VERSE';
-        const groupLabel = GROUP_LABEL_LIST[tagKey] || GROUP_LABEL_LIST['VERSE'];
-        const cueName = groupLabel.zh_hk || slide.tag || `Verse ${index + 1}`;
+        let tagKey, cueName, baseSlideToUse, textContent, fontName, fontSize, bold;
+
+        if (index === 0) {
+          // 第一個是標題頁
+          tagKey = mapTagToKey('TAG');
+          const groupLabel = GROUP_LABEL_LIST[tagKey] || GROUP_LABEL_LIST['TAG'];
+          cueName = groupLabel.zh_hk || 'TAG';
+          baseSlideToUse = titleSlide.baseSlide;
+          textContent = songData.song_name;
+          fontName = "MicrosoftJhengHeiUIBold";
+          fontSize = 130;
+          bold = true;
+        } else {
+          // 其他是歌詞頁
+          tagKey = mapTagToKey(slide.tag) || 'VERSE';
+          const groupLabel = GROUP_LABEL_LIST[tagKey] || GROUP_LABEL_LIST['VERSE'];
+          cueName = groupLabel.zh_hk || slide.tag || `Verse ${index + 1}`;
+          baseSlideToUse = lyricsSlide.baseSlide;
+          textContent = slide.content || "";
+          fontName = "ArialMT";
+          fontSize = 72;
+          bold = false;
+        }
 
         const cue = {
           uuid: {
@@ -277,9 +251,7 @@ async function generateProFile(songData, themePath = path.join(__dirname, "defau
           completionActionUuid: {
             string: "00000000-0000-0000-0000-000000000000"
           },
-          triggerTime: {
-            time: 0
-          },
+          triggerTime: index === 0 ? {} : { time: 0 },
           actions: [
             {
               uuid: {
@@ -293,17 +265,17 @@ async function generateProFile(songData, themePath = path.join(__dirname, "defau
               type: 11,
               slide: {
                 presentation: {
-                  baseSlide: cloneBaseSlide(lyricsSlide.baseSlide)
+                  baseSlide: cloneBaseSlide(baseSlideToUse)
                 }
               }
             }
           ]
         };
 
-        // 更新歌詞頁的文字內容
-        const lyricsElement = cue.actions[0].slide.presentation.baseSlide.elements.find(e => e.info === 2);
-        if (lyricsElement) {
-          lyricsElement.element.text.rtfData = textToRTF(slide.content || "", "ArialMT", 72, false);
+        // 更新文字內容
+        const textElement = cue.actions[0].slide.presentation.baseSlide.elements.find(e => e.info === 2);
+        if (textElement) {
+          textElement.element.text.rtfData = textToRTF(textContent, baseSlideToUse, fontName, fontSize, bold);
         }
 
         presentation.cues.push(cue);
@@ -314,6 +286,56 @@ async function generateProFile(songData, themePath = path.join(__dirname, "defau
         }
         cuesByGroup[tagKey].push(cue.uuid.string);
       });
+
+      // 添加空白頁
+      const blankCue = {
+        uuid: {
+          string: generateUUID()
+        },
+        name: "空白",
+        isEnabled: true,
+        completionTargetUuid: {
+          string: "00000000-0000-0000-0000-000000000000"
+        },
+        completionActionUuid: {
+          string: "00000000-0000-0000-0000-000000000000"
+        },
+        triggerTime: {
+          time: 0
+        },
+        actions: [
+          {
+            uuid: {
+              string: generateUUID()
+            },
+            name: "Presentation Slide",
+            label: {
+              text: "空白"
+            },
+            isEnabled: true,
+            type: 11,
+            slide: {
+              presentation: {
+                baseSlide: cloneBaseSlide(lyricsSlide.baseSlide)
+              }
+            }
+          }
+        ]
+      };
+
+      // 空白頁沒有文字內容
+      const blankTextElement = blankCue.actions[0].slide.presentation.baseSlide.elements.find(e => e.info === 2);
+      if (blankTextElement) {
+        blankTextElement.element.text.rtfData = textToRTF("", lyricsSlide.baseSlide, "ArialMT", 72, false);
+      }
+
+      presentation.cues.push(blankCue);
+
+      // 添加到BLANK分組
+      if (!cuesByGroup['BLANK']) {
+        cuesByGroup['BLANK'] = [];
+      }
+      cuesByGroup['BLANK'].push(blankCue.uuid.string);
     }
 
     // 不使用 arrangements，直接讓所有 cues 啟用
@@ -345,49 +367,7 @@ async function generateProFile(songData, themePath = path.join(__dirname, "defau
       presentation.cueGroups.push(cueGroup);
     }
 
-    // 如果沒有內容，創建一個默認的標題 slide
-    if (!presentation.cues.length) {
-      const titleCue = {
-        uuid: {
-          string: generateUUID()
-        },
-        name: "Title",
-        isEnabled: true,
-        completionTargetUuid: {
-          string: "00000000-0000-0000-0000-000000000000"
-        },
-        completionActionUuid: {
-          string: "00000000-0000-0000-0000-000000000000"
-        },
-        triggerTime: {},
-        actions: [
-          {
-            uuid: {
-              string: generateUUID()
-            },
-            name: "Presentation Slide",
-            label: {
-              text: "Title"
-            },
-            isEnabled: true,
-            type: "ACTION_TYPE_PRESENTATION_SLIDE",
-            slide: {
-              presentation: {
-                baseSlide: cloneBaseSlide(titleSlide.baseSlide)
-              }
-            }
-          }
-        ]
-      };
 
-      // 更新標題頁的文字內容
-      const titleElement = titleCue.actions[0].slide.presentation.baseSlide.elements.find(e => e.info === 2);
-      if (titleElement) {
-        titleElement.element.text.rtfData = textToRTF(songData.song_name, "MicrosoftJhengHeiUIBold", 130, true);
-      }
-
-      presentation.cues.push(titleCue);
-    }
 
     return presentation;
   } catch (error) {
