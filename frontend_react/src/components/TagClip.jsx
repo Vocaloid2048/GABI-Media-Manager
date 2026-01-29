@@ -10,7 +10,7 @@ export const TagTypeEnum = {
 
 export const TagClip = ({ tagData }) => {
     const { language } = useLanguage();
-    const tagName = language === 'zh' ? tagData.tag_zh_name : (tagData.tag_en_name || tagData.tag_zh_name);
+    const tagName = language === 'zh' ? tagData.tag_zh_name : (tagData.tag_en_name || tagData);
 
     return (
         <div className="inline-block mr-2 mb-2">

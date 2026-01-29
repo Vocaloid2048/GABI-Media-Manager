@@ -306,18 +306,19 @@ const SongUploadPopup = ({ onClose }) => {
               語言
             </label>
             <div className="flex flex-wrap gap-2">
-              {Object.entries(SongLanguageLabels).map(([value, label]) => {
+              {Object.entries(SongLanguageLabels).map(([value, langInfo]) => {
                 const isSelected = songLanguage.includes(value);
                 return (
                   <button
                     key={value}
                     onClick={() => toggleSongLanguage(value)}
                     className={`px-3 py-1.5 rounded-lg text-sm transition-colors border ${isSelected
-                      ? 'bg-green-600 text-white border-green-500'
+                      ? 'text-white border-transparent'
                       : 'bg-gray-700 text-gray-300 border-transparent hover:bg-gray-600'
                       }`}
+                    style={isSelected ? { backgroundColor: langInfo.color } : {}}
                   >
-                    {label}
+                    {langInfo.label}
                   </button>
                 );
               })}

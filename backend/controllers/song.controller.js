@@ -60,7 +60,18 @@ exports.getAllSongs = async (req, res) => {
 
     const songs = await db.VideoDb.songData.findAll(queryOptions);
 
-    returnSuccess(res, songs);
+    // Add uploader names to songs
+    const songsWithNames = await Promise.all(songs.map(async (song) => {
+      const user = await db.VideoDb.userData.findOne({
+        where: { user_id: song.uploader_id }
+      });
+      return {
+        ...song.toJSON(), // Convert Sequelize instance to plain object
+        uploader_name: user ? (user.locale_name || user.username) : "未知使用者"
+      };
+    }));
+
+    returnSuccess(res, songsWithNames);
   } catch (error) {
     console.error('Error fetching songs:', error);
     errorByAPI(res, error);
@@ -105,8 +116,8 @@ exports.uploadSong = async (req, res) => {
       song_name: song_name,
       content: songData.content,
       song_copyright: JSON.stringify(song_copyright || "{}"),
-      song_tags: song_tags || "",
-      song_language: song_language || "",
+      song_tags: JSON.stringify(song_tags || []),
+      song_language: JSON.stringify(song_language || []),
       uploader_id: req.get("user_id"),
     });
 

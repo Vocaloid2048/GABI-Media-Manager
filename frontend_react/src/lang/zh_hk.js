@@ -126,6 +126,11 @@ export default {
   // Song Tags
   "song.filter.worship": "敬拜讚美",
   "song.filter.other": "其他",
+  "song.language.mandarin": "國語",
+  "song.language.english": "英語",
+  "song.language.cantonese": "粵語",
+  "song.language.taiwanese": "台語",
+  "song.language.other": "其他",
 
   // Upload
   "upload.title": "上傳新影片",

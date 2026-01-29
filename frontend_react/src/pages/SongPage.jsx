@@ -66,16 +66,18 @@ const SongPage = () => {
   };
 
   const getTagNames = (tagIds) => {
-    if (!tagIds || !Array.isArray(tagIds)) return [];
-    return tagIds.map(id => {
-      const tag = tagsData.find(t => t.tag_id === id);
+    // tagIds is 1,2,3 string
+    if (!tagIds) return [];
+    return tagIds.split(',').map(id => {
+      const tag = tagsData.find(t => t.tag_id.toString() === id);
+      console.log(tag);
       return tag ? tag.tag_zh_name : id;
     });
   };
 
   const handleSongClick = (song) => {
     // Format song data for LyricPopup
-    const copyright = song.song_copyright || {};
+    const copyright = JSON.parse(song.song_copyright) || {};
     const formattedSong = {
       title: song.song_name,
       slides: song.content || [],
@@ -135,9 +137,9 @@ const SongPage = () => {
   };
 
   const handleToggleTag = (tagId) => {
-    setSelectedTags(prev => 
-      prev.includes(tagId) 
-        ? prev.filter(id => id !== tagId) 
+    setSelectedTags(prev =>
+      prev.includes(tagId)
+        ? prev.filter(id => id !== tagId)
         : [...prev, tagId]
     );
   };
@@ -156,7 +158,7 @@ const SongPage = () => {
 
   const filteredSongs = songs.filter(song => {
     const matchesSearch = song.song_name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTags = selectedTags.length === 0 || 
+    const matchesTags = selectedTags.length === 0 ||
       (song.song_tags && song.song_tags.some(tagId => selectedTags.includes(tagId)));
     return matchesSearch && matchesTags;
   });
@@ -171,20 +173,12 @@ const SongPage = () => {
 
   return (
     <>
-      <TagBar 
-        tags={tagsData} 
-        selectedTags={selectedTags} 
-        onToggleTag={handleToggleTag} 
-        onRefreshTags={handleRefreshTags} 
-        isVisible={isTagBarVisible}
-      />
-
       <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto no-scrollbar relative p-6"
       >
-        <div className="max-w-6xl mx-auto">
-          <SongGrid songs={filteredSongs} onSongClick={handleSongClick} />
+        <div className="max-w-7xl mx-auto">
+          <SongGrid songs={filteredSongs} songTagList={tagsData} onSongClick={handleSongClick} />
         </div>
       </div>
 

@@ -1,13 +1,15 @@
 import React from 'react';
 import SongItem from './SongItem';
 
-const SongGrid = ({ songs, onSongClick }) => {
+const SongGrid = ({ songs, songTagList, onSongClick }) => {
+  const songss = [...songs, ...songs, ...songs,...songs, ...songs, ...songs,...songs]; // For testing layout with more items
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {songs.map((song) => (
+    <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 pt-4 pb-4">
+      {songss.map((song) => (
         <SongItem
           key={song.song_id}
           song={song}
+          songTagList={songTagList}
           onClick={() => onSongClick(song)}
         />
       ))}

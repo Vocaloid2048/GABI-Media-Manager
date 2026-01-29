@@ -242,7 +242,7 @@ const HomePage = () => {
       
       <div className="h-16 shrink-0" />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden pb-16">
         {currentPage === 'video' && (
           <VideoPage
             tagsList={tagsList}

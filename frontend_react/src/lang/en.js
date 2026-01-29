@@ -126,6 +126,11 @@ export default {
   // Song Tags
   "song.filter.worship": "Worship & Praise",
   "song.filter.other": "Other",
+  "song.language.mandarin": "Mandarin",
+  "song.language.english": "English",
+  "song.language.cantonese": "Cantonese",
+  "song.language.taiwanese": "Taiwanese",
+  "song.language.other": "Other",
 
   // Upload
   "upload.title": "Upload New Video",
