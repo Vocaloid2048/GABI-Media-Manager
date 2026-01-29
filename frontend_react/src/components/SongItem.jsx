@@ -57,7 +57,7 @@ const SongItem = ({ song, songTagList, onClick }) => {
         {/* 作者信息 */}
         {(copyright?.composer || copyright?.lyricist || copyright?.arranger) && (
           <div className="text-sm text-gray-400 mb-2 overflow-hidden text-ellipsis whitespace-nowrap">
-            作者：{[
+            {locale('song.author_label')}{[
               copyright.composer && `${copyright.composer}`,
               copyright.lyricist && `${copyright.lyricist}`,
               copyright.arranger && `${copyright.arranger}`
@@ -68,13 +68,13 @@ const SongItem = ({ song, songTagList, onClick }) => {
         {/* 出版信息 */}
         {copyright?.publisher && (
           <div className="text-sm text-gray-400 mb-2 overflow-hidden text-ellipsis whitespace-nowrap">
-            出版：{copyright.publisher}
+            {locale('song.publisher_label')}{copyright.publisher}
           </div>
         )}
 
         {/* 上載者信息 */}
         <div className="text-sm text-gray-400 overflow-hidden text-ellipsis whitespace-nowrap">
-          上載：{song.uploader_name || '未知'}
+          {locale('song.upload_label')}{song.uploader_name || locale('song.unknown')}
         </div>
       </div>
     </div>

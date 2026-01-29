@@ -69,7 +69,7 @@ const SongUploadPopup = ({ onClose }) => {
       if (droppedFile.name.endsWith('.pro')) {
         setFile(droppedFile);
       } else {
-        alert('請拖放 .pro 檔案');
+        alert(locale('pleaseDragProFile'));
       }
     }
   };
@@ -78,12 +78,12 @@ const SongUploadPopup = ({ onClose }) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       if (!selectedFile.name.endsWith('.pro')) {
-        alert('請選擇 .pro 檔案');
+        alert(locale('pleaseSelectProFile'));
         e.target.value = '';
         return;
       }
       if (selectedFile.size > 1024 * 1024) {
-        alert('檔案大小不能超過 1MB');
+        alert(locale('fileSizeExceed'));
         e.target.value = '';
         return;
       }
@@ -94,11 +94,11 @@ const SongUploadPopup = ({ onClose }) => {
   const handleUpload = async () => {
 
     if (!songName.trim()) {
-      alert('請輸入詩歌名稱');
+      alert(locale('pleaseEnterSongName'));
       return;
     }
     if (!file) {
-      alert('請選擇檔案');
+      alert(locale('pleaseSelectFile'));
       return;
     }
 
@@ -137,15 +137,15 @@ const SongUploadPopup = ({ onClose }) => {
 
       const data = await response.json();
       if (data.retcode === 1) {
-        alert('詩歌上載成功');
+        alert(locale('songUploadSuccess'));
         onClose();
         window.location.reload();
       } else {
-        alert('上載失敗: ' + data.message);
+        alert(locale('uploadFailed') + ': ' + data.message);
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('上載失敗' + error.message);
+      alert(locale('uploadFailed') + error.message);
     } finally {
       setUploading(false);
     }
@@ -196,7 +196,7 @@ const SongUploadPopup = ({ onClose }) => {
           <div className="w-12 h-1.5 bg-gray-600 rounded-full mx-auto mb-6 sm:hidden"></div>
 
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold text-white">上載詩歌</h2>
+            <h2 className="text-lg font-bold text-white">{locale('uploadSong')}</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-white transition-colors"
@@ -211,99 +211,99 @@ const SongUploadPopup = ({ onClose }) => {
           {/* 新增詩歌名稱欄位 */}
           <div className="mb-4">
             <label className="block text-white text-sm font-medium mb-2">
-              詩歌名稱
+              {locale('songName')}
             </label>
             <input
               type="text"
               value={songName}
               onChange={e => setSongName(e.target.value)}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-              placeholder="請輸入詩歌名稱"
+              placeholder={locale('pleaseEnterSongName')}
               maxLength={100}
             />
           </div>
 
           <div className="mb-4">
             <label className="block text-white text-sm font-medium mb-2">
-              作曲
+              {locale('song.composer')}
             </label>
             <input
               type="text"
               value={composer}
               onChange={(e) => setComposer(e.target.value)}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-              placeholder="作曲者"
+              placeholder={locale('song.composer_placeholder')}
             />
           </div>
 
           <div className="mb-4">
             <label className="block text-white text-sm font-medium mb-2">
-              填詞
+              {locale('song.lyricist')}
             </label>
             <input
               type="text"
               value={lyricist}
               onChange={(e) => setLyricist(e.target.value)}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-              placeholder="填詞者"
+              placeholder={locale('song.lyricist_placeholder')}
             />
           </div>
 
           <div className="mb-4">
             <label className="block text-white text-sm font-medium mb-2">
-              編曲
+              {locale('song.arranger')}
             </label>
             <input
               type="text"
               value={arranger}
               onChange={(e) => setArranger(e.target.value)}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-              placeholder="編曲者"
+              placeholder={locale('song.arranger_placeholder')}
             />
           </div>
 
           <div className="mb-4">
             <label className="block text-white text-sm font-medium mb-2">
-              專輯
+              {locale('song.album')}
             </label>
             <input
               type="text"
               value={album}
               onChange={(e) => setAlbum(e.target.value)}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-              placeholder="專輯名稱"
+              placeholder={locale('song.album_placeholder')}
             />
           </div>
 
           <div className="mb-4">
             <label className="block text-white text-sm font-medium mb-2">
-              出版
+              {locale('song.publisher')}
             </label>
             <input
               type="text"
               value={publisher}
               onChange={(e) => setPublisher(e.target.value)}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-              placeholder="出版者"
+              placeholder={locale('song.publisher_placeholder')}
             />
           </div>
 
           <div className="mb-4">
             <label className="block text-white text-sm font-medium mb-2">
-              年份
+              {locale('song.year')}
             </label>
             <input
               type="number"
               value={year}
               onChange={(e) => setYear(e.target.value)}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-              placeholder="出版年份"
+              placeholder={locale('song.year_placeholder')}
             />
           </div>
 
           <div className="mb-6">
             <label className="block text-white text-sm font-medium mb-2">
-              語言
+              {locale('song.language_label')}
             </label>
             <div className="flex flex-wrap gap-2">
               {Object.entries(SongLanguageLabels).map(([value, langInfo]) => {
@@ -327,7 +327,7 @@ const SongUploadPopup = ({ onClose }) => {
 
           <div className="mb-6">
             <label className="block text-white text-sm font-medium mb-2">
-              類別
+              {locale('song.category_label')}
             </label>
             <div className="space-y-6 pr-3">
               {Object.keys(SongTagTypeEnum).map((tagType) => (
@@ -360,7 +360,7 @@ const SongUploadPopup = ({ onClose }) => {
           {/* 將選擇 .pro 檔案移到最底 */}
           <div className="mb-4">
             <label className="block text-white text-sm font-medium mb-2">
-              選擇 .pro 檔案 (最大 1MB)
+              {locale('song.select_pro_file')}
             </label>
             <div
               className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${file ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 bg-gray-900/50 hover:bg-gray-900 hover:border-gray-500'}`}
@@ -370,7 +370,7 @@ const SongUploadPopup = ({ onClose }) => {
             >
               <FaCloudUploadAlt className={`text-4xl mb-3 ${file ? 'text-blue-400' : 'text-gray-500'}`} />
               <p className="text-gray-300 text-sm text-center font-medium">
-                {file ? file.name : '拖放或點擊選擇 .pro 檔案'}
+                {file ? file.name : locale('song.drag_drop_pro')}
               </p>
               <input
                 type="file"

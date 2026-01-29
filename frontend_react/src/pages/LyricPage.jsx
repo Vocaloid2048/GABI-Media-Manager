@@ -160,11 +160,11 @@ const LyricPage = () => {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        alert('下載失敗');
+        alert(locale('song.download_failed'));
       }
     } catch (error) {
       console.error('Download error:', error);
-      alert('下載失敗');
+      alert(locale('song.download_failed'));
     }
   };
 
@@ -176,7 +176,7 @@ const LyricPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <div className="text-xl">載入中...</div>
+        <div className="text-xl">{locale('song.loading')}</div>
       </div>
     );
   }
@@ -184,7 +184,7 @@ const LyricPage = () => {
   if (!song) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <div className="text-xl">歌曲不存在</div>
+        <div className="text-xl">{locale('song.not_found')}</div>
       </div>
     );
   }
@@ -208,14 +208,14 @@ const LyricPage = () => {
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
                 >
                   <FaPen size={16} />
-                  製作 .proBundle 檔案
+                  {locale('song.make_bundle')}
                 </button>
                 <button
                   onClick={handleDownloadLyrics}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
                 >
                   <FaDownload size={16} />
-                  下載 .pro 檔案 (僅歌詞)
+                  {locale('song.download_lyrics')}
                 </button>
               </div>
             </div>
@@ -226,7 +226,7 @@ const LyricPage = () => {
             <div className="xl:col-span-1 space-y-6"> 
               {/* Tags */}
               <div>
-                <h3 className="text-lg font-semibold text-white mb-2">標籤</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">{locale('song.tags')}</h3>
                 <div className="flex flex-wrap gap-2">
                   {[...song.song_tags, ...song.song_language].map((tag, index) => (
                     <span
@@ -242,42 +242,42 @@ const LyricPage = () => {
 
               {/* Copyright */}
               <div>
-                <h3 className="text-lg font-semibold text-white mb-2">版權資訊</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">{locale('song.copyright_info')}</h3>
                 <div className="bg-gray-800 rounded-lg p-4">
                   <div className="grid grid-cols-2 gap-4">
                     {copyright.composer && (
                       <div className="flex flex-col">
-                        <span className="text-gray-400 text-sm mb-1">作曲</span>
+                        <span className="text-gray-400 text-sm mb-1">{locale('song.composer')}</span>
                         <span className="text-white">{copyright.composer}</span>
                       </div>
                     )}
                     {copyright.lyricist && (
                       <div className="flex flex-col">
-                        <span className="text-gray-400 text-sm mb-1">填詞</span>
+                        <span className="text-gray-400 text-sm mb-1">{locale('song.lyricist')}</span>
                         <span className="text-white">{copyright.lyricist}</span>
                       </div>
                     )}
                     {copyright.arranger && (
                       <div className="flex flex-col">
-                        <span className="text-gray-400 text-sm mb-1">編曲</span>
+                        <span className="text-gray-400 text-sm mb-1">{locale('song.arranger')}</span>
                         <span className="text-white">{copyright.arranger}</span>
                       </div>
                     )}
                     {copyright.album && (
                       <div className="flex flex-col">
-                        <span className="text-gray-400 text-sm mb-1">專輯</span>
+                        <span className="text-gray-400 text-sm mb-1">{locale('song.album')}</span>
                         <span className="text-white">{copyright.album}</span>
                       </div>
                     )}
                     {copyright.publisher && (
                       <div className="flex flex-col">
-                        <span className="text-gray-400 text-sm mb-1">出版</span>
+                        <span className="text-gray-400 text-sm mb-1">{locale('song.publisher')}</span>
                         <span className="text-white">{copyright.publisher}</span>
                       </div>
                     )}
                     {copyright.year && (
                       <div className="flex flex-col">
-                        <span className="text-gray-400 text-sm mb-1">年份</span>
+                        <span className="text-gray-400 text-sm mb-1">{locale('song.year')}</span>
                         <span className="text-white">{copyright.year}</span>
                       </div>
                     )}
@@ -289,7 +289,7 @@ const LyricPage = () => {
             {/* Right Column - Lyrics Grid */}
             <div className="xl:col-span-2">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-white">歌詞分頁</h3>
+                <h3 className="text-lg font-semibold text-white">{locale('lyrics.pages')}</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {(Array.isArray(song.content) ? song.content : []).map((slide) => {

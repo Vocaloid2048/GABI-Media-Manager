@@ -7,6 +7,7 @@ import HoverNav from '../components/HoverNav';
 import SongGrid from '../components/SongGrid';
 import { generateDs } from '../utils/auth';
 import { SongLanguageLabels, SongTagTypeEnum } from '../utils/songLang';
+import { useLanguage } from '../lang/LanguageContext';
 
 const SongPage = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const SongPage = () => {
   const [selectedTags, setSelectedTags] = useState([]);
   const [isTagBarVisible, setIsTagBarVisible] = useState(false);
   const scrollContainerRef = useRef(null);
+  const { locale } = useLanguage();
 
   useEffect(() => {
     fetchSongs();
@@ -89,17 +91,17 @@ const SongPage = () => {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        alert('下載失敗');
+        alert(locale('song.download_failed'));
       }
     } catch (error) {
       console.error('Download error:', error);
-      alert('下載失敗');
+      alert(locale('song.download_failed'));
     }
   };
 
   const handleMakeProBundle = (song) => {
     // TODO: Implement ProBundle creation
-    alert('製作 ProBundle 功能即將推出');
+    alert(locale('song.bundle_coming_soon'));
   };
 
   const handleUploadSuccess = (newSong) => {
@@ -136,7 +138,7 @@ const SongPage = () => {
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-white">載入中...</div>
+        <div className="text-white">{locale('song.loading')}</div>
       </div>
     );
   }

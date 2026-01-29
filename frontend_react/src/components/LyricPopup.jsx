@@ -1,7 +1,9 @@
 import React from 'react';
 import { SongLanguageLabels } from '../utils/songLang';
+import { useLanguage } from '../lang/LanguageContext';
 
 const LyricPopup = ({ lyric, onClose, onDownloadLyrics, onMakeProBundle }) => {
+  const { locale } = useLanguage();
   if (!lyric) return null;
 
   return (
@@ -22,7 +24,7 @@ const LyricPopup = ({ lyric, onClose, onDownloadLyrics, onMakeProBundle }) => {
         <div className="p-6">
           {/* Tags */}
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-white mb-2">標籤</h3>
+            <h3 className="text-lg font-semibold text-white mb-2">{locale('lyrics.tags')}</h3>
             <div className="flex flex-wrap gap-2">
               {(Array.isArray(lyric.tags) ? lyric.tags : []).map((tag, index) => (
                 <span
@@ -37,7 +39,7 @@ const LyricPopup = ({ lyric, onClose, onDownloadLyrics, onMakeProBundle }) => {
 
           {/* Slides */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-white mb-3">歌詞分頁</h3>
+            <h3 className="text-lg font-semibold text-white mb-3">{locale('lyrics.pages')}</h3>
             <div className="space-y-3">
               {(Array.isArray(lyric.slides) ? lyric.slides : []).map((slide) => (
                 <div
@@ -48,7 +50,7 @@ const LyricPopup = ({ lyric, onClose, onDownloadLyrics, onMakeProBundle }) => {
                     <span className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3">
                       {slide.page}
                     </span>
-                    <span className="text-gray-300 text-sm">第 {slide.page} 頁 - {slide.tag}</span>
+                    <span className="text-gray-300 text-sm">{locale('lyrics.page_label').replace('{page}', slide.page).replace('{tag}', slide.tag)}</span>
                   </div>
                   <p className="text-white leading-relaxed">{slide.content}</p>
                 </div>
@@ -58,53 +60,53 @@ const LyricPopup = ({ lyric, onClose, onDownloadLyrics, onMakeProBundle }) => {
 
           {/* Copyright */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-white mb-2">版權資訊</h3>
+            <h3 className="text-lg font-semibold text-white mb-2">{locale('song.copyright_info')}</h3>
             <div className="bg-gray-700 rounded-lg p-4 space-y-2">
               {lyric.composer && (
                 <div className="flex">
-                  <span className="text-gray-400 w-16">作曲：</span>
+                  <span className="text-gray-400 w-16">{locale('song.composer')}：</span>
                   <span className="text-white">{lyric.composer}</span>
                 </div>
               )}
               {lyric.lyricist && (
                 <div className="flex">
-                  <span className="text-gray-400 w-16">填詞：</span>
+                  <span className="text-gray-400 w-16">{locale('song.lyricist')}：</span>
                   <span className="text-white">{lyric.lyricist}</span>
                 </div>
               )}
               {lyric.arranger && (
                 <div className="flex">
-                  <span className="text-gray-400 w-16">編曲：</span>
+                  <span className="text-gray-400 w-16">{locale('song.arranger')}：</span>
                   <span className="text-white">{lyric.arranger}</span>
                 </div>
               )}
               {lyric.album && (
                 <div className="flex">
-                  <span className="text-gray-400 w-16">專輯：</span>
+                  <span className="text-gray-400 w-16">{locale('song.album')}：</span>
                   <span className="text-white">{lyric.album}</span>
                 </div>
               )}
               {lyric.publisher && (
                 <div className="flex">
-                  <span className="text-gray-400 w-16">出版：</span>
+                  <span className="text-gray-400 w-16">{locale('song.publisher')}：</span>
                   <span className="text-white">{lyric.publisher}</span>
                 </div>
               )}
               {lyric.year && (
                 <div className="flex">
-                  <span className="text-gray-400 w-16">年份：</span>
+                  <span className="text-gray-400 w-16">{locale('song.year')}：</span>
                   <span className="text-white">{lyric.year}</span>
                 </div>
               )}
               {lyric.song_tags && lyric.song_tags.length > 0 && (
                 <div className="flex">
-                  <span className="text-gray-400 w-16">類別：</span>
+                  <span className="text-gray-400 w-16">{locale('lyrics.category')}</span>
                   <span className="text-white">{lyric.song_tags.join(', ')}</span>
                 </div>
               )}
               {lyric.song_language && lyric.song_language.length > 0 && (
                 <div className="flex">
-                  <span className="text-gray-400 w-16">語言：</span>
+                  <span className="text-gray-400 w-16">{locale('lyrics.language')}</span>
                   <span className="text-white">{(Array.isArray(lyric.song_language) ? lyric.song_language : [lyric.song_language]).filter(Boolean).map(lang => SongLanguageLabels[lang] || lang).join(', ')}</span>
                 </div>
               )}
@@ -118,13 +120,13 @@ const LyricPopup = ({ lyric, onClose, onDownloadLyrics, onMakeProBundle }) => {
             onClick={() => onDownloadLyrics(lyric)}
             className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
           >
-            下載歌詞
+            {locale('lyrics.download_lyrics')}
           </button>
           <button
             onClick={() => onMakeProBundle(lyric)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
           >
-            製作 ProBundle
+            {locale('lyrics.make_bundle')}
           </button>
         </div>
       </div>

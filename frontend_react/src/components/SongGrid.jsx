@@ -14,7 +14,7 @@ const SongGrid = ({ songs, songTagList, onSongClick }) => {
       ))}
       {songs.length === 0 && (
         <div className="col-span-full text-center text-gray-400 mt-12">
-          沒有找到匹配的詩歌
+          {locale('song.no_matches')}
         </div>
       )}
     </div>
