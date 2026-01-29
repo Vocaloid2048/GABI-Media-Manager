@@ -1,7 +1,7 @@
 import React from 'react';
 import SongItem from './SongItem';
 
-const SongGrid = ({ songs, songTagList, onSongClick }) => {
+const SongGrid = ({ songs, songTagList, onSongClick, onDownload }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 pt-4 pb-4">
       {songs.map((song) => (
@@ -10,6 +10,7 @@ const SongGrid = ({ songs, songTagList, onSongClick }) => {
           song={song}
           songTagList={songTagList}
           onClick={() => onSongClick(song)}
+          onDownload={() => onDownload(song)}
         />
       ))}
       {songs.length === 0 && (

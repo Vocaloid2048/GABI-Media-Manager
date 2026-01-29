@@ -1,8 +1,9 @@
 import React from 'react';
+import { FaDownload } from 'react-icons/fa';
 import { getSongTagListLocale, SongLanguageLabels } from '../utils/songLang';
 import { useLanguage } from '../lang/LanguageContext';
 
-const SongItem = ({ song, songTagList, onClick }) => {
+const SongItem = ({ song, songTagList, onClick, onDownload }) => {
   console.log("songTagList in SongItem:", songTagList);
   const { locale, language } = useLanguage();
   const copyright = JSON.parse(song.song_copyright || '{}');
@@ -24,10 +25,15 @@ const SongItem = ({ song, songTagList, onClick }) => {
     );
   };
 
+  const handleDownloadClick = (e) => {
+    e.stopPropagation(); // Prevent triggering the onClick for the song item
+    onDownload(song);
+  };
+
   return (
     <div
       onClick={onClick}
-      className="bg-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-700 transition-colors flex gap-4"
+      className="bg-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-700 transition-colors flex gap-4 relative"
     >
       <div className='flex justify-center items-center'>
         {generateThumbnail(song.song_name)}
@@ -77,6 +83,15 @@ const SongItem = ({ song, songTagList, onClick }) => {
           {locale('song.upload_label')}{song.uploader_name || locale('song.unknown')}
         </div>
       </div>
+
+      {/* 下載按鈕 */}
+      <button
+        onClick={handleDownloadClick}
+        className="absolute top-2 right-2 bg-gray-900 hover:bg-gray-500 active:bg-gray-700 text-white p-2 rounded-full shadow-lg transition-all duration-200"
+        title={locale('song.download_pro')}
+      >
+        <FaDownload size={12} />
+      </button>
     </div>
   );
 };

@@ -14,7 +14,8 @@ const SongTagTypeEnum = {
 };
 
 const getSongTagListLocale = (tagList, songTagList, language,locale) => {
-  if (tagList == null || tagList.length === 0) return [];
+  console.log(typeof tagList, tagList);
+  if (tagList == null || tagList.length === 0 || typeof tagList !== "string") return [];
   return tagList.split(",").map(tagId => {
     const tagInfo = songTagList.find(t => t.tag_id.toString() === tagId);
     const langInfo = SongLanguageLabels[tagId];

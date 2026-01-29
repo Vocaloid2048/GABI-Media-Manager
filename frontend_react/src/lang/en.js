@@ -137,6 +137,7 @@ export default {
   "song.not_found": "Song not found",
   "song.make_bundle": "Create .proBundle File",
   "song.download_lyrics": "Download .pro File (Lyrics Only)",
+  "song.download_pro": "Download .pro File",
   "song.tags": "Tags",
   "song.copyright_info": "Copyright Information",
   "song.composer": "Composer",

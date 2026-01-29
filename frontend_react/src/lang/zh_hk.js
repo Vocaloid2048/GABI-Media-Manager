@@ -137,6 +137,7 @@ export default {
   "song.not_found": "歌曲不存在",
   "song.make_bundle": "製作 .proBundle 檔案",
   "song.download_lyrics": "下載 .pro 檔案 (僅歌詞)",
+  "song.download_pro": "下載 .pro 檔案",
   "song.tags": "標籤",
   "song.copyright_info": "版權資訊",
   "song.composer": "作曲",

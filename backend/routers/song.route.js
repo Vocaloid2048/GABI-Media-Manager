@@ -19,7 +19,7 @@ const upload = multer({ storage });
 router.get('/', songController.getAllSongs);
 router.get('/tags', songController.getSongTags);
 router.post('/upload', checkAuth, upload.single('file'), songController.uploadSong);
-router.get('/download', checkAuth, songController.downloadSongProFile);
 router.get('/:id', songController.getSongById);
+router.get('/:id/download', checkAuth, songController.downloadSongProFile);
 
 module.exports = router;

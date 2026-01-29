@@ -90,18 +90,22 @@ const LyricPage = () => {
       }
     };
 
-    const fetchSong = async () => {
-      try {
-        const userId = localStorage.getItem('user_id');
-        const ds = generateDs(userId);
+    if (id && songTagsData.length === 0) {
+      fetchTags();
+    }
+  }, [id, songTagsData.length]);
 
+  useEffect(() => {
+    const fetchSong = async () => {
+      if (songTagsData.length === 0) return; // Wait for tags to be loaded
+
+      try {
         const response = await fetch(`/api/song/${id}`);
 
         if (response.ok) {
           const data = await response.json();
           if (data.retcode === 1) {
             const songData = data.data;
-
             // Parse tags (comma-separated string)
             const songTags = getSongTagListLocale(songData.song_tags, songTagsData, language, locale);
             // Parse language (comma-separated string)
@@ -124,8 +128,7 @@ const LyricPage = () => {
       }
     };
 
-    if (id) {
-      fetchTags();
+    if (id && songTagsData.length > 0) {
       fetchSong();
     }
   }, [id, songTagsData, language, locale]);
@@ -150,7 +153,8 @@ const LyricPage = () => {
       });
 
       if (response.ok) {
-        const blob = await response.blob();
+        const arrayBuffer = await response.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;

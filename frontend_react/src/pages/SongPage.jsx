@@ -23,8 +23,11 @@ const SongPage = () => {
   const { locale } = useLanguage();
 
   useEffect(() => {
-    fetchSongs();
-    fetchTags();
+    const initializeData = async () => {
+      await fetchTags();
+      await fetchSongs();
+    };
+    initializeData();
   }, []);
 
   const fetchSongs = async () => {
@@ -66,14 +69,10 @@ const SongPage = () => {
   };
 
   const handleDownloadLyrics = async (song) => {
-    // Find the original song data
-    const originalSong = songs.find(s => s.song_name === song.title);
-    if (!originalSong) return;
-
     try {
       const userId = localStorage.getItem('user_id');
       const ds = generateDs(userId);
-      const response = await fetch(`/api/song/${originalSong.song_id}/download`, {
+      const response = await fetch(`/api/song/${song.song_id}/download`, {
         headers: {
           'user_id': userId,
           'ds': ds
@@ -81,11 +80,12 @@ const SongPage = () => {
       });
 
       if (response.ok) {
-        const blob = await response.blob();
+        const arrayBuffer = await response.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${song.title}.pro`;
+        a.download = `${song.song_name}.pro`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -150,7 +150,7 @@ const SongPage = () => {
         className="flex-1 overflow-y-auto no-scrollbar relative p-6"
       >
         <div className="max-w-[90rem] mx-auto">
-          <SongGrid songs={filteredSongs} songTagList={tagsData} onSongClick={handleSongClick} />
+          <SongGrid songs={filteredSongs} songTagList={tagsData} onSongClick={handleSongClick} onDownload={handleDownloadLyrics} />
         </div>
       </div>
 
