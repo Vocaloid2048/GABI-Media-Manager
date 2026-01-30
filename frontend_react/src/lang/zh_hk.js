@@ -183,6 +183,9 @@ export default {
   "lyrics.make_bundle": "製作 ProBundle",
   "lyrics.category": "類別：",
   "lyrics.language": "語言：",
+  "lyrics.spacing": "空格間距",
+  "lyrics.theme": "ProTheme主題",
+  "lyrics.add_blank_page": "添加尾頁 (空白)",
 
   // Upload
   "upload.title": "上傳新影片",

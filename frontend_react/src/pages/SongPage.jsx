@@ -1,111 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaDownload, FaArchive } from 'react-icons/fa';
 import SongUploadPopup from '../components/SongUploadPopup';
 import TagBar from '../components/TagBar';
 import HoverNav from '../components/HoverNav';
 import SongGrid from '../components/SongGrid';
-import { generateDs } from '../utils/auth';
-import { SongLanguageLabels, SongTagTypeEnum } from '../utils/songLang';
 import { useLanguage } from '../lang/LanguageContext';
+import { useSongs, useSongTags } from '../hooks/useSongs';
 
 const SongPage = () => {
   const navigate = useNavigate();
-  const [songs, setSongs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedSong, setSelectedSong] = useState(null);
   const [showUploadPopup, setShowUploadPopup] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [tagsData, setTagsData] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [isTagBarVisible, setIsTagBarVisible] = useState(false);
   const scrollContainerRef = useRef(null);
+
   const { locale } = useLanguage();
-
-  useEffect(() => {
-    const initializeData = async () => {
-      await fetchTags();
-      await fetchSongs();
-    };
-    initializeData();
-  }, []);
-
-  const fetchSongs = async () => {
-    try {
-      const userId = localStorage.getItem('user_id');
-      const ds = generateDs(userId);
-      const response = await fetch(`/api/song`);
-
-      const data = await response.json();
-      if (data.retcode === 1) {
-        setSongs(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching songs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTags = async () => {
-    try {
-      const userId = localStorage.getItem('user_id');
-      const ds = generateDs(userId);
-      const response = await fetch(`/api/song/tags`);
-      const data = await response.json();
-      if (data.retcode === 1) {
-        setTagsData(data.data);
-      }
-      console.log("Fetched tags data:", data);
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-    }
-  };
-
+  const { songs, loading, addSong } = useSongs();
+  const { tagsData, refetch: refetchTags } = useSongTags();
 
   const handleSongClick = (song) => {
-    // Navigate to lyric page
     navigate(`/song/${song.song_id}`);
   };
 
-  const handleDownloadLyrics = async (song) => {
-    try {
-      const userId = localStorage.getItem('user_id');
-      const ds = generateDs(userId);
-      const response = await fetch(`/api/song/${song.song_id}/download`, {
-        headers: {
-          'user_id': userId,
-          'ds': ds
-        }
-      });
-
-      if (response.ok) {
-        const arrayBuffer = await response.arrayBuffer();
-        const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${song.song_name}.pro`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        alert(locale('song.download_failed'));
-      }
-    } catch (error) {
-      console.error('Download error:', error);
-      alert(locale('song.download_failed'));
-    }
-  };
-
-  const handleMakeProBundle = (song) => {
-    // TODO: Implement ProBundle creation
-    alert(locale('song.bundle_coming_soon'));
-  };
-
   const handleUploadSuccess = (newSong) => {
-    setSongs(prev => [newSong, ...prev]);
+    addSong(newSong);
   };
 
   const handleToggleTag = (tagId) => {
@@ -117,7 +36,7 @@ const SongPage = () => {
   };
 
   const handleRefreshTags = () => {
-    fetchTags();
+    refetchTags();
   };
 
   const handleSearch = (term) => {
@@ -128,12 +47,14 @@ const SongPage = () => {
     setIsTagBarVisible(!isTagBarVisible);
   };
 
-  const filteredSongs = songs.filter(song => {
-    const matchesSearch = song.song_name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTags = selectedTags.length === 0 ||
-      (song.song_tags && song.song_tags.some(tagId => selectedTags.includes(tagId)));
-    return matchesSearch && matchesTags;
-  });
+  const filteredSongs = useMemo(() => {
+    return songs.filter(song => {
+      const matchesSearch = song.song_name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTags = selectedTags.length === 0 ||
+        (song.song_tags && song.song_tags.some(tagId => selectedTags.includes(tagId)));
+      return matchesSearch && matchesTags;
+    });
+  }, [songs, searchTerm, selectedTags]);
 
   if (loading) {
     return (
@@ -150,7 +71,11 @@ const SongPage = () => {
         className="flex-1 overflow-y-auto no-scrollbar relative p-6"
       >
         <div className="max-w-[90rem] mx-auto">
-          <SongGrid songs={filteredSongs} songTagList={tagsData} onSongClick={handleSongClick} onDownload={handleDownloadLyrics} />
+          <SongGrid
+            songs={filteredSongs}
+            songTagList={tagsData}
+            onSongClick={handleSongClick}
+          />
         </div>
       </div>
 
@@ -161,7 +86,15 @@ const SongPage = () => {
         hasActiveSearch={searchTerm.length > 0}
       />
 
-      {/* Upload Popup */}
+      {isTagBarVisible && (
+        <TagBar
+          tags={tagsData}
+          selectedTags={selectedTags}
+          onTagToggle={handleToggleTag}
+          onRefresh={handleRefreshTags}
+        />
+      )}
+
       {showUploadPopup && (
         <SongUploadPopup
           onClose={() => setShowUploadPopup(false)}

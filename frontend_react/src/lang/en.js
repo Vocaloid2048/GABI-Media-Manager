@@ -183,6 +183,9 @@ export default {
   "lyrics.make_bundle": "Create ProBundle",
   "lyrics.category": "Category: ",
   "lyrics.language": "Language: ",
+  "lyrics.spacing": "Spacing",
+  "lyrics.theme": "ProTheme",
+  "lyrics.add_blank_page": "Add Blank Page at End",
 
   // Upload
   "upload.title": "Upload New Video",
