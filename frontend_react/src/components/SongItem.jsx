@@ -8,7 +8,7 @@ const SongItem = ({ song, songTagList, onClick, onDownload }) => {
   const { locale, language } = useLanguage();
   const copyright = JSON.parse(song.song_copyright || '{}');
   const chipList = [...getSongTagListLocale(song.song_tags, songTagList, language, locale), ...getSongTagListLocale(song.song_language, songTagList, language, locale)];
-  
+
   // Generate a simple text-based thumbnail
   const generateThumbnail = (songName) => {
     const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
@@ -61,22 +61,18 @@ const SongItem = ({ song, songTagList, onClick, onDownload }) => {
         </div>
 
         {/* 作者信息 */}
-        {(copyright?.composer || copyright?.lyricist || copyright?.arranger) && (
-          <div className="text-sm text-gray-400 mb-2 overflow-hidden text-ellipsis whitespace-nowrap">
-            {locale('song.author_label')}{[
-              copyright.composer && `${copyright.composer}`,
-              copyright.lyricist && `${copyright.lyricist}`,
-              copyright.arranger && `${copyright.arranger}`
-            ].filter(Boolean).join('、')}
-          </div>
-        )}
+        <div className="text-sm text-gray-400 overflow-hidden text-ellipsis whitespace-nowrap">
+          {locale('song.author_label')}{[
+            `${copyright.composer || ""}`,
+            `${copyright.lyricist || ""}`,
+            `${copyright.arranger || ""}`
+          ].filter(Boolean).join('、')}
+        </div>
 
         {/* 出版信息 */}
-        {copyright?.publisher && (
-          <div className="text-sm text-gray-400 mb-2 overflow-hidden text-ellipsis whitespace-nowrap">
-            {locale('song.publisher_label')}{copyright.publisher}
-          </div>
-        )}
+        <div className="text-sm text-gray-400 overflow-hidden text-ellipsis whitespace-nowrap">
+          {locale('song.publisher_label')}{copyright.publisher || ""}
+        </div>
 
         {/* 上載者信息 */}
         <div className="text-sm text-gray-400 overflow-hidden text-ellipsis whitespace-nowrap">

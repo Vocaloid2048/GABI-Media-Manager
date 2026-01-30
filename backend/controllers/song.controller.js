@@ -116,8 +116,8 @@ exports.uploadSong = async (req, res) => {
       song_name: song_name,
       content: songData.content,
       song_copyright: JSON.stringify(song_copyright || "{}"),
-      song_tags: JSON.stringify(song_tags || []),
-      song_language: JSON.stringify(song_language || []),
+      song_tags: song_tags,
+      song_language: song_language,
       uploader_id: req.get("user_id"),
     });
 

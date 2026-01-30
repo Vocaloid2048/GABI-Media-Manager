@@ -163,6 +163,17 @@ export default {
   "song.album_placeholder": "專輯名稱",
   "song.publisher_placeholder": "出版者",
   "song.year_placeholder": "出版年份",
+  "song.name": "歌曲名稱",
+  "song.please_enter_name": "請輸入歌曲名稱",
+  "song.upload_song": "上傳歌曲",
+  "song.upload_success": "歌曲上傳成功",
+  "song.upload_failed": "上傳失敗",
+  "song.please_select_file": "請選擇檔案",
+  "song.please_select_category": "請選擇類別",
+  "song.please_select_language": "請選擇語言",
+  "song.please_drag_pro_file": "請拖放 .pro 檔案",
+  "song.please_select_pro_file": "請選擇 .pro 檔案",
+  "song.file_size_exceed": "檔案大小超過 1MB",
 
   // Lyrics
   "lyrics.pages": "歌詞分頁",

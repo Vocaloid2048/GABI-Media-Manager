@@ -163,6 +163,17 @@ export default {
   "song.album_placeholder": "Album Name",
   "song.publisher_placeholder": "Publisher",
   "song.year_placeholder": "Publication Year",
+  "song.name": "Song Name",
+  "song.please_enter_name": "Please enter song name",
+  "song.upload_song": "Upload Song",
+  "song.upload_success": "Song uploaded successfully",
+  "song.upload_failed": "Upload failed",
+  "song.please_select_file": "Please select a file",
+  "song.please_select_category": "Please select category",
+  "song.please_select_language": "Please select language",
+  "song.please_drag_pro_file": "Please drag and drop a .pro file",
+  "song.please_select_pro_file": "Please select a .pro file",
+  "song.file_size_exceed": "File size exceeds 1MB",
 
   // Lyrics
   "lyrics.pages": "Lyrics Pages",

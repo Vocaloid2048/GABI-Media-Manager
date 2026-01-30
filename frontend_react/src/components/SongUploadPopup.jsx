@@ -69,7 +69,7 @@ const SongUploadPopup = ({ onClose }) => {
       if (droppedFile.name.endsWith('.pro')) {
         setFile(droppedFile);
       } else {
-        alert(locale('pleaseDragProFile'));
+        alert(locale('song.please_drag_pro_file'));
       }
     }
   };
@@ -78,12 +78,12 @@ const SongUploadPopup = ({ onClose }) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       if (!selectedFile.name.endsWith('.pro')) {
-        alert(locale('pleaseSelectProFile'));
+        alert(locale('song.please_select_pro_file'));
         e.target.value = '';
         return;
       }
       if (selectedFile.size > 1024 * 1024) {
-        alert(locale('fileSizeExceed'));
+        alert(locale('song.file_size_exceed'));
         e.target.value = '';
         return;
       }
@@ -94,11 +94,19 @@ const SongUploadPopup = ({ onClose }) => {
   const handleUpload = async () => {
 
     if (!songName.trim()) {
-      alert(locale('pleaseEnterSongName'));
+      alert(locale('song.please_enter_name'));
+      return;
+    }
+    if (songTags.length === 0) {
+      alert(locale('song.please_select_category'));
+      return;
+    }
+    if (songLanguage.length === 0) {
+      alert(locale('song.please_select_language'));
       return;
     }
     if (!file) {
-      alert(locale('pleaseSelectFile'));
+      alert(locale('song.please_select_file'));
       return;
     }
 
@@ -120,7 +128,7 @@ const SongUploadPopup = ({ onClose }) => {
         song_name: songName,
         fileName: file.name,
         file: fileContent,
-        song_copyright: {composer, lyricist, arranger, album, publisher, year},
+        song_copyright: {composer: composer || null, lyricist: lyricist || null, arranger: arranger || null, album: album || null, publisher: publisher || null, year: year || null},
         song_tags: songTags.join(','),
         song_language: songLanguage.join(',')
       };
@@ -137,15 +145,15 @@ const SongUploadPopup = ({ onClose }) => {
 
       const data = await response.json();
       if (data.retcode === 1) {
-        alert(locale('songUploadSuccess'));
+        alert(locale('song.upload_success'));
         onClose();
         window.location.reload();
       } else {
-        alert(locale('uploadFailed') + ': ' + data.message);
+        alert(locale('song.upload_failed') + ': ' + data.message);
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert(locale('uploadFailed') + error.message);
+      alert(locale('song.upload_failed') + error.message);
     } finally {
       setUploading(false);
     }
@@ -196,7 +204,7 @@ const SongUploadPopup = ({ onClose }) => {
           <div className="w-12 h-1.5 bg-gray-600 rounded-full mx-auto mb-6 sm:hidden"></div>
 
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold text-white">{locale('uploadSong')}</h2>
+            <h2 className="text-lg font-bold text-white">{locale('song.upload_song')}</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-white transition-colors"
@@ -211,14 +219,14 @@ const SongUploadPopup = ({ onClose }) => {
           {/* 新增詩歌名稱欄位 */}
           <div className="mb-4">
             <label className="block text-white text-sm font-medium mb-2">
-              {locale('songName')}
+              {locale('song.name')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={songName}
               onChange={e => setSongName(e.target.value)}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-              placeholder={locale('pleaseEnterSongName')}
+              placeholder={locale('song.please_enter_name')}
               maxLength={100}
             />
           </div>
@@ -303,7 +311,7 @@ const SongUploadPopup = ({ onClose }) => {
 
           <div className="mb-6">
             <label className="block text-white text-sm font-medium mb-2">
-              {locale('song.language_label')}
+              {locale('song.language_label')} <span className="text-red-500">*</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {Object.entries(SongLanguageLabels).map(([value, langInfo]) => {
@@ -327,7 +335,7 @@ const SongUploadPopup = ({ onClose }) => {
 
           <div className="mb-6">
             <label className="block text-white text-sm font-medium mb-2">
-              {locale('song.category_label')}
+              {locale('song.category_label')} <span className="text-red-500">*</span>
             </label>
             <div className="space-y-6 pr-3">
               {Object.keys(SongTagTypeEnum).map((tagType) => (
@@ -387,9 +395,9 @@ const SongUploadPopup = ({ onClose }) => {
           <button onClick={onClose} className="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors text-sm font-medium">{locale('common.cancel')}</button>
           <button 
             onClick={handleUpload} 
-            disabled={!file || uploading}
+            disabled={!file || uploading || !songName.trim() || songTags.length === 0 || songLanguage.length === 0}
             className={`px-6 py-2 rounded-lg text-white font-medium text-sm transition-all shadow-lg ${
-              !file || uploading 
+              !file || uploading || !songName.trim() || songTags.length === 0 || songLanguage.length === 0 
               ? 'bg-gray-600 cursor-not-allowed opacity-50' 
               : 'bg-blue-600 hover:bg-blue-500 shadow-blue-600/20'
             }`}
