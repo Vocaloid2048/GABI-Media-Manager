@@ -154,10 +154,12 @@ function cloneBaseSlide(baseSlide) {
 }
 
 // 從 songData 生成 ProPresenter 文件
-async function generateProFile(songData, themePath = path.join(__dirname, "default_Theme")) {
+async function generateProFile(songData, options = {}) {
+  const { spacing = '1', addBlankPage = false, themePath = path.join(__dirname, "default_Theme") } = options;
   try {
     const root = await loadProPresenterProto();
     const Presentation = root.lookupType("rv.data.Presentation");
+    
 
     // 載入主題
     const themeSlides = await loadTheme(themePath);
@@ -213,8 +215,17 @@ async function generateProFile(songData, themePath = path.join(__dirname, "defau
     // 生成 cues
     const cuesByGroup = {};
 
-    if (songData.content && Array.isArray(songData.content)) {
-      songData.content.forEach((slide, index) => {
+    // 處理 content 應用選項
+    let processedContent = songData.content;
+    if (Array.isArray(processedContent)) {
+      processedContent = processedContent.map(slide => ({
+        ...slide,
+        content: slide.content.replace(/ /g, (spacing === 'tab' ? '\t' : " ".repeat(parseInt(spacing) || 1)))
+      }));
+    }
+
+    if (processedContent && Array.isArray(processedContent)) {
+      processedContent.forEach((slide, index) => {
         let tagKey, cueName, baseSlideToUse, textContent, fontName, fontSize, bold;
 
         if (index === 0) {
@@ -287,55 +298,57 @@ async function generateProFile(songData, themePath = path.join(__dirname, "defau
         cuesByGroup[tagKey].push(cue.uuid.string);
       });
 
-      // 添加空白頁
-      const blankCue = {
-        uuid: {
-          string: generateUUID()
-        },
-        name: "空白",
-        isEnabled: true,
-        completionTargetUuid: {
-          string: "00000000-0000-0000-0000-000000000000"
-        },
-        completionActionUuid: {
-          string: "00000000-0000-0000-0000-000000000000"
-        },
-        triggerTime: {
-          time: 0
-        },
-        actions: [
-          {
-            uuid: {
-              string: generateUUID()
-            },
-            name: "Presentation Slide",
-            label: {
-              text: "空白"
-            },
-            isEnabled: true,
-            type: 11,
-            slide: {
-              presentation: {
-                baseSlide: cloneBaseSlide(lyricsSlide.baseSlide)
+      // 如果需要，添加空白頁
+      if (addBlankPage) {
+        const blankCue = {
+          uuid: {
+            string: generateUUID()
+          },
+          name: "空白",
+          isEnabled: true,
+          completionTargetUuid: {
+            string: "00000000-0000-0000-0000-000000000000"
+          },
+          completionActionUuid: {
+            string: "00000000-0000-0000-0000-000000000000"
+          },
+          triggerTime: {
+            time: 0
+          },
+          actions: [
+            {
+              uuid: {
+                string: generateUUID()
+              },
+              name: "Presentation Slide",
+              label: {
+                text: "空白"
+              },
+              isEnabled: true,
+              type: 11,
+              slide: {
+                presentation: {
+                  baseSlide: cloneBaseSlide(lyricsSlide.baseSlide)
+                }
               }
             }
-          }
-        ]
-      };
+          ]
+        };
 
-      // 空白頁沒有文字內容
-      const blankTextElement = blankCue.actions[0].slide.presentation.baseSlide.elements.find(e => e.info === 2);
-      if (blankTextElement) {
-        blankTextElement.element.text.rtfData = textToRTF("", lyricsSlide.baseSlide, "ArialMT", 72, false);
+        // 空白頁沒有文字內容
+        const blankTextElement = blankCue.actions[0].slide.presentation.baseSlide.elements.find(e => e.info === 2);
+        if (blankTextElement) {
+          blankTextElement.element.text.rtfData = textToRTF("", lyricsSlide.baseSlide, "ArialMT", 72, false);
+        }
+
+        presentation.cues.push(blankCue);
+
+        // 添加到BLANK分組
+        if (!cuesByGroup['BLANK']) {
+          cuesByGroup['BLANK'] = [];
+        }
+        cuesByGroup['BLANK'].push(blankCue.uuid.string);
       }
-
-      presentation.cues.push(blankCue);
-
-      // 添加到BLANK分組
-      if (!cuesByGroup['BLANK']) {
-        cuesByGroup['BLANK'] = [];
-      }
-      cuesByGroup['BLANK'].push(blankCue.uuid.string);
     }
 
     // 不使用 arrangements，直接讓所有 cues 啟用

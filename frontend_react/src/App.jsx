@@ -21,6 +21,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/songs" element={<HomePage initialPage="song" />} />
           <Route path="/group/:id" element={<DetailPage />} />
           <Route path="/song/:id" element={<LyricPage />} />
         </Routes>

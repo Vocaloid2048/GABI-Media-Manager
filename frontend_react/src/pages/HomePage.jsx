@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import TitleHeader from '../components/TitleHeader';
 import BottomNav from '../components/BottomNav';
 import UserPage from './UserPage';
@@ -12,8 +13,9 @@ import SearchPopup from '../components/SearchPopup';
 import { AnimatePresence } from 'framer-motion';
 import SongUploadPopup from '../components/SongUploadPopup';
 
-const HomePage = () => {
-  const [currentPage, setCurrentPage] = useState('video'); // 'video', 'song', 'user'
+const HomePage = ({ initialPage = 'video' }) => {
+  const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(initialPage); // 'video', 'song', 'user'
   const [showLogin, setShowLogin] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [showSongUpload, setShowSongUpload] = useState(false);
@@ -35,6 +37,13 @@ const HomePage = () => {
   const scrollContainerRef = React.useRef(null);
   const lastScrollTopRef = React.useRef(0);
   const [isTagBarVisible, setIsTagBarVisible] = useState(true);
+
+  React.useEffect(() => {
+    if (initialPage === 'song') {
+      setCurrentPage('song');
+      navigate('/', { replace: true });
+    }
+  }, [initialPage, navigate]);
 
   // Website initial data fetch
   React.useEffect(() => {

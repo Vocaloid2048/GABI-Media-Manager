@@ -147,7 +147,7 @@ const SongUploadPopup = ({ onClose }) => {
       if (data.retcode === 1) {
         alert(locale('song.upload_success'));
         onClose();
-        window.location.reload();
+        window.location.href = '/songs';
       } else {
         alert(locale('song.upload_failed') + ': ' + data.message);
       }

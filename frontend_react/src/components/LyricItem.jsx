@@ -104,7 +104,7 @@ const LyricItem = ({ slide, tagInfo }) => {
     color: textColor,
     textShadow: `0 1px 0 rgba(0,0,0,0.8), 0 -1px 0 rgba(0,0,0,0.8)`,
     lineHeight: '1.1',
-    whiteSpace: 'pre-line',
+    whiteSpace: 'pre-wrap',
     wordBreak: 'break-word',
     textAlign: slide.page === 1 ? 'left' : 'center',
     margin: 0

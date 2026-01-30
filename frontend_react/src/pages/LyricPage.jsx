@@ -64,7 +64,8 @@ const LyricPage = () => {
 
   const [songTagsData, setSongTagsData] = useState([]);
   const { language, locale } = useLanguage();
-  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+  const [spacing, setSpacing] = useState('1');
+  const [addBlankPage, setAddBlankPage] = useState(true);
 
   useEffect(() => {
     const handleResize = () => {
@@ -143,13 +144,33 @@ const LyricPage = () => {
     return { colorHex: groupInfo.colorHex, labelName: language === 'zh' ? (groupInfo.zh_hk || label) : (groupInfo.en || label) };
   };
 
+  // 處理內容根據選項
+  const processedContent = React.useMemo(() => {
+    if (!song?.content || !Array.isArray(song.content)) return [];
+
+    let content = song.content.map(slide => ({
+      ...slide,
+      content: slide.content.replace(/ /g, (spacing === 'tab' ? '\t' : " ".repeat(parseInt(spacing) || 1)))
+    }));
+
+    if (addBlankPage) {
+      content.push({
+        page: content.length + 1,
+        tag: 'BLANK',
+        content: ''
+      });
+    }
+
+    return content;
+  }, [song?.content, spacing, addBlankPage]);
+
   const handleDownloadLyrics = async () => {
     if (!song) return;
 
     try {
       const userId = localStorage.getItem('user_id');
       const ds = generateDs(userId);
-      const response = await fetch(`/api/song/${song.song_id}/download`, {
+      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}`, {
         headers: {
           'user_id': userId,
           'ds': ds
@@ -201,7 +222,7 @@ const LyricPage = () => {
 
   return(
     <div className="min-h-screen bg-gray-900 text-white">
-      <TitleHeader />
+      <TitleHeader onBack={() => navigate('/songs')} />
 
       {/* Main Content */}
       <div className="pt-16 pb-8"> {/* Account for fixed header */}
@@ -287,8 +308,40 @@ const LyricPage = () => {
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-white">{locale('lyrics.pages')}</h3>
               </div>
+              
+              
+              {/* Options */}
+              <div className="p-4 bg-gray-800 rounded-lg mb-4">
+                <div className="flex flex-wrap gap-4 items-center">
+                  <div className="flex items-center gap-2">
+                    <label className="text-white">歌詞間隔:</label>
+                    <select
+                      value={spacing}
+                      onChange={(e) => setSpacing(e.target.value)}
+                      className="bg-gray-700 text-white px-3 py-1 rounded"
+                    >
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="tab">Tab</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="addBlankPage"
+                      checked={addBlankPage}
+                      onChange={(e) => setAddBlankPage(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <label htmlFor="addBlankPage" className="text-white">添加尾頁 (空白)</label>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(Array.isArray(song.content) ? song.content : []).map((slide) => {
+                {processedContent.map((slide) => {
                   const tagInfo = getLabelDisplay(slide.tag);
 
                   return (

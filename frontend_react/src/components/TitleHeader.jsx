@@ -3,7 +3,7 @@ import { FaArrowCircleLeft, FaBackward, FaPlayCircle, FaGlobe, FaArrowLeft, FaCl
 import { useLanguage } from '../lang/LanguageContext';
 import { ENABLE_USER_UPLOAD } from '../config';
 
-const TitleHeader = ({isHomePage = false, isRightButtonVisible = isHomePage, onUploadClick}) => {
+const TitleHeader = ({isHomePage = false, isRightButtonVisible = isHomePage, onUploadClick, onBack}) => {
   const { locale, toggleLanguage, language } = useLanguage();
   
   return (
@@ -11,7 +11,7 @@ const TitleHeader = ({isHomePage = false, isRightButtonVisible = isHomePage, onU
       {/* Left: Back Button */}
       <div className="flex items-center w-10 shrink-0">
         {isHomePage !== true && 
-          <FaArrowLeft className="text-2xl cursor-pointer hover:text-gray-300 transition-colors" onClick={() => window.history.back()} />
+          <FaArrowLeft className="text-2xl cursor-pointer hover:text-gray-300 transition-colors" onClick={onBack || (() => window.history.back())} />
         }
       </div>
 
