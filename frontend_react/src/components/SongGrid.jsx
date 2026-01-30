@@ -1,10 +1,16 @@
 import React from 'react';
 import SongItem from './SongItem';
+import { useLanguage } from '../lang/LanguageContext';
 
 const SongGrid = ({ songs, songTagList, onSongClick }) => {
+  const { locale } = useLanguage();
+  
+  // Ensure songs is an array
+  const safeSongs = Array.isArray(songs) ? songs : [];
+  
   return (
     <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 pt-4 pb-4">
-      {songs.map((song) => (
+      {safeSongs.map((song) => (
         <SongItem
           key={song.song_id}
           song={song}
@@ -12,7 +18,7 @@ const SongGrid = ({ songs, songTagList, onSongClick }) => {
           onClick={() => onSongClick(song)}
         />
       ))}
-      {songs.length === 0 && (
+      {safeSongs.length === 0 && (
         <div className="col-span-full text-center text-gray-400 mt-12">
           {locale('song.no_matches')}
         </div>

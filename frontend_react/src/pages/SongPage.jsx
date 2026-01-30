@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SongUploadPopup from '../components/SongUploadPopup';
-import TagBar from '../components/TagBar';
+import SongFilterPopup from '../components/SongFilterPopup';
 import HoverNav from '../components/HoverNav';
 import SongGrid from '../components/SongGrid';
 import { useLanguage } from '../lang/LanguageContext';
@@ -12,11 +12,12 @@ const SongPage = () => {
   const [showUploadPopup, setShowUploadPopup] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
+  const [selectedLanguages, setSelectedLanguages] = useState([]);
   const [isTagBarVisible, setIsTagBarVisible] = useState(false);
   const scrollContainerRef = useRef(null);
 
   const { locale } = useLanguage();
-  const { songs, loading, addSong } = useSongs();
+  const { songs, loading, addSong, refetch: refetchSongs, applyFilters } = useSongs();
   const { tagsData, refetch: refetchTags } = useSongTags();
 
   const handleSongClick = (song) => {
@@ -27,34 +28,31 @@ const SongPage = () => {
     addSong(newSong);
   };
 
-  const handleToggleTag = (tagId) => {
-    setSelectedTags(prev =>
-      prev.includes(tagId)
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId]
-    );
-  };
-
-  const handleRefreshTags = () => {
-    refetchTags();
+  const handleFilterApply = (newSelectedTags, newSelectedLanguages) => {
+    setSelectedTags(newSelectedTags);
+    setSelectedLanguages(newSelectedLanguages);
+    setIsTagBarVisible(false);
+    
+    // Apply filters through backend
+    applyFilters({
+      tags: newSelectedTags,
+      languages: newSelectedLanguages
+    });
   };
 
   const handleSearch = (term) => {
     setSearchTerm(term);
+    // Apply search through backend
+    applyFilters({
+      search: term,
+      tags: selectedTags,
+      languages: selectedLanguages
+    });
   };
 
   const handleFilterClick = () => {
     setIsTagBarVisible(!isTagBarVisible);
   };
-
-  const filteredSongs = useMemo(() => {
-    return songs.filter(song => {
-      const matchesSearch = song.song_name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesTags = selectedTags.length === 0 ||
-        (song.song_tags && song.song_tags.some(tagId => selectedTags.includes(tagId)));
-      return matchesSearch && matchesTags;
-    });
-  }, [songs, searchTerm, selectedTags]);
 
   if (loading) {
     return (
@@ -72,7 +70,7 @@ const SongPage = () => {
       >
         <div className="max-w-[90rem] mx-auto">
           <SongGrid
-            songs={filteredSongs}
+            songs={songs}
             songTagList={tagsData}
             onSongClick={handleSongClick}
           />
@@ -82,16 +80,17 @@ const SongPage = () => {
       <HoverNav
         onFilterClick={handleFilterClick}
         onSearch={handleSearch}
-        filterCount={selectedTags.length}
+        filterCount={selectedTags.length + selectedLanguages.length}
         hasActiveSearch={searchTerm.length > 0}
       />
 
       {isTagBarVisible && (
-        <TagBar
-          tags={tagsData}
+        <SongFilterPopup
+          tagList={tagsData}
           selectedTags={selectedTags}
-          onTagToggle={handleToggleTag}
-          onRefresh={handleRefreshTags}
+          selectedLanguages={selectedLanguages}
+          onClose={() => setIsTagBarVisible(false)}
+          onApply={handleFilterApply}
         />
       )}
 

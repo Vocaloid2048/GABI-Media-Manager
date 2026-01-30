@@ -2,10 +2,6 @@ const { generateProFile, saveProFile } = require('../utils/genProFile');
 const db = require('../models');
 const fs = require('fs');
 const path = require('path');
-const xml2js = require('xml2js');
-
-// Pagination Requirement
-const limitRequirement = (offset) => ({ limit: 12, offset: offset });
 const { Sequelize } = require('sequelize');
 const { returnSuccess, raiseError, errorByAPI, checkParamsExisted, INVALID_REQUEST, MISSING_REQUIRE_KEYS } = require('../middlewares/error');
 const { extractSongData } = require('../utils/readProFile');
@@ -15,6 +11,7 @@ exports.getAllSongs = async (req, res) => {
     // Get Query Params
     const searchWords = req.query.search || "";
     const searchTags = req.query.tags || "";
+    const searchLanguages = req.query.languages || "";
     const offset = parseInt(req.query.offset) || 0;
     const limit = 12; // Default limit
 
@@ -24,8 +21,7 @@ exports.getAllSongs = async (req, res) => {
     if (searchTags.trim() !== "") {
       const tags = searchTags.split("|").map(t => t.trim()).filter(t => t.length > 0);
       if (tags.length > 0) {
-        // song_tags stores array of tag IDs like [1, 2, 3]
-        // Convert to string for LIKE queries: "[1,2,3]"
+        // song_tags stores comma-separated tag IDs like "1,2,3"
         const tagConditions = tags.map(tagId => ({
           song_tags: {
             [Sequelize.Op.like]: `%${tagId}%`
@@ -35,7 +31,21 @@ exports.getAllSongs = async (req, res) => {
       }
     }
 
-    // 2. Handle Search Words (Case Insensitive)
+    // 2. Handle Languages Filter
+    if (searchLanguages.trim() !== "") {
+      const languages = searchLanguages.split("|").map(l => l.trim()).filter(l => l.length > 0);
+      if (languages.length > 0) {
+        // song_language stores comma-separated languages like "zh,en"
+        const languageConditions = languages.map(lang => ({
+          song_language: {
+            [Sequelize.Op.like]: `%${lang}%`
+          }
+        }));
+        whereConditions.push({ [Sequelize.Op.or]: languageConditions });
+      }
+    }
+
+    // 3. Handle Search Words (Case Insensitive)
     if (searchWords.trim() !== "") {
       const needle = searchWords.trim().toLowerCase();
       whereConditions.push(
@@ -147,7 +157,6 @@ exports.downloadSongProFile = async (req, res) => {
     if (!song) {
       return raiseError(res, INVALID_REQUEST);
     }
-    console.log(song)
 
     // 生成 ProPresenter 文件結構
     const presentation = await generateProFile(song, { spacing, addBlankPage, theme, labelLanguage });
