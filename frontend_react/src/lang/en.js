@@ -186,6 +186,7 @@ export default {
   "lyrics.spacing": "Spacing",
   "lyrics.theme": "ProTheme",
   "lyrics.add_blank_page": "Add Blank Page at End",
+  "lyrics.label_language": "Label Language",
 
   // Upload
   "upload.title": "Upload New Video",

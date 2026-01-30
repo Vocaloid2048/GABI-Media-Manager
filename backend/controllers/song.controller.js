@@ -135,6 +135,7 @@ exports.downloadSongProFile = async (req, res) => {
     const spacing = req.query.spacing || '1';
     const addBlankPage = req.query.addBlankPage === 'true';
     const theme = req.query.theme || 'default_Theme';
+    const labelLanguage = req.query.labelLanguage || 'zh_hk';
 
     if (!checkParamsExisted({ songId })) {
       return raiseError(res, MISSING_REQUIRE_KEYS);
@@ -148,9 +149,10 @@ exports.downloadSongProFile = async (req, res) => {
     if (!song) {
       return raiseError(res, INVALID_REQUEST);
     }
+    console.log(song)
 
     // 生成 ProPresenter 文件結構
-    const presentation = await generateProFile(song, { spacing, addBlankPage, theme });
+    const presentation = await generateProFile(song, { spacing, addBlankPage, theme, labelLanguage });
 
     // 創建臨時文件路徑
     const tempDir = path.join(__dirname, '../temp');

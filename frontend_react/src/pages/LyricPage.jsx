@@ -18,7 +18,7 @@ const LyricPage = () => {
 
   const [songTagsData, setSongTagsData] = useState([]);
   const { language, locale } = useLanguage();
-  const { spacing, setSpacing, addBlankPage, setAddBlankPage, selectedTheme, setSelectedTheme } = useLyricOptions();
+  const { spacing, setSpacing, addBlankPage, setAddBlankPage, selectedTheme, setSelectedTheme, labelLanguage, setLabelLanguage } = useLyricOptions();
   const [themes, setThemes] = useState([]);
 
   useEffect(() => {
@@ -113,7 +113,22 @@ const LyricPage = () => {
     if (!groupInfo) {
       return { colorHex: '#777777', labelName: label || 'Unknown' };
     }
-    return { colorHex: groupInfo.colorHex, labelName: language === 'zh' ? (groupInfo.zh_hk || label) : (groupInfo.en || label) };
+
+    let labelName;
+    switch (labelLanguage) {
+      case 'zh_cn':
+        labelName = groupInfo.zh_cn || groupInfo.en || label;
+        break;
+      case 'en':
+        labelName = groupInfo.en || label;
+        break;
+      case 'zh_hk':
+      default:
+        labelName = groupInfo.zh_hk || groupInfo.en || label;
+        break;
+    }
+
+    return { colorHex: groupInfo.colorHex, labelName };
   };
 
   // 處理內容根據選項
@@ -142,7 +157,7 @@ const LyricPage = () => {
     try {
       const userId = localStorage.getItem('user_id');
       const ds = generateDs(userId);
-      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}&theme=${selectedTheme+"_Theme"}`, {
+      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}&theme=${selectedTheme+"_Theme"}&labelLanguage=${labelLanguage}`, {
         headers: {
           'user_id': userId,
           'ds': ds
@@ -299,6 +314,7 @@ const LyricPage = () => {
                       <option value="tab">Tab</option>
                     </select>
                   </div>
+                  <div className="w-px h-6 bg-gray-600"></div>
                   <div className="flex items-center gap-2">
                     <label className="text-white">{locale('lyrics.theme')}</label>
                     <select
@@ -313,6 +329,20 @@ const LyricPage = () => {
                       ))}
                     </select>
                   </div>
+                  <div className="w-px h-6 bg-gray-600"></div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-white">{locale('lyrics.label_language')}</label>
+                    <select
+                      value={labelLanguage}
+                      onChange={(e) => setLabelLanguage(e.target.value)}
+                      className="bg-gray-700 text-white px-3 py-1 rounded"
+                    >
+                      <option value="zh_cn">簡體中文</option>
+                      <option value="zh_hk">繁體中文</option>
+                      <option value="en">English</option>
+                    </select>
+                  </div>
+                  <div className="w-px h-6 bg-gray-600"></div>
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"

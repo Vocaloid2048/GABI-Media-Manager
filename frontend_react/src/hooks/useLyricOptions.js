@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 const STORAGE_KEYS = {
   SPACING: 'lyricPage_spacing',
   ADD_BLANK_PAGE: 'lyricPage_addBlankPage',
-  SELECTED_THEME: 'lyricPage_selectedTheme'
+  SELECTED_THEME: 'lyricPage_selectedTheme',
+  LABEL_LANGUAGE: 'lyricPage_labelLanguage'
 };
 
 export function useLyricOptions() {
@@ -18,6 +19,10 @@ export function useLyricOptions() {
 
   const [selectedTheme, setSelectedTheme] = useState(() =>
     localStorage.getItem(STORAGE_KEYS.SELECTED_THEME) || ''
+  );
+
+  const [labelLanguage, setLabelLanguage] = useState(() =>
+    localStorage.getItem(STORAGE_KEYS.LABEL_LANGUAGE) || 'zh_hk'
   );
 
   // 保存到 localStorage
@@ -35,12 +40,18 @@ export function useLyricOptions() {
     }
   }, [selectedTheme]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.LABEL_LANGUAGE, labelLanguage);
+  }, [labelLanguage]);
+
   return {
     spacing,
     setSpacing,
     addBlankPage,
     setAddBlankPage,
     selectedTheme,
-    setSelectedTheme
+    setSelectedTheme,
+    labelLanguage,
+    setLabelLanguage
   };
 }

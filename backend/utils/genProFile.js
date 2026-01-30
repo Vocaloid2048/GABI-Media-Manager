@@ -155,7 +155,7 @@ function cloneBaseSlide(baseSlide) {
 
 // 從 songData 生成 ProPresenter 文件
 async function generateProFile(songData, options = {}) {
-  const { spacing = '1', addBlankPage = false, theme = 'default_Theme' } = options;
+  const { spacing = '1', addBlankPage = false, theme = 'default_Theme', labelLanguage = 'zh_hk' } = options;
   const themePath = path.join(__dirname, "theme", theme);
   try {
     const root = await loadProPresenterProto();
@@ -227,23 +227,21 @@ async function generateProFile(songData, options = {}) {
 
     if (processedContent && Array.isArray(processedContent)) {
       processedContent.forEach((slide, index) => {
-        let tagKey, cueName, baseSlideToUse, textContent, fontName, fontSize, bold;
+        let tagKey, cueName, assetName, baseSlideToUse, textContent, fontName, fontSize, bold;
 
         if (index === 0) {
           // 第一個是標題頁
           tagKey = mapTagToKey('TAG');
-          const groupLabel = GROUP_LABEL_LIST[tagKey] || GROUP_LABEL_LIST['TAG'];
-          cueName = groupLabel.zh_hk || 'TAG';
+          cueName = getGroupLabel(tagKey, labelLanguage) || 'TAG';
           baseSlideToUse = titleSlide.baseSlide;
-          textContent = songData.song_name;
+          textContent = slide.content || songData.song_name || "Title";
           fontName = "MicrosoftJhengHeiUIBold";
           fontSize = 130;
           bold = true;
         } else {
           // 其他是歌詞頁
           tagKey = mapTagToKey(slide.tag) || 'VERSE';
-          const groupLabel = GROUP_LABEL_LIST[tagKey] || GROUP_LABEL_LIST['VERSE'];
-          cueName = groupLabel.zh_hk || slide.tag || `Verse ${index + 1}`;
+          cueName = getGroupLabel(tagKey, labelLanguage) || slide.tag || `Verse ${index + 1}`;
           baseSlideToUse = lyricsSlide.baseSlide;
           textContent = slide.content || "";
           fontName = "ArialMT";
@@ -271,7 +269,7 @@ async function generateProFile(songData, options = {}) {
               },
               name: "Presentation Slide",
               label: {
-                text: cueName
+                text: assetName
               },
               isEnabled: true,
               type: 11,
@@ -301,11 +299,12 @@ async function generateProFile(songData, options = {}) {
 
       // 如果需要，添加空白頁
       if (addBlankPage) {
+        const blankAssetName = undefined;
         const blankCue = {
           uuid: {
             string: generateUUID()
           },
-          name: "空白",
+          name: getGroupLabel('BLANK', labelLanguage),
           isEnabled: true,
           completionTargetUuid: {
             string: "00000000-0000-0000-0000-000000000000"
@@ -323,7 +322,7 @@ async function generateProFile(songData, options = {}) {
               },
               name: "Presentation Slide",
               label: {
-                text: "空白"
+                text: blankAssetName
               },
               isEnabled: true,
               type: 11,
@@ -368,7 +367,7 @@ async function generateProFile(songData, options = {}) {
           uuid: {
             string: generateUUID()
           },
-          name: groupLabel.zh_hk,
+          name: getGroupLabel(tagKey, labelLanguage) || tagKey,
           color: {
             red: r,
             green: g,
@@ -427,6 +426,22 @@ async function saveProFile(presentation, outputPath) {
     console.error("Error saving ProPresenter file:", error);
     throw error;
   }
+}
+
+const getGroupLabel = (tagKey, labelLanguage = 'zh_hk') => {
+  const groupLabel = GROUP_LABEL_LIST[tagKey] || GROUP_LABEL_LIST['VERSE'];
+  return (() => {
+    switch (labelLanguage) {
+      case 'zh_cn':
+        return groupLabel.zh_cn;
+      case 'en':
+        return groupLabel.en;
+      case 'zh_hk':
+        return groupLabel.zh_hk;
+      default:
+        return tagKey;
+    }
+  })();
 }
 
 module.exports = {

@@ -186,6 +186,7 @@ export default {
   "lyrics.spacing": "空格間距",
   "lyrics.theme": "ProTheme主題",
   "lyrics.add_blank_page": "添加尾頁 (空白)",
+  "lyrics.label_language": "標籤語言",
 
   // Upload
   "upload.title": "上傳新影片",
