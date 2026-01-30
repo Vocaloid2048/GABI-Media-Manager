@@ -73,7 +73,6 @@ exports.getAllSongs = async (req, res) => {
 
     returnSuccess(res, songsWithNames);
   } catch (error) {
-    console.error('Error fetching songs:', error);
     errorByAPI(res, error);
   }
 };
@@ -124,7 +123,6 @@ exports.uploadSong = async (req, res) => {
     fs.unlinkSync(tempPath);
     returnSuccess(res, song);
   } catch (error) {
-    console.error('Error uploading song:', error);
     errorByAPI(res, error);
   }
 };
@@ -180,12 +178,11 @@ exports.downloadSongProFile = async (req, res) => {
       }
 
       if (err) {
-        console.error('Error downloading file:', err);
+        // Error downloading file - file cleanup already handled above
       }
     });
 
   } catch (error) {
-    console.error('Error downloading ProPresenter file:', error);
     errorByAPI(res, error);
   }
 };
@@ -204,12 +201,8 @@ exports.getThemes = async (req, res) => {
       themes = themes.filter(theme => theme !== 'default');
     }
 
-    res.json({
-      retcode: 1,
-      data: themes
-    });
+    returnSuccess(res, themes);
   } catch (error) {
-    console.error('Error getting themes:', error);
     errorByAPI(res, error);
   }
 };
@@ -244,7 +237,6 @@ exports.getSongById = async (req, res) => {
 
     returnSuccess(res, song);
   } catch (error) {
-    console.error('Error fetching song:', error);
     errorByAPI(res, error);
   }
 };

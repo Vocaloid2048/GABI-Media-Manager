@@ -266,7 +266,6 @@ async function extractSongData(proFilePath) {
       content
     };
   } catch (error) {
-    console.error('Error extracting song data from ProPresenter file:', error);
     throw error;
   }
 }

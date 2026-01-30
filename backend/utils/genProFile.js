@@ -404,26 +404,18 @@ async function saveProFile(presentation, outputPath) {
     const root = await loadProPresenterProto();
     const Presentation = root.lookupType("rv.data.Presentation");
 
-    console.log("Creating message...");
     const message = Presentation.create(presentation);
-    console.log("Verifying message...");
     const err = Presentation.verify(presentation);
     if (err) {
-      console.error("Verification error:", err);
       throw new Error(err);
     }
-    console.log("Encoding message...");
     const buffer = Presentation.encode(message).finish();
-
-    console.log(`Buffer length: ${buffer.length}`);
 
     // 保存到文件
     fs.writeFileSync(outputPath, buffer);
-    console.log(`ProPresenter file saved to: ${outputPath}`);
 
     return outputPath;
   } catch (error) {
-    console.error("Error saving ProPresenter file:", error);
     throw error;
   }
 }
