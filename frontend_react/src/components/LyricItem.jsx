@@ -114,12 +114,12 @@ const LyricItem = ({ slide, tagInfo }) => {
     <div className="bg-gray-800 overflow-hidden">
       {/* 16:9 content area */}
       <div
-        style={{ aspectRatio: '16/9', border: `2px solid ${tagInfo.colorHex}` }}
+        style={{ border: `2px solid ${tagInfo.colorHex}` }}
         className="relative rounded-t-lg"
         ref={containerRef}
       >
         {/* Page content with positioned text */}
-        <div className="pt-1 pb-4 px-4 h-full relative">
+        <div className="pt-1 pb-4 px-4 h-full relative" style={{ aspectRatio: '16/9' }}>
           <div style={calculateElementStyle()}>
             <p ref={textRef} style={textStyle}>
               {slide.content}

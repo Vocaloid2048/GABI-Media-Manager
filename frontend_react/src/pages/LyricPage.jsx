@@ -17,7 +17,7 @@ const GROUP_LABEL_LIST = {
   "VERSE5": { colorHex: "#005A9E", en: "Verse 5", zh_cn: "主歌5", zh_hk: "主歌5" },
   "VERSE6": { colorHex: "#002050", en: "Verse 6", zh_cn: "主歌6", zh_hk: "主歌6" },
   "CHORUS": { colorHex: "#D41243", en: "Chorus", zh_cn: "副歌", zh_hk: "副歌" },
-  "CHORUS 1": { colorHex: "#D41243", en: "Chorus 1", zh_cn: "副歌1", zh_hk: "副歌1" },
+  "CHORUS1": { colorHex: "#D41243", en: "Chorus 1", zh_cn: "副歌1", zh_hk: "副歌1" },
   "CHORUS2": { colorHex: "#D41243", en: "Chorus 2", zh_cn: "副歌2", zh_hk: "副歌2" },
   "CHORUS3": { colorHex: "#5B0025", en: "Chorus 3", zh_cn: "副歌3", zh_hk: "副歌3" },
   "CHORUS4": { colorHex: "#D41243", en: "Chorus 4", zh_cn: "副歌4", zh_hk: "副歌4" },
@@ -136,7 +136,11 @@ const LyricPage = () => {
   // 獲取Label的顯示名稱和顏色
   const getLabelDisplay = (label) => {
     const upperLabel = label ? label.toUpperCase().replace(/\s+/g, '') : '';
-    return { colorHex: GROUP_LABEL_LIST[upperLabel].colorHex || '#777777', labelName: language === 'zh' ? (GROUP_LABEL_LIST[upperLabel].zh_hk || label) : (GROUP_LABEL_LIST[upperLabel].en || label) };
+    const groupInfo = GROUP_LABEL_LIST[upperLabel];
+    if (!groupInfo) {
+      return { colorHex: '#777777', labelName: label || 'Unknown' };
+    }
+    return { colorHex: groupInfo.colorHex, labelName: language === 'zh' ? (groupInfo.zh_hk || label) : (groupInfo.en || label) };
   };
 
   const handleDownloadLyrics = async () => {
@@ -249,42 +253,30 @@ const LyricPage = () => {
                 <h3 className="text-lg font-semibold text-white mb-2">{locale('song.copyright_info')}</h3>
                 <div className="bg-gray-800 rounded-lg p-4">
                   <div className="grid grid-cols-2 gap-4">
-                    {copyright.composer && (
-                      <div className="flex flex-col">
+                    <div className="flex flex-col">
                         <span className="text-gray-400 text-sm mb-1">{locale('song.composer')}</span>
-                        <span className="text-white">{copyright.composer}</span>
+                        <span className="text-white">{copyright.composer || "--"}</span>
                       </div>
-                    )}
-                    {copyright.lyricist && (
-                      <div className="flex flex-col">
+                    <div className="flex flex-col">
                         <span className="text-gray-400 text-sm mb-1">{locale('song.lyricist')}</span>
-                        <span className="text-white">{copyright.lyricist}</span>
+                        <span className="text-white">{copyright.lyricist || "--"  }</span>
                       </div>
-                    )}
-                    {copyright.arranger && (
-                      <div className="flex flex-col">
+                    <div className="flex flex-col">
                         <span className="text-gray-400 text-sm mb-1">{locale('song.arranger')}</span>
-                        <span className="text-white">{copyright.arranger}</span>
+                        <span className="text-white">{copyright.arranger || "--"}</span>
                       </div>
-                    )}
-                    {copyright.album && (
-                      <div className="flex flex-col">
+                    <div className="flex flex-col">
                         <span className="text-gray-400 text-sm mb-1">{locale('song.album')}</span>
-                        <span className="text-white">{copyright.album}</span>
+                        <span className="text-white">{copyright.album || "--"}</span>
                       </div>
-                    )}
-                    {copyright.publisher && (
-                      <div className="flex flex-col">
+                    <div className="flex flex-col">
                         <span className="text-gray-400 text-sm mb-1">{locale('song.publisher')}</span>
-                        <span className="text-white">{copyright.publisher}</span>
+                        <span className="text-white">{copyright.publisher || "--"}</span>
                       </div>
-                    )}
-                    {copyright.year && (
-                      <div className="flex flex-col">
+                    <div className="flex flex-col">
                         <span className="text-gray-400 text-sm mb-1">{locale('song.year')}</span>
-                        <span className="text-white">{copyright.year}</span>
+                        <span className="text-white">{copyright.year || "--"}</span>
                       </div>
-                    )}
                   </div>
                 </div>
               </div>
