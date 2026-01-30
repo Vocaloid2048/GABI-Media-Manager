@@ -64,8 +64,13 @@ const LyricPage = () => {
 
   const [songTagsData, setSongTagsData] = useState([]);
   const { language, locale } = useLanguage();
-  const [spacing, setSpacing] = useState('1');
-  const [addBlankPage, setAddBlankPage] = useState(true);
+  const [spacing, setSpacing] = useState(() => localStorage.getItem('lyricPage_spacing') || '1');
+  const [addBlankPage, setAddBlankPage] = useState(() => {
+    const saved = localStorage.getItem('lyricPage_addBlankPage');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [selectedTheme, setSelectedTheme] = useState(() => localStorage.getItem('lyricPage_selectedTheme') || '');
+  const [themes, setThemes] = useState([]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -134,6 +139,41 @@ const LyricPage = () => {
     }
   }, [id, songTagsData, language, locale]);
 
+  useEffect(() => {
+    const fetchThemes = async () => {
+      try {
+        const response = await fetch('/api/song/themes');
+        const data = await response.json();
+        if (data.retcode === 1) {
+          setThemes(data.data);
+          // 如果沒有選擇主題或選擇的主題不在列表中，設置為第一個主題
+          if (!selectedTheme || !data.data.includes(selectedTheme)) {
+            setSelectedTheme(data.data[0] || '');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching themes:', error);
+      }
+    };
+
+    fetchThemes();
+  }, []);
+
+  // 保存選項到 localStorage
+  useEffect(() => {
+    localStorage.setItem('lyricPage_spacing', spacing);
+  }, [spacing]);
+
+  useEffect(() => {
+    localStorage.setItem('lyricPage_addBlankPage', JSON.stringify(addBlankPage));
+  }, [addBlankPage]);
+
+  useEffect(() => {
+    if (selectedTheme) {
+      localStorage.setItem('lyricPage_selectedTheme', selectedTheme);
+    }
+  }, [selectedTheme]);
+
   // 獲取Label的顯示名稱和顏色
   const getLabelDisplay = (label) => {
     const upperLabel = label ? label.toUpperCase().replace(/\s+/g, '') : '';
@@ -170,7 +210,7 @@ const LyricPage = () => {
     try {
       const userId = localStorage.getItem('user_id');
       const ds = generateDs(userId);
-      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}`, {
+      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}&theme=${selectedTheme+"_Theme"}`, {
         headers: {
           'user_id': userId,
           'ds': ds
@@ -325,6 +365,20 @@ const LyricPage = () => {
                       <option value="3">3</option>
                       <option value="4">4</option>
                       <option value="tab">Tab</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-white">主題:</label>
+                    <select
+                      value={selectedTheme}
+                      onChange={(e) => setSelectedTheme(e.target.value)}
+                      className="bg-gray-700 text-white px-3 py-1 rounded"
+                    >
+                      {themes.map((theme) => (
+                        <option key={theme} value={theme}>
+                          {theme}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="flex items-center gap-2">

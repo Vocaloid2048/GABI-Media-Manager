@@ -134,6 +134,7 @@ exports.downloadSongProFile = async (req, res) => {
     const songId = req.params.id;
     const spacing = req.query.spacing || '1';
     const addBlankPage = req.query.addBlankPage === 'true';
+    const theme = req.query.theme || 'default_Theme';
 
     if (!checkParamsExisted({ songId })) {
       return raiseError(res, MISSING_REQUIRE_KEYS);
@@ -149,7 +150,7 @@ exports.downloadSongProFile = async (req, res) => {
     }
 
     // 生成 ProPresenter 文件結構
-    const presentation = await generateProFile(song, { spacing, addBlankPage });
+    const presentation = await generateProFile(song, { spacing, addBlankPage, theme });
 
     // 創建臨時文件路徑
     const tempDir = path.join(__dirname, '../temp');
@@ -183,6 +184,30 @@ exports.downloadSongProFile = async (req, res) => {
 
   } catch (error) {
     console.error('Error downloading ProPresenter file:', error);
+    errorByAPI(res, error);
+  }
+};
+
+exports.getThemes = async (req, res) => {
+  try {
+    const themeDir = path.join(__dirname, '../utils/theme');
+    const files = fs.readdirSync(themeDir);
+    let themes = files
+      .filter(file => file.endsWith('_Theme'))
+      .map(file => file.replace('_Theme', ''));
+
+    // 如果有其他非 default_Theme 的檔案，則不展示 default_Theme
+    const hasOtherThemes = themes.some(theme => theme !== 'default');
+    if (hasOtherThemes) {
+      themes = themes.filter(theme => theme !== 'default');
+    }
+
+    res.json({
+      retcode: 1,
+      data: themes
+    });
+  } catch (error) {
+    console.error('Error getting themes:', error);
     errorByAPI(res, error);
   }
 };

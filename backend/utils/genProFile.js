@@ -155,7 +155,8 @@ function cloneBaseSlide(baseSlide) {
 
 // 從 songData 生成 ProPresenter 文件
 async function generateProFile(songData, options = {}) {
-  const { spacing = '1', addBlankPage = false, themePath = path.join(__dirname, "default_Theme") } = options;
+  const { spacing = '1', addBlankPage = false, theme = 'default_Theme' } = options;
+  const themePath = path.join(__dirname, "theme", theme);
   try {
     const root = await loadProPresenterProto();
     const Presentation = root.lookupType("rv.data.Presentation");
