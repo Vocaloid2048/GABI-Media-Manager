@@ -123,6 +123,11 @@ const SongUploadPopup = ({ onClose }) => {
       const userId = localStorage.getItem('user_id');
       const ds = generateDs(userId);
 
+      if(!ds) {
+        alert(locale('auth.ds_generation_failed'));
+        setUploading(false);
+        return;
+      }
 
       const payload = {
         song_name: songName,
@@ -133,12 +138,10 @@ const SongUploadPopup = ({ onClose }) => {
         song_language: songLanguage.join(',')
       };
 
-      const response = await fetch(`/api/song/upload`, {
+      const response = await fetch(`/api/song/upload?user_id=${(userId)}&ds=${encodeURIComponent(ds)}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'user_id': userId,
-          'ds': ds
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
       });

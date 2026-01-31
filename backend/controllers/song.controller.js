@@ -127,7 +127,7 @@ exports.uploadSong = async (req, res) => {
       song_copyright: JSON.stringify(song_copyright || "{}"),
       song_tags: song_tags,
       song_language: song_language,
-      uploader_id: req.get("user_id"),
+      uploader_id: req.get("user_id") || req.query.user_id,
     });
 
     fs.unlinkSync(tempPath);
