@@ -18,7 +18,7 @@ const LyricPage = () => {
 
   const [songTagsData, setSongTagsData] = useState([]);
   const { language, locale } = useLanguage();
-  const { spacing, setSpacing, addBlankPage, setAddBlankPage, selectedTheme, setSelectedTheme, labelLanguage, setLabelLanguage, addTitlePage, setAddTitlePage, addCopyright, setAddCopyright, showCopyright, setShowCopyright, copyrightLanguage, setCopyrightLanguage } = useLyricOptions();
+  const { spacing, setSpacing, addBlankPage, setAddBlankPage, selectedTheme, setSelectedTheme, labelLanguage, setLabelLanguage, addTitlePage, setAddTitlePage, showCopyright, setShowCopyright, copyrightLanguage, setCopyrightLanguage } = useLyricOptions();
   const [themes, setThemes] = useState([]);
 
   useEffect(() => {
@@ -228,7 +228,7 @@ const LyricPage = () => {
     try {
       const userId = localStorage.getItem('user_id');
       const ds = generateDs(userId);
-      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}&theme=${selectedTheme+"_Theme"}&labelLanguage=${labelLanguage}&addTitlePage=${addTitlePage}&addCopyright=${addCopyright}&showCopyright=${showCopyright}&copyrightLanguage=${copyrightLanguage}&user_id=${userId}&ds=${encodeURIComponent(ds)}`);
+      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}&theme=${selectedTheme+"_Theme"}&labelLanguage=${labelLanguage}&addTitlePage=${addTitlePage}&showCopyright=${showCopyright}&copyrightLanguage=${copyrightLanguage}&user_id=${userId}&ds=${encodeURIComponent(ds)}`);
 
       if (response.ok) {
         const arrayBuffer = await response.arrayBuffer();

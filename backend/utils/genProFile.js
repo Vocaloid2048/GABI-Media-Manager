@@ -163,7 +163,7 @@ function cloneBaseSlide(baseSlide) {
 
 // 從 songData 生成 ProPresenter 文件
 async function generateProFile(songData, options = {}) {
-  const { spacing = '1', addBlankPage = false, theme = 'default_Theme', labelLanguage = 'zh_hk', addTitlePage = true, addCopyright = true, showCopyright = true, copyrightLanguage = 'zh_hk' } = options;
+  const { spacing = '1', addBlankPage = false, theme = 'default_Theme', labelLanguage = 'zh_hk', addTitlePage = true, showCopyright = true, copyrightLanguage = 'zh_hk' } = options;
   const themePath = path.join(__dirname, "theme", theme);
   try {
     const root = await loadProPresenterProto();
@@ -223,7 +223,7 @@ async function generateProFile(songData, options = {}) {
     };
 
     // 處理 CCLI 版權資訊
-    if (addCopyright && songData.song_copyright) {
+    if (songData.song_copyright) {
       try {
         const copyright = JSON.parse(songData.song_copyright);
         const authorParts = [];

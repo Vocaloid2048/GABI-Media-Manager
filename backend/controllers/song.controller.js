@@ -151,7 +151,6 @@ exports.downloadSongProFile = async (req, res) => {
     const theme = req.query.theme || 'default_Theme';
     const labelLanguage = req.query.labelLanguage || 'zh_hk';
     const addTitlePage = req.query.addTitlePage !== 'false'; // default true
-    const addCopyright = req.query.addCopyright !== 'false'; // default true
     const showCopyright = req.query.showCopyright !== 'false'; // default true
     const copyrightLanguage = req.query.copyrightLanguage || 'zh_hk';
 
@@ -169,7 +168,7 @@ exports.downloadSongProFile = async (req, res) => {
     }
 
     // 生成 ProPresenter 文件結構
-    const presentation = await generateProFile(song, { spacing, addBlankPage, theme, labelLanguage, addTitlePage, addCopyright, showCopyright, copyrightLanguage });
+    const presentation = await generateProFile(song, { spacing, addBlankPage, theme, labelLanguage, addTitlePage, showCopyright, copyrightLanguage });
 
     // 創建臨時文件路徑
     const tempDir = path.join(__dirname, '../temp');
