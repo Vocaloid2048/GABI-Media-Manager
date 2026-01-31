@@ -29,7 +29,7 @@ export function useLyricItem(slide, dynamicScale) {
   const [computedFontPx, setComputedFontPx] = useState(null);
 
   // Hardcoded bounds for 青少崇拜 theme
-  const bounds = slide.page === 1
+  const bounds = slide.is_title
     ? { x: 52.61261261261268, y: 45.630630630630606, width: 1772.972972972973, height: 161.35135135135135 }
     : { x: 52.61261261261268, y: 45.63063063063058, width: 1819.099099099099, height: 494.3693693693694 };
 
@@ -46,7 +46,7 @@ export function useLyricItem(slide, dynamicScale) {
       width: `${scaledWidth}px`,
       height: `${scaledHeight}px`,
       display: 'flex',
-      justifyContent: slide.page === 1 ? 'flex-start' : 'center',
+      justifyContent: slide.is_title ? 'flex-start' : 'center',
       padding: '0px',
       boxSizing: 'border-box'
     };
@@ -59,7 +59,7 @@ export function useLyricItem(slide, dynamicScale) {
       const container = containerRef.current;
       const availableWidth = container.clientWidth - 16; // padding
       const availableHeight = container.clientHeight - 16;
-      const baseFontPx = (slide.page === 1 ? 130 : 115) * dynamicScale;
+      const baseFontPx = (slide.is_title ? 130 : 115) * dynamicScale;
       // prepare CSS font string for canvas measure
       const cssFont = `bold ${baseFontPx}px Microsoft JhengHei UI, sans-serif`;
       const text = slide.content || '';
@@ -77,7 +77,7 @@ export function useLyricItem(slide, dynamicScale) {
 
   const textColor = 'rgb(255,255,255)';
   const fontFamilyCss = 'Microsoft JhengHei UI, sans-serif';
-  const baseFontPx = (slide.page === 1 ? 130 : 115) * dynamicScale;
+  const baseFontPx = (slide.is_title ? 130 : 115) * dynamicScale;
 
   const textStyle = {
     fontFamily: fontFamilyCss,
@@ -88,7 +88,7 @@ export function useLyricItem(slide, dynamicScale) {
     lineHeight: '1.1',
     whiteSpace: 'pre-wrap',
     wordBreak: 'break-word',
-    textAlign: slide.page === 1 ? 'left' : 'center',
+    textAlign: slide.is_title ? 'left' : 'center',
     margin: 0
   };
 

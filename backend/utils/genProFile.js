@@ -163,7 +163,7 @@ function cloneBaseSlide(baseSlide) {
 
 // 從 songData 生成 ProPresenter 文件
 async function generateProFile(songData, options = {}) {
-  const { spacing = '1', addBlankPage = false, theme = 'default_Theme', labelLanguage = 'zh_hk', addTitlePage = true, addCopyright = true, copyrightLanguage = 'zh_hk' } = options;
+  const { spacing = '1', addBlankPage = false, theme = 'default_Theme', labelLanguage = 'zh_hk', addTitlePage = true, addCopyright = true, showCopyright = true, copyrightLanguage = 'zh_hk' } = options;
   const themePath = path.join(__dirname, "theme", theme);
   try {
     const root = await loadProPresenterProto();
@@ -246,7 +246,7 @@ async function generateProFile(songData, options = {}) {
           songTitle: songData.song_name || '',
           copyrightYear: Number.isInteger(+copyright.year) ? parseInt(copyright.year) : undefined,
           album: copyright.album || '',
-          display: true
+          display: showCopyright
         };
       } catch (error) {
         console.warn('Failed to parse song_copyright:', error);
@@ -265,6 +265,15 @@ async function generateProFile(songData, options = {}) {
         content: slide.content.replace("\t", " ").replace(/ /g, (spacing === 'tab' ? '\t' : " ".repeat(parseInt(spacing) || 1)))
       }));
 
+      // 如果添加首頁，但第一個不是標題頁，則插入標題頁
+      if (addTitlePage && (!processedContent[0] || !processedContent[0].is_title)) {
+        processedContent.unshift({
+          is_title: true,
+          content: songData.song_name || "Title",
+          tag: 'TAG'
+        });
+      }
+
       // 如果不添加首頁，過濾掉標題頁
       if (!addTitlePage) {
         processedContent = processedContent.filter(slide => !slide.is_title);
@@ -275,8 +284,8 @@ async function generateProFile(songData, options = {}) {
       processedContent.forEach((slide, index) => {
         let tagKey, cueName, assetName, baseSlideToUse, textContent, fontName, fontSize, bold;
 
-        if (index === 0 && addTitlePage) {
-          // 第一個是標題頁
+        if (slide.is_title && addTitlePage) {
+          // 標題頁
           tagKey = mapTagToKey('TAG');
           cueName = getGroupLabel(tagKey, labelLanguage) || 'TAG';
           baseSlideToUse = titleSlide.baseSlide;
@@ -285,7 +294,7 @@ async function generateProFile(songData, options = {}) {
           fontSize = 130;
           bold = true;
         } else {
-          // 其他是歌詞頁
+          // 歌詞頁
           tagKey = mapTagToKey(slide.tag) || 'VERSE';
           cueName = getGroupLabel(tagKey, labelLanguage) || slide.tag || `Verse ${index + 1}`;
           baseSlideToUse = lyricsSlide.baseSlide;
@@ -307,7 +316,7 @@ async function generateProFile(songData, options = {}) {
           completionActionUuid: {
             string: "00000000-0000-0000-0000-000000000000"
           },
-          triggerTime: index === 0 ? {} : { time: 0 },
+          triggerTime: (slide.is_title && addTitlePage) ? {} : { time: 0 },
           actions: [
             {
               uuid: {

@@ -186,7 +186,7 @@ export default {
   "lyrics.category": "Category: ",
   "lyrics.language": "Language: ",
   "lyrics.spacing": "Spacing",
-  "lyrics.theme": "ProTheme",
+  "lyrics.theme": "ProTheme (No Preview)",
   "lyrics.add_blank_page": "Add Blank Page at End",
   "lyrics.label_language": "Label Language",
   "lyrics.add_title_page": "Add Title Page",

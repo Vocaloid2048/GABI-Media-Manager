@@ -186,7 +186,7 @@ export default {
   "lyrics.category": "類別：",
   "lyrics.language": "語言：",
   "lyrics.spacing": "空格間距",
-  "lyrics.theme": "ProTheme主題",
+  "lyrics.theme": "ProTheme 主題（無預覽）",
   "lyrics.add_blank_page": "添加尾頁 (空白)",
   "lyrics.label_language": "標籤語言",
   "lyrics.add_title_page": "添加標題頁",

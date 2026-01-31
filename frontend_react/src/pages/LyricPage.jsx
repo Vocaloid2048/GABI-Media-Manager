@@ -18,7 +18,7 @@ const LyricPage = () => {
 
   const [songTagsData, setSongTagsData] = useState([]);
   const { language, locale } = useLanguage();
-  const { spacing, setSpacing, addBlankPage, setAddBlankPage, selectedTheme, setSelectedTheme, labelLanguage, setLabelLanguage, addTitlePage, setAddTitlePage, addCopyright, setAddCopyright, copyrightLanguage, setCopyrightLanguage } = useLyricOptions();
+  const { spacing, setSpacing, addBlankPage, setAddBlankPage, selectedTheme, setSelectedTheme, labelLanguage, setLabelLanguage, addTitlePage, setAddTitlePage, addCopyright, setAddCopyright, showCopyright, setShowCopyright, copyrightLanguage, setCopyrightLanguage } = useLyricOptions();
   const [themes, setThemes] = useState([]);
 
   useEffect(() => {
@@ -160,6 +160,15 @@ const LyricPage = () => {
       content: slide.content.replace("\t", " ").replace(/ /g, (spacing === 'tab' ? '\t' : " ".repeat(parseInt(spacing) || 1)))
     }));
 
+    // 如果添加首頁，但第一個不是標題頁，則插入標題頁
+    if (addTitlePage && (!content[0] || !content[0].is_title)) {
+      content.unshift({
+        is_title: true,
+        content: song.song_name || "Title",
+        tag: 'TAG'
+      });
+    }
+
     // 如果不添加首頁，過濾掉標題頁
     if (!addTitlePage) {
       content = content.filter(slide => !slide.is_title);
@@ -180,7 +189,38 @@ const LyricPage = () => {
     }
 
     return content;
-  }, [song?.content, spacing, addBlankPage, addTitlePage]);
+  }, [song?.content, song?.song_name, spacing, addBlankPage, addTitlePage]);
+
+  // 生成 CCLI 資訊根據版權語言
+  const ccliInfo = React.useMemo(() => {
+    if (!song?.song_copyright) return null;
+
+    const copyright = song.song_copyright;
+    const authorParts = [];
+
+    const labels = {
+      composer: { en: "Composer: ", zh_cn: "作曲：", zh_hk: "作曲：" },
+      lyricist: { en: "Lyricist: ", zh_cn: "填词：", zh_hk: "填詞：" },
+      arranger: { en: "Arranger: ", zh_cn: "编曲：", zh_hk: "編曲：" }
+    };
+
+    if (copyright.composer && copyright.composer.trim()) {
+      authorParts.push(`${labels.composer[copyrightLanguage] || labels.composer.en}${copyright.composer.trim()}`);
+    }
+    if (copyright.lyricist && copyright.lyricist.trim()) {
+      authorParts.push(`${labels.lyricist[copyrightLanguage] || labels.lyricist.en}${copyright.lyricist.trim()}`);
+    }
+    if (copyright.arranger && copyright.arranger.trim()) {
+      authorParts.push(`${labels.arranger[copyrightLanguage] || labels.arranger.en}${copyright.arranger.trim()}`);
+    }
+
+    return {
+      songTitle: song.song_name || '',
+      author: authorParts.join('\n'),
+      publisher: copyright.publisher || '',
+      copyrightYear: copyright.year || ''
+    };
+  }, [song?.song_copyright, song?.song_name, copyrightLanguage]);
 
   const handleDownloadLyrics = async () => {
     if (!song) return;
@@ -188,7 +228,7 @@ const LyricPage = () => {
     try {
       const userId = localStorage.getItem('user_id');
       const ds = generateDs(userId);
-      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}&theme=${selectedTheme+"_Theme"}&labelLanguage=${labelLanguage}&addTitlePage=${addTitlePage}&addCopyright=${addCopyright}&copyrightLanguage=${copyrightLanguage}&user_id=${userId}&ds=${encodeURIComponent(ds)}`);
+      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}&theme=${selectedTheme+"_Theme"}&labelLanguage=${labelLanguage}&addTitlePage=${addTitlePage}&addCopyright=${addCopyright}&showCopyright=${showCopyright}&copyrightLanguage=${copyrightLanguage}&user_id=${userId}&ds=${encodeURIComponent(ds)}`);
 
       if (response.ok) {
         const arrayBuffer = await response.arrayBuffer();
@@ -392,6 +432,17 @@ const LyricPage = () => {
                   </div>
                   <div className="w-px h-6 bg-gray-600"></div>
                   <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="showCopyright"
+                      checked={showCopyright}
+                      onChange={(e) => setShowCopyright(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <label htmlFor="showCopyright" className="text-white">{locale('lyrics.show_copyright')}</label>
+                  </div>
+                  <div className="w-px h-6 bg-gray-600"></div>
+                  <div className="flex items-center gap-2">
                     <label className="text-white">{locale('lyrics.copyright_language')}</label>
                     <select
                       value={copyrightLanguage}
@@ -415,8 +466,9 @@ const LyricPage = () => {
                       key={slide.page}
                       slide={slide}
                       tagInfo={tagInfo}
-                      ccli={song.ccli}
+                      ccli={ccliInfo}
                       isTitlePage={slide.is_title && addTitlePage}
+                      showCopyright={showCopyright}
                     />
                   );
                 })}
