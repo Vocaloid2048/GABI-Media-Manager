@@ -394,6 +394,17 @@ const UserPage = () => {
                     >
                         <span>{locale('user.settings.change_password')}</span>
                     </button>
+                    <button
+                        onClick={() => {
+                            localStorage.removeItem('user_id');
+                            localStorage.removeItem('username');
+                            localStorage.removeItem('locale_name');
+                            window.location.href = '/'
+                        }}
+                        className="w-full p-4 flex items-center justify-between hover:bg-gray-700 transition-colors text-left text-red-400"
+                    >
+                        <span>{locale('user.settings.logout') || 'Logout'}</span>
+                    </button>
                 </div>
             </div>
 

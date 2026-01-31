@@ -71,6 +71,7 @@ export default {
   "user.err.avatar_size": "頭像檔案大小不能超過 5MB。",
   "user.err.avatar_dims": "頭像尺寸必須在 64x64 到 1024x1024 之間。",
   "user.history.download": "下載紀錄",
+  "user.settings.logout": "登出",
 
   // Login
   "login.welcome": "歡迎回來",

@@ -157,12 +157,7 @@ const LyricPage = () => {
     try {
       const userId = localStorage.getItem('user_id');
       const ds = generateDs(userId);
-      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}&theme=${selectedTheme+"_Theme"}&labelLanguage=${labelLanguage}`, {
-        headers: {
-          'user_id': userId,
-          'ds': ds
-        }
-      });
+      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}&theme=${selectedTheme+"_Theme"}&labelLanguage=${labelLanguage}&user_id=${userId}&ds=${encodeURIComponent(ds)}`);
 
       if (response.ok) {
         const arrayBuffer = await response.arrayBuffer();

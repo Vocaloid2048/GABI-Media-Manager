@@ -71,6 +71,7 @@ export default {
   "user.err.avatar_size": "Avatar size must be within 5MB.",
   "user.err.avatar_dims": "Avatar dimensions must be between 64x64 and 1024x1024.",
   "user.history.download": "Download History",
+  "user.settings.logout": "Logout",
 
   // Login
   "login.welcome": "Welcome",
