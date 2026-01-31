@@ -6,7 +6,6 @@ const STORAGE_KEYS = {
   SELECTED_THEME: 'lyricPage_selectedTheme',
   LABEL_LANGUAGE: 'lyricPage_labelLanguage',
   ADD_TITLE_PAGE: 'lyricPage_addTitlePage',
-  ADD_COPYRIGHT: 'lyricPage_addCopyright',
   SHOW_COPYRIGHT: 'lyricPage_showCopyright',
   COPYRIGHT_LANGUAGE: 'lyricPage_copyrightLanguage'
 };
@@ -31,11 +30,6 @@ export function useLyricOptions() {
 
   const [addTitlePage, setAddTitlePage] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.ADD_TITLE_PAGE);
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-
-  const [addCopyright, setAddCopyright] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ADD_COPYRIGHT);
     return saved !== null ? JSON.parse(saved) : true;
   });
 
@@ -72,10 +66,6 @@ export function useLyricOptions() {
   }, [addTitlePage]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.ADD_COPYRIGHT, JSON.stringify(addCopyright));
-  }, [addCopyright]);
-
-  useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.SHOW_COPYRIGHT, JSON.stringify(showCopyright));
   }, [showCopyright]);
 
@@ -94,8 +84,6 @@ export function useLyricOptions() {
     setLabelLanguage,
     addTitlePage,
     setAddTitlePage,
-    addCopyright,
-    setAddCopyright,
     showCopyright,
     setShowCopyright,
     copyrightLanguage,

@@ -15,6 +15,7 @@ const SongUploadPopup = ({ onClose }) => {
   const [album, setAlbum] = useState('');
   const [publisher, setPublisher] = useState('');
   const [year, setYear] = useState('');
+  const [songYoutubelink, setSongYoutubelink] = useState('');
   const [songTags, setSongTags] = useState([]);
   const [songLanguage, setSongLanguage] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -137,7 +138,8 @@ const SongUploadPopup = ({ onClose }) => {
         song_copyright: {composer: composer || null, lyricist: lyricist || null, arranger: arranger || null, album: album || null, publisher: publisher || null, year: year || null},
         song_tags: songTags.join(','),
         song_language: songLanguage.join(','),
-        hasTitlePage: hasTitlePage
+        hasTitlePage: hasTitlePage,
+        song_ytlink: songYoutubelink || null
       };
 
       const response = await fetch(`/api/song/upload?user_id=${(userId)}&ds=${encodeURIComponent(ds)}`, {
@@ -311,6 +313,19 @@ const SongUploadPopup = ({ onClose }) => {
               onChange={(e) => setYear(e.target.value)}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
               placeholder={locale('song.year_placeholder')}
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-white text-sm font-medium mb-2">
+              YouTube Link
+            </label>
+            <input
+              type="url"
+              value={songYoutubelink}
+              onChange={(e) => setSongYoutubelink(e.target.value)}
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+              placeholder="https://www.youtube.com/watch?v=..."
             />
           </div>
 

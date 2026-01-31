@@ -176,6 +176,7 @@ export default {
   "song.has_title_page": "Has Title Page",
   "song.please_select_pro_file": "Please select a .pro file",
   "song.file_size_exceed": "File size exceeds 1MB",
+  "song.youtube_link": "YouTube Link",
 
   // Lyrics
   "lyrics.pages": "Lyrics Pages",

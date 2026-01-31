@@ -151,6 +151,14 @@ const LyricPage = () => {
     return { colorHex: groupInfo.colorHex, labelName };
   };
 
+  // 提取 YouTube video ID
+  const getYouTubeVideoId = (url) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
   // 處理內容根據選項
   const processedContent = React.useMemo(() => {
     if (!song?.content || !Array.isArray(song.content)) return [];
@@ -228,7 +236,7 @@ const LyricPage = () => {
     try {
       const userId = localStorage.getItem('user_id');
       const ds = generateDs(userId);
-      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}&theme=${selectedTheme+"_Theme"}&labelLanguage=${labelLanguage}&addTitlePage=${addTitlePage}&showCopyright=${showCopyright}&copyrightLanguage=${copyrightLanguage}&user_id=${userId}&ds=${encodeURIComponent(ds)}`);
+      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}&theme=${selectedTheme + "_Theme"}&labelLanguage=${labelLanguage}&addTitlePage=${addTitlePage}&showCopyright=${showCopyright}&copyrightLanguage=${copyrightLanguage}&user_id=${userId}&ds=${encodeURIComponent(ds)}`);
 
       if (response.ok) {
         const arrayBuffer = await response.arrayBuffer();
@@ -270,10 +278,10 @@ const LyricPage = () => {
       </div>
     );
   }
-  
+
   const copyright = song.song_copyright || {};
 
-  return(
+  return (
     <div className="min-h-screen bg-gray-900 text-white">
       <TitleHeader onBack={() => navigate('/songs')} />
 
@@ -305,7 +313,7 @@ const LyricPage = () => {
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             {/* Left Column - Song Info */}
-            <div className="xl:col-span-1 space-y-6"> 
+            <div className="xl:col-span-1 space-y-6">
               {/* Tags */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-2">{locale('song.tags')}</h3>
@@ -328,29 +336,45 @@ const LyricPage = () => {
                 <div className="bg-gray-800 rounded-lg p-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col">
-                        <span className="text-gray-400 text-sm mb-1">{locale('song.composer')}</span>
-                        <span className="text-white">{copyright.composer || "--"}</span>
-                      </div>
+                      <span className="text-gray-400 text-sm mb-1">{locale('song.composer')}</span>
+                      <span className="text-white">{copyright.composer || "--"}</span>
+                    </div>
                     <div className="flex flex-col">
-                        <span className="text-gray-400 text-sm mb-1">{locale('song.lyricist')}</span>
-                        <span className="text-white">{copyright.lyricist || "--"  }</span>
-                      </div>
+                      <span className="text-gray-400 text-sm mb-1">{locale('song.lyricist')}</span>
+                      <span className="text-white">{copyright.lyricist || "--"}</span>
+                    </div>
                     <div className="flex flex-col">
-                        <span className="text-gray-400 text-sm mb-1">{locale('song.arranger')}</span>
-                        <span className="text-white">{copyright.arranger || "--"}</span>
-                      </div>
+                      <span className="text-gray-400 text-sm mb-1">{locale('song.arranger')}</span>
+                      <span className="text-white">{copyright.arranger || "--"}</span>
+                    </div>
                     <div className="flex flex-col">
-                        <span className="text-gray-400 text-sm mb-1">{locale('song.album')}</span>
-                        <span className="text-white">{copyright.album || "--"}</span>
-                      </div>
+                      <span className="text-gray-400 text-sm mb-1">{locale('song.album')}</span>
+                      <span className="text-white">{copyright.album || "--"}</span>
+                    </div>
                     <div className="flex flex-col">
-                        <span className="text-gray-400 text-sm mb-1">{locale('song.publisher')}</span>
-                        <span className="text-white">{copyright.publisher || "--"}</span>
-                      </div>
+                      <span className="text-gray-400 text-sm mb-1">{locale('song.publisher')}</span>
+                      <span className="text-white">{copyright.publisher || "--"}</span>
+                    </div>
                     <div className="flex flex-col">
-                        <span className="text-gray-400 text-sm mb-1">{locale('song.year')}</span>
-                        <span className="text-white">{copyright.year || "--"}</span>
-                      </div>
+                      <span className="text-gray-400 text-sm mb-1">{locale('song.year')}</span>
+                      <span className="text-white">{copyright.year || "--"}</span>
+                    </div>
+                    {/** YouTube Link + iFrame */}
+                    <div className="flex flex-col col-span-2">
+                      <span className="text-gray-400 text-sm mb-1">{locale('song.youtube_link')}</span>
+                      {song?.song_ytlink && getYouTubeVideoId(song.song_ytlink) && (<div className="aspect-video">
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          src={`https://www.youtube.com/embed/${getYouTubeVideoId(song.song_ytlink)}`}
+                          title="YouTube video player"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="rounded-lg"
+                        ></iframe>
+                      </div>) || <span className="text-white">{"--"}</span>}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -361,8 +385,8 @@ const LyricPage = () => {
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-white">{locale('lyrics.pages')}</h3>
               </div>
-              
-              
+
+
               {/* Options */}
               <div className="p-4 bg-gray-800 rounded-lg mb-4">
                 <div className="flex flex-wrap gap-4 items-center">

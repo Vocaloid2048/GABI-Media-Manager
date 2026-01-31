@@ -94,7 +94,7 @@ exports.uploadSong = async (req, res) => {
     if (file === undefined) { return raiseError(res, INVALID_REQUEST); }
 
     // Check is video info params existed
-    const { song_name, song_copyright, song_tags, song_language, hasTitlePage } = req.body;
+    const { song_name, song_copyright, song_tags, song_language, hasTitlePage, song_ytlink } = req.body;
     if (!song_name || !song_copyright || !song_tags || !song_language) {
       return raiseError(res, MISSING_REQUIRE_KEYS);
     }
@@ -133,6 +133,7 @@ exports.uploadSong = async (req, res) => {
       song_copyright: JSON.stringify(song_copyright || "{}"),
       song_tags: song_tags,
       song_language: song_language,
+      song_ytlink: song_ytlink || null,
       uploader_id: req.get("user_id") || req.query.user_id,
     });
 

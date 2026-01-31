@@ -176,6 +176,7 @@ export default {
   "song.has_title_page": "已有標題頁",
   "song.please_select_pro_file": "請選擇 .pro 檔案",
   "song.file_size_exceed": "檔案大小超過 1MB",
+  "song.youtube_link": "YouTube 連結",
 
   // Lyrics
   "lyrics.pages": "歌詞分頁",

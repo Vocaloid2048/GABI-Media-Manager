@@ -40,6 +40,10 @@ const {
         allowNull: true,
         defaultValue: {}
       },
+      song_ytlink: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
       uploader_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
