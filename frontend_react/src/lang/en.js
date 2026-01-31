@@ -173,6 +173,7 @@ export default {
   "song.please_select_category": "Please select category",
   "song.please_select_language": "Please select language",
   "song.please_drag_pro_file": "Please drag and drop a .pro file",
+  "song.has_title_page": "Has Title Page",
   "song.please_select_pro_file": "Please select a .pro file",
   "song.file_size_exceed": "File size exceeds 1MB",
 
@@ -188,6 +189,9 @@ export default {
   "lyrics.theme": "ProTheme",
   "lyrics.add_blank_page": "Add Blank Page at End",
   "lyrics.label_language": "Label Language",
+  "lyrics.add_title_page": "Add Title Page",
+  "lyrics.show_copyright": "Show Copyright Info",
+  "lyrics.copyright_language": "Copyright Language",
 
   // Upload
   "upload.title": "Upload New Video",

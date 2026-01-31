@@ -18,7 +18,7 @@ const LyricPage = () => {
 
   const [songTagsData, setSongTagsData] = useState([]);
   const { language, locale } = useLanguage();
-  const { spacing, setSpacing, addBlankPage, setAddBlankPage, selectedTheme, setSelectedTheme, labelLanguage, setLabelLanguage } = useLyricOptions();
+  const { spacing, setSpacing, addBlankPage, setAddBlankPage, selectedTheme, setSelectedTheme, labelLanguage, setLabelLanguage, addTitlePage, setAddTitlePage, addCopyright, setAddCopyright, copyrightLanguage, setCopyrightLanguage } = useLyricOptions();
   const [themes, setThemes] = useState([]);
 
   useEffect(() => {
@@ -66,11 +66,31 @@ const LyricPage = () => {
             // Parse copyright (JSON string)
             const songCopyright = JSON.parse(songData.song_copyright || '{}');
 
+            // Generate CCLI info
+            const authorParts = [];
+            if (songCopyright.composer && songCopyright.composer.trim()) {
+              authorParts.push(`作曲：${songCopyright.composer.trim()}`);
+            }
+            if (songCopyright.lyricist && songCopyright.lyricist.trim()) {
+              authorParts.push(`填詞：${songCopyright.lyricist.trim()}`);
+            }
+            if (songCopyright.arranger && songCopyright.arranger.trim()) {
+              authorParts.push(`編曲：${songCopyright.arranger.trim()}`);
+            }
+
+            const ccli = {
+              songTitle: songData.song_name || '',
+              author: authorParts.join('\n'),
+              publisher: songCopyright.publisher || '',
+              copyrightYear: songCopyright.year || ''
+            };
+
             setSong({
               ...songData,
               song_tags: songTags,
               song_language: songLanguage,
-              song_copyright: songCopyright
+              song_copyright: songCopyright,
+              ccli: ccli
             });
           }
         }
@@ -137,7 +157,18 @@ const LyricPage = () => {
 
     let content = song.content.map(slide => ({
       ...slide,
-      content: slide.content.replace(/ /g, (spacing === 'tab' ? '\t' : " ".repeat(parseInt(spacing) || 1)))
+      content: slide.content.replace("\t", " ").replace(/ /g, (spacing === 'tab' ? '\t' : " ".repeat(parseInt(spacing) || 1)))
+    }));
+
+    // 如果不添加首頁，過濾掉標題頁
+    if (!addTitlePage) {
+      content = content.filter(slide => !slide.is_title);
+    }
+
+    // 重新分配頁數
+    content = content.map((slide, index) => ({
+      ...slide,
+      page: index + 1
     }));
 
     if (addBlankPage) {
@@ -149,7 +180,7 @@ const LyricPage = () => {
     }
 
     return content;
-  }, [song?.content, spacing, addBlankPage]);
+  }, [song?.content, spacing, addBlankPage, addTitlePage]);
 
   const handleDownloadLyrics = async () => {
     if (!song) return;
@@ -157,7 +188,7 @@ const LyricPage = () => {
     try {
       const userId = localStorage.getItem('user_id');
       const ds = generateDs(userId);
-      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}&theme=${selectedTheme+"_Theme"}&labelLanguage=${labelLanguage}&user_id=${userId}&ds=${encodeURIComponent(ds)}`);
+      const response = await fetch(`/api/song/${song.song_id}/download?spacing=${spacing}&addBlankPage=${addBlankPage}&theme=${selectedTheme+"_Theme"}&labelLanguage=${labelLanguage}&addTitlePage=${addTitlePage}&addCopyright=${addCopyright}&copyrightLanguage=${copyrightLanguage}&user_id=${userId}&ds=${encodeURIComponent(ds)}`);
 
       if (response.ok) {
         const arrayBuffer = await response.arrayBuffer();
@@ -348,6 +379,30 @@ const LyricPage = () => {
                     />
                     <label htmlFor="addBlankPage" className="text-white">{locale('lyrics.add_blank_page')}</label>
                   </div>
+                  <div className="w-px h-6 bg-gray-600"></div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="addTitlePage"
+                      checked={addTitlePage}
+                      onChange={(e) => setAddTitlePage(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <label htmlFor="addTitlePage" className="text-white">{locale('lyrics.add_title_page')}</label>
+                  </div>
+                  <div className="w-px h-6 bg-gray-600"></div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-white">{locale('lyrics.copyright_language')}</label>
+                    <select
+                      value={copyrightLanguage}
+                      onChange={(e) => setCopyrightLanguage(e.target.value)}
+                      className="bg-gray-700 text-white px-2 py-1 rounded text-sm"
+                    >
+                      <option value="zh_cn">簡體中文</option>
+                      <option value="zh_hk">繁體中文</option>
+                      <option value="en">English</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -360,6 +415,8 @@ const LyricPage = () => {
                       key={slide.page}
                       slide={slide}
                       tagInfo={tagInfo}
+                      ccli={song.ccli}
+                      isTitlePage={slide.is_title && addTitlePage}
                     />
                   );
                 })}

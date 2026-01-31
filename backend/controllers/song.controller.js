@@ -94,7 +94,7 @@ exports.uploadSong = async (req, res) => {
     if (file === undefined) { return raiseError(res, INVALID_REQUEST); }
 
     // Check is video info params existed
-    const { song_name, song_copyright, song_tags, song_language } = req.body;
+    const { song_name, song_copyright, song_tags, song_language, hasTitlePage } = req.body;
     if (!song_name || !song_copyright || !song_tags || !song_language) {
       return raiseError(res, MISSING_REQUIRE_KEYS);
     }
@@ -120,10 +120,16 @@ exports.uploadSong = async (req, res) => {
     // 解析暫存檔案取得歌曲資料
     const songData = await extractSongData(tempPath);
 
+    // 修改 content，如果有標題頁，標記第一頁為 is_title
+    let content = songData.content;
+    if (hasTitlePage && Array.isArray(content) && content.length > 0) {
+      content[0].is_title = true;
+    }
+
     // 這裡 songData 需包含所有欄位，或可根據需要自行擴充
     const song = await db.VideoDb.songData.create({
       song_name: song_name,
-      content: songData.content,
+      content: content,
       song_copyright: JSON.stringify(song_copyright || "{}"),
       song_tags: song_tags,
       song_language: song_language,
@@ -144,6 +150,9 @@ exports.downloadSongProFile = async (req, res) => {
     const addBlankPage = req.query.addBlankPage === 'true';
     const theme = req.query.theme || 'default_Theme';
     const labelLanguage = req.query.labelLanguage || 'zh_hk';
+    const addTitlePage = req.query.addTitlePage !== 'false'; // default true
+    const addCopyright = req.query.addCopyright !== 'false'; // default true
+    const copyrightLanguage = req.query.copyrightLanguage || 'zh_hk';
 
     if (!checkParamsExisted({ songId })) {
       return raiseError(res, MISSING_REQUIRE_KEYS);
@@ -159,7 +168,7 @@ exports.downloadSongProFile = async (req, res) => {
     }
 
     // 生成 ProPresenter 文件結構
-    const presentation = await generateProFile(song, { spacing, addBlankPage, theme, labelLanguage });
+    const presentation = await generateProFile(song, { spacing, addBlankPage, theme, labelLanguage, addTitlePage, addCopyright, copyrightLanguage });
 
     // 創建臨時文件路徑
     const tempDir = path.join(__dirname, '../temp');

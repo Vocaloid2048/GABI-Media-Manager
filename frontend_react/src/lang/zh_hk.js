@@ -173,6 +173,7 @@ export default {
   "song.please_select_category": "請選擇類別",
   "song.please_select_language": "請選擇語言",
   "song.please_drag_pro_file": "請拖放 .pro 檔案",
+  "song.has_title_page": "已有標題頁",
   "song.please_select_pro_file": "請選擇 .pro 檔案",
   "song.file_size_exceed": "檔案大小超過 1MB",
 
@@ -188,6 +189,9 @@ export default {
   "lyrics.theme": "ProTheme主題",
   "lyrics.add_blank_page": "添加尾頁 (空白)",
   "lyrics.label_language": "標籤語言",
+  "lyrics.add_title_page": "添加標題頁",
+  "lyrics.show_copyright": "展示版權資訊",
+  "lyrics.copyright_language": "版權語言",
 
   // Upload
   "upload.title": "上傳新影片",

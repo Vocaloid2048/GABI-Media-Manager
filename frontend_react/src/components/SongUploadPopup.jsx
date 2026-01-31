@@ -18,6 +18,7 @@ const SongUploadPopup = ({ onClose }) => {
   const [songTags, setSongTags] = useState([]);
   const [songLanguage, setSongLanguage] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [hasTitlePage, setHasTitlePage] = useState(true);
 
   const [fullTagList, setFullTagList] = useState([]);
 
@@ -135,7 +136,8 @@ const SongUploadPopup = ({ onClose }) => {
         file: fileContent,
         song_copyright: {composer: composer || null, lyricist: lyricist || null, arranger: arranger || null, album: album || null, publisher: publisher || null, year: year || null},
         song_tags: songTags.join(','),
-        song_language: songLanguage.join(',')
+        song_language: songLanguage.join(','),
+        hasTitlePage: hasTitlePage
       };
 
       const response = await fetch(`/api/song/upload?user_id=${(userId)}&ds=${encodeURIComponent(ds)}`, {
@@ -310,6 +312,18 @@ const SongUploadPopup = ({ onClose }) => {
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
               placeholder={locale('song.year_placeholder')}
             />
+          </div>
+
+                    <div className="mb-6">
+            <label className="flex items-center gap-2 text-white text-sm">
+              <input
+                type="checkbox"
+                checked={hasTitlePage}
+                onChange={(e) => setHasTitlePage(e.target.checked)}
+                className="w-4 h-4"
+              />
+              {locale('song.has_title_page')}
+            </label>
           </div>
 
           <div className="mb-6">

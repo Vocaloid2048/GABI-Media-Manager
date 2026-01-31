@@ -1,6 +1,7 @@
 const protobuf = require("protobufjs");
 const path = require("path");
 const fs = require("fs");
+const { copy } = require("../routers/song.route");
 
 // 群組標籤映射表
 const GROUP_LABEL_LIST = {
@@ -30,6 +31,13 @@ const GROUP_LABEL_LIST = {
   "TURNAROUND": { colorHex: "#28C840", en: "Turnaround", zh_cn: "变调", zh_hk: "變調" },
   "BLANK": { colorHex: "#000000", en: "Blank", zh_cn: "空白", zh_hk: "空白" },
   "TITLE": { colorHex: "#FFA500", en: "Title", zh_cn: "标题", zh_hk: "標題" }
+};
+
+const COPYRIGHT_LABEL_LIST = {
+  composer: { en: "Composer: ", zh_cn: "作曲：", zh_hk: "作曲：" },
+  lyricist: { en: "Lyricist: ", zh_cn: "填词：", zh_hk: "填詞：" },
+  arranger: { en: "Arranger: ", zh_cn: "编曲：", zh_hk: "編曲：" },
+  publisher: { en: "Publisher: ", zh_cn: "出版：", zh_hk: "出版：" }
 };
 
 // 反查映射表：中英文→英文大寫key
@@ -155,7 +163,7 @@ function cloneBaseSlide(baseSlide) {
 
 // 從 songData 生成 ProPresenter 文件
 async function generateProFile(songData, options = {}) {
-  const { spacing = '1', addBlankPage = false, theme = 'default_Theme', labelLanguage = 'zh_hk' } = options;
+  const { spacing = '1', addBlankPage = false, theme = 'default_Theme', labelLanguage = 'zh_hk', addTitlePage = true, addCopyright = true, copyrightLanguage = 'zh_hk' } = options;
   const themePath = path.join(__dirname, "theme", theme);
   try {
     const root = await loadProPresenterProto();
@@ -210,8 +218,41 @@ async function generateProFile(songData, options = {}) {
       },
       arrangements: [],
       cueGroups: [],
-      cues: []
+      cues: [],
+      ccli: {}
     };
+
+    // 處理 CCLI 版權資訊
+    if (addCopyright && songData.song_copyright) {
+      try {
+        const copyright = JSON.parse(songData.song_copyright);
+        const authorParts = [];
+        
+        if (copyright.composer && copyright.composer.trim()) {
+          authorParts.push(`${COPYRIGHT_LABEL_LIST.composer[copyrightLanguage] || COPYRIGHT_LABEL_LIST.composer.en}${copyright.composer.trim()}`);
+        }
+        if (copyright.lyricist && copyright.lyricist.trim()) {
+          authorParts.push(`${COPYRIGHT_LABEL_LIST.lyricist[copyrightLanguage] || COPYRIGHT_LABEL_LIST.lyricist.en}${copyright.lyricist.trim()}`);
+        }
+        if (copyright.arranger && copyright.arranger.trim()) {
+          authorParts.push(`${COPYRIGHT_LABEL_LIST.arranger[copyrightLanguage] || COPYRIGHT_LABEL_LIST.arranger.en}${copyright.arranger.trim()}`);
+        }
+
+        console.log(typeof copyright.year, copyright.year, Number.isInteger(+copyright.year), parseInt(copyright.year));
+        
+        presentation.ccli = {
+          author: authorParts.join('\n'),
+          publisher: copyright.publisher || '',
+          songTitle: songData.song_name || '',
+          copyrightYear: Number.isInteger(+copyright.year) ? parseInt(copyright.year) : undefined,
+          album: copyright.album || '',
+          display: true
+        };
+      } catch (error) {
+        console.warn('Failed to parse song_copyright:', error);
+        presentation.ccli = {};
+      }
+    }
 
     // 生成 cues
     const cuesByGroup = {};
@@ -221,15 +262,20 @@ async function generateProFile(songData, options = {}) {
     if (Array.isArray(processedContent)) {
       processedContent = processedContent.map(slide => ({
         ...slide,
-        content: slide.content.replace(/ /g, (spacing === 'tab' ? '\t' : " ".repeat(parseInt(spacing) || 1)))
+        content: slide.content.replace("\t", " ").replace(/ /g, (spacing === 'tab' ? '\t' : " ".repeat(parseInt(spacing) || 1)))
       }));
+
+      // 如果不添加首頁，過濾掉標題頁
+      if (!addTitlePage) {
+        processedContent = processedContent.filter(slide => !slide.is_title);
+      }
     }
 
     if (processedContent && Array.isArray(processedContent)) {
       processedContent.forEach((slide, index) => {
         let tagKey, cueName, assetName, baseSlideToUse, textContent, fontName, fontSize, bold;
 
-        if (index === 0) {
+        if (index === 0 && addTitlePage) {
           // 第一個是標題頁
           tagKey = mapTagToKey('TAG');
           cueName = getGroupLabel(tagKey, labelLanguage) || 'TAG';

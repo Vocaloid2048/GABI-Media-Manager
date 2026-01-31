@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useLyricItem } from '../hooks/useLyricItem';
 
-const LyricItem = ({ slide, tagInfo }) => {
+const LyricItem = ({ slide, tagInfo, ccli, isTitlePage }) => {
   const containerRef = useRef(null);
   const [dynamicScale, setDynamicScale] = useState(1);
 
@@ -36,6 +36,35 @@ const LyricItem = ({ slide, tagInfo }) => {
               {slide.content}
             </p>
           </div>
+          {isTitlePage && ccli && (
+            <div
+              className="absolute text-white text-right"
+              style={{
+                left: `${1067 * dynamicScale}px`,
+                top: `${599 * dynamicScale}px`,
+                width: `${823 * dynamicScale}px`,
+                height: `${447 * dynamicScale}px`,
+                fontSize: `${50 * dynamicScale}px`,
+                textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-end',
+                alignItems: 'flex-end'
+              }}
+            >
+              <div>
+                {ccli.songTitle && <div>{ccli.songTitle}</div>}
+                {ccli.author && <div>{ccli.author}</div>}
+                {(ccli.publisher || ccli.copyrightYear) && (
+                  <div>
+                    {ccli.publisher}
+                    {ccli.publisher && ccli.copyrightYear && ' © '}
+                    {ccli.copyrightYear}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
