@@ -20,6 +20,20 @@ const SongPage = () => {
   const { songs, loading, addSong, refetch: refetchSongs, applyFilters } = useSongs();
   const { tagsData, refetch: refetchTags } = useSongTags();
 
+  // Load saved filter options from localStorage on component mount
+  React.useEffect(() => {
+    const savedSongFilters = localStorage.getItem('songFilters');
+    if (savedSongFilters) {
+      try {
+        const { tags, languages } = JSON.parse(savedSongFilters);
+        setSelectedTags(tags || []);
+        setSelectedLanguages(languages || []);
+      } catch (error) {
+        console.error('Failed to parse saved song filters:', error);
+      }
+    }
+  }, []);
+
   const handleSongClick = (song) => {
     navigate(`/song/${song.song_id}`);
   };
@@ -32,6 +46,12 @@ const SongPage = () => {
     setSelectedTags(newSelectedTags);
     setSelectedLanguages(newSelectedLanguages);
     setIsTagBarVisible(false);
+    
+    // Save filter options to localStorage
+    localStorage.setItem('songFilters', JSON.stringify({
+      tags: newSelectedTags,
+      languages: newSelectedLanguages
+    }));
     
     // Apply filters through backend
     applyFilters({

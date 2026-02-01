@@ -45,6 +45,18 @@ const HomePage = ({ initialPage = 'video' }) => {
     }
   }, [initialPage, navigate]);
 
+  // Load saved selectedTags from localStorage on component mount
+  React.useEffect(() => {
+    const savedSelectedTags = localStorage.getItem('selectedTags');
+    if (savedSelectedTags) {
+      try {
+        setSelectedTags(JSON.parse(savedSelectedTags));
+      } catch (error) {
+        console.error('Failed to parse saved selectedTags:', error);
+      }
+    }
+  }, []);
+
   // Website initial data fetch
   React.useEffect(() => {
     const fetchTags = async () => {
@@ -231,6 +243,7 @@ const HomePage = ({ initialPage = 'video' }) => {
 
   const handleApplyFilter = (newTags) => {
     setSelectedTags(newTags);
+    localStorage.setItem('selectedTags', JSON.stringify(newTags));
   };
 
   return (
