@@ -2,7 +2,7 @@ import React from 'react';
 import SongItem from './SongItem';
 import { useLanguage } from '../lang/LanguageContext';
 
-const SongGrid = ({ songs, songTagList, onSongClick }) => {
+const SongGrid = ({ songs, songTagList, onSongClick, isLoadingMore = false }) => {
   const { locale } = useLanguage();
   
   // Ensure songs is an array
@@ -18,7 +18,12 @@ const SongGrid = ({ songs, songTagList, onSongClick }) => {
           onClick={() => onSongClick(song)}
         />
       ))}
-      {safeSongs.length === 0 && (
+      {isLoadingMore && (
+        <div className="col-span-full text-center text-gray-400 mt-4">
+          {locale('song.loading_more') || '載入更多...'}
+        </div>
+      )}
+      {safeSongs.length === 0 && !isLoadingMore && (
         <div className="col-span-full text-center text-gray-400 mt-12">
           {locale('song.no_matches')}
         </div>

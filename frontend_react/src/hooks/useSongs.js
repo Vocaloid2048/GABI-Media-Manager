@@ -11,9 +11,13 @@ export function useSongs() {
   const [filteredSongs, setFilteredSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const hasFetchedRef = useRef(false);
+  const currentFiltersRef = useRef({});
 
-  const fetchSongs = async (filters = {}, force = false) => {
+  const fetchSongs = async (filters = {}, force = false, append = false) => {
     const { search = '', tags = [], languages = [] } = filters;
     
     // Create query string
@@ -21,65 +25,98 @@ export function useSongs() {
     if (search) params.append('search', search);
     if (tags.length > 0) params.append('tags', tags.join('|'));
     if (languages.length > 0) params.append('languages', languages.join('|'));
+    if (append) {
+      params.append('offset', offset.toString());
+    }
     
     const queryString = params.toString();
     const url = `/api/song${queryString ? `?${queryString}` : ''}`;
 
-    // If we already have cached data for this query and not forcing refresh, use cache
-    const cacheKey = url;
-    if (songsCache && songsCache[cacheKey] && !force) {
-      setFilteredSongs(songsCache[cacheKey]);
-      setLoading(false);
-      return;
-    }
-
-    // If there's already a fetch in progress, wait for it
-    if (songsPromise && !force) {
-      try {
-        const data = await songsPromise;
-        setFilteredSongs(data);
+    // If appending, don't use cache
+    if (!append) {
+      // If we already have cached data for this query and not forcing refresh, use cache
+      const cacheKey = url;
+      if (songsCache && songsCache[cacheKey] && !force) {
+        setFilteredSongs(songsCache[cacheKey]);
         setLoading(false);
-      } catch (error) {
-        setError(error.message);
-        setLoading(false);
+        return;
       }
-      return;
+
+      // If there's already a fetch in progress, wait for it
+      if (songsPromise && !force) {
+        try {
+          const data = await songsPromise;
+          setFilteredSongs(data);
+          setLoading(false);
+        } catch (error) {
+          setError(error.message);
+          setLoading(false);
+        }
+        return;
+      }
     }
 
     try {
-      setLoading(true);
+      if (!append) {
+        setLoading(true);
+      } else {
+        setIsLoadingMore(true);
+      }
       setError(null);
 
       const fetchPromise = fetch(url);
-      songsPromise = fetchPromise;
+      if (!append) {
+        songsPromise = fetchPromise;
+      }
 
       const response = await fetchPromise;
       const data = await response.json();
 
       if (data.retcode === 1) {
-        // Cache the result
-        if (!songsCache) songsCache = {};
-        songsCache[cacheKey] = data.data;
-        setSongs(data.data); // Keep all songs for reference
-        setFilteredSongs(data.data);
+        if (append) {
+          const newSongs = [...filteredSongs, ...data.data];
+          setFilteredSongs(newSongs);
+          setSongs(newSongs); // Update all songs
+          setOffset(prev => prev + 12); // Assuming limit is 12
+          if (data.data.length < 12) {
+            setHasMore(false);
+          }
+        } else {
+          // Cache the result
+          if (!songsCache) songsCache = {};
+          songsCache[url] = data.data;
+          setSongs(data.data); // Keep all songs for reference
+          setFilteredSongs(data.data);
+          setOffset(12);
+          setHasMore(data.data.length >= 12);
+        }
+        currentFiltersRef.current = filters;
       } else {
         setError('Failed to fetch songs');
-        setFilteredSongs([]); // Set to empty array on error
+        if (!append) {
+          setFilteredSongs([]); // Set to empty array on error
+        }
       }
     } catch (error) {
       console.error('Error fetching songs:', error);
       setError(error.message);
-      setFilteredSongs([]); // Set to empty array on error
+      if (!append) {
+        setFilteredSongs([]); // Set to empty array on error
+      }
     } finally {
-      setLoading(false);
-      songsPromise = null;
+      if (!append) {
+        setLoading(false);
+        songsPromise = null;
+      } else {
+        setIsLoadingMore(false);
+      }
     }
   };
 
   useEffect(() => {
     if (!hasFetchedRef.current) {
       hasFetchedRef.current = true;
-      fetchSongs();
+      fetchSongs({}, true); // Force refresh on initial load
     }
   }, []);
 
@@ -91,7 +128,15 @@ export function useSongs() {
   };
 
   const applyFilters = (filters) => {
+    setOffset(0);
+    setHasMore(true);
     fetchSongs(filters, true); // Force refresh with filters
+  };
+
+  const loadMore = () => {
+    if (hasMore && !isLoadingMore && !loading) {
+      fetchSongs(currentFiltersRef.current, false, true);
+    }
   };
 
   return {
@@ -99,9 +144,12 @@ export function useSongs() {
     allSongs: songs, // Keep reference to all songs
     loading,
     error,
+    hasMore,
+    isLoadingMore,
     refetch: () => fetchSongs({}, true), // Force refresh without filters
     addSong,
-    applyFilters
+    applyFilters,
+    loadMore
   };
 }
 

@@ -135,6 +135,7 @@ export default {
 
   // Song related
   "song.loading": "載入中...",
+  "song.loading_more": "載入更多...",
   "song.not_found": "歌曲不存在",
   "song.make_bundle": "製作 .proBundle 檔案",
   "song.download_lyrics": "下載 .pro 檔案 (僅歌詞)",

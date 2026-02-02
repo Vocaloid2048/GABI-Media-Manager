@@ -135,6 +135,7 @@ export default {
 
   // Song related
   "song.loading": "Loading...",
+  "song.loading_more": "Loading more...",
   "song.not_found": "Song not found",
   "song.make_bundle": "Create .proBundle File",
   "song.download_lyrics": "Download .pro File (Lyrics Only)",

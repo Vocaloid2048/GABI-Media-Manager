@@ -17,7 +17,7 @@ const SongPage = () => {
   const scrollContainerRef = useRef(null);
 
   const { locale } = useLanguage();
-  const { songs, loading, addSong, refetch: refetchSongs, applyFilters } = useSongs();
+  const { songs, loading, hasMore, isLoadingMore, addSong, refetch: refetchSongs, applyFilters, loadMore } = useSongs();
   const { tagsData, refetch: refetchTags } = useSongTags();
 
   // Load saved filter options from localStorage on component mount
@@ -33,6 +33,39 @@ const SongPage = () => {
       }
     }
   }, []);
+
+  // Infinite scroll logic
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      if (loading || isLoadingMore || !hasMore) return;
+
+      if (container.scrollTop + container.clientHeight >= container.scrollHeight - 100) {
+        loadMore();
+      }
+    };
+
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+    }
+
+    return () => {
+      if (container) container.removeEventListener('scroll', handleScroll);
+    };
+  }, [loading, isLoadingMore, hasMore, loadMore]);
+
+  // Auto-fetch more if screen is not filled
+  React.useEffect(() => {
+    if (!loading && !isLoadingMore && hasMore && songs.length > 0) {
+      const container = scrollContainerRef.current;
+      if (container && container.scrollHeight < container.clientHeight + 100) {
+        loadMore();
+      }
+    }
+  }, [songs, loading, isLoadingMore, hasMore, loadMore]);
 
   const handleSongClick = (song) => {
     navigate(`/song/${song.song_id}`);
@@ -93,6 +126,7 @@ const SongPage = () => {
             songs={songs}
             songTagList={tagsData}
             onSongClick={handleSongClick}
+            isLoadingMore={isLoadingMore}
           />
         </div>
       </div>
