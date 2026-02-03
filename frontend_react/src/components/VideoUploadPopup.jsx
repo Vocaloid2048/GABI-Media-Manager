@@ -6,7 +6,7 @@ import { generateDs } from '../utils/auth';
 import { TagTypeEnum } from './TagClip';
 import { API_URL, VALID_VIDEO_EXTENSIONS } from '../config';
 
-const UploadPopup = ({ onClose }) => {
+const VideoUploadPopup = ({ onClose }) => {
   const { locale, language } = useLanguage();
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -444,4 +444,4 @@ const UploadPopup = ({ onClose }) => {
   );
 };
 
-export default UploadPopup;
+export default VideoUploadPopup;

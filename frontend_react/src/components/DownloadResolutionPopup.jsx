@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FaDownload, FaTimes, FaVideo } from 'react-icons/fa';
-import { getUniqueValues } from '../pages/DetailPage';
+import { getUniqueValues } from '../pages/VideoDetailPage';
 import { useLanguage } from '../lang/LanguageContext';
 
 const DownloadResolutionPopup = ({ isOpen, onClose, video: itemData, onConfirm }) => {

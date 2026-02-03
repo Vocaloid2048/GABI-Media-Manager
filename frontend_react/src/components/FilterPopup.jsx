@@ -2,13 +2,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../lang/LanguageContext';
 import { TagTypeEnum } from './TagClip';
-import { ColorMapTable, COLOR_CATEGORIES } from './ColorMapTable';
+import { ColorMapTable } from './ColorMapTable';
 import { FaTimes } from 'react-icons/fa';
 
-
-const FilterPopup = ({ tagList, selectedTags, onClose, onApply }) => {
+const FilterPopup = ({ tagList, selectedTags, selectedLanguages = [], onClose, onApply, config }) => {
   const { locale, language } = useLanguage();
   const [localSelectedTags, setLocalSelectedTags] = React.useState(selectedTags);
+  const [localSelectedLanguages, setLocalSelectedLanguages] = React.useState(selectedLanguages);
 
   const toggleLocalTag = (tagId) => {
     setLocalSelectedTags(prev => {
@@ -20,15 +20,55 @@ const FilterPopup = ({ tagList, selectedTags, onClose, onApply }) => {
     });
   };
 
+  const toggleLocalLanguage = (lang) => {
+    setLocalSelectedLanguages(prev => {
+      if (prev.includes(lang)) {
+        return prev.filter(l => l !== lang);
+      } else {
+        return [...prev, lang];
+      }
+    });
+  };
+
   const handleReset = () => {
-    onApply([]);
+    if (config.hasLanguage) {
+      onApply([], []);
+    } else {
+      onApply([]);
+    }
     onClose();
   };
 
   const handleApply = () => {
-    onApply(localSelectedTags);
+    if (config.hasLanguage) {
+      onApply(localSelectedTags, localSelectedLanguages);
+    } else {
+      onApply(localSelectedTags);
+    }
     onClose();
   };
+
+  // Group tags based on config
+  const groupedTags = React.useMemo(() => {
+    if (config.tagGrouping === 'enum') {
+      const groups = {};
+      Object.keys(TagTypeEnum).forEach(tagType => {
+        groups[tagType] = tagList.filter(tagItem => tagItem.tag_type === tagType);
+      });
+      return groups;
+    } else if (config.tagGrouping === 'type') {
+      const groups = {};
+      tagList.forEach(tag => {
+        const type = tag.tag_type || 'other';
+        if (!groups[type]) {
+          groups[type] = [];
+        }
+        groups[type].push(tag);
+      });
+      return groups;
+    }
+    return {};
+  }, [tagList, config.tagGrouping]);
 
   return (
     <motion.div
@@ -81,11 +121,13 @@ const FilterPopup = ({ tagList, selectedTags, onClose, onApply }) => {
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-2 pr-2 mr-1">
           <div className="space-y-6 pr-3">
-            {Object.keys(TagTypeEnum).map((tagType) => (
+            {Object.entries(groupedTags).map(([tagType, tags]) => (
               <div key={tagType}>
-                <h4 className="text-sm text-gray-400 mb-3 font-medium">{locale(TagTypeEnum[tagType].localeKey)}</h4>
+                <h4 className="text-sm text-gray-400 mb-3 font-medium">
+                  {config.tagGrouping === 'enum' ? locale(TagTypeEnum[tagType].localeKey) : (tagType === 'other' ? locale('filter.other') || 'Other' : tagType)}
+                </h4>
                 <div className="flex flex-wrap gap-2">
-                  {tagList.filter(tagItem => tagItem.tag_type === tagType).map(tag => {
+                  {tags.map(tag => {
                     const isSelected = localSelectedTags.includes(tag.tag_id);
                     return (
                       <button
@@ -101,20 +143,46 @@ const FilterPopup = ({ tagList, selectedTags, onClose, onApply }) => {
                     );
                   })}
                 </div>
-
               </div>
             ))}
-            {/* Color Categories */}
-            <ColorMapTable selectedTags={localSelectedTags} onToggleColor={toggleLocalTag} />
 
-            
+            {/* Color Categories */}
+            {config.hasColorMap && (
+              <ColorMapTable selectedTags={localSelectedTags} onToggleColor={toggleLocalTag} />
+            )}
+
+            {/* Language Filter Section */}
+            {config.hasLanguage && config.languageLabels && (
+              <div>
+                <h4 className="text-sm text-gray-400 mb-3 font-medium">
+                  {locale('song.language_label') || 'Language'}
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {Object.keys(config.languageLabels).map(lang => {
+                    const isSelected = localSelectedLanguages.includes(lang);
+                    return (
+                      <button
+                        key={lang}
+                        onClick={() => toggleLocalLanguage(lang)}
+                        className={`px-3 py-1.5 rounded-lg text-sm transition-colors border ${isSelected
+                          ? 'bg-green-600 text-white border-green-500'
+                          : 'bg-gray-700 text-gray-300 border-transparent hover:bg-gray-600'
+                          }`}
+                      >
+                        {locale(config.languageLabels[lang].localeKey)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Footer Section */}
         <div className="p-6 pt-4 shrink-0 flex gap-3">
-          <button 
-            onClick={handleReset} 
+          <button
+            onClick={handleReset}
             className="flex-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 font-bold rounded-xl transition-colors shrink-0"
           >
             {locale('filter.reset')}

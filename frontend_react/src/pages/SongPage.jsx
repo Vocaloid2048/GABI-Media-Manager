@@ -1,7 +1,8 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SongUploadPopup from '../components/SongUploadPopup';
-import SongFilterPopup from '../components/SongFilterPopup';
+import FilterPopup from '../components/FilterPopup';
+import { FILTER_CONFIGS } from '../utils/constants';
 import HoverNav from '../components/HoverNav';
 import SongGrid from '../components/SongGrid';
 import { useLanguage } from '../lang/LanguageContext';
@@ -139,12 +140,13 @@ const SongPage = () => {
       />
 
       {isTagBarVisible && (
-        <SongFilterPopup
+        <FilterPopup
           tagList={tagsData}
           selectedTags={selectedTags}
           selectedLanguages={selectedLanguages}
           onClose={() => setIsTagBarVisible(false)}
           onApply={handleFilterApply}
+          config={FILTER_CONFIGS.song}
         />
       )}
 

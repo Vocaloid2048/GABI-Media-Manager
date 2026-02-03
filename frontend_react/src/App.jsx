@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
-import DetailPage from './pages/DetailPage';
+import DetailPage from './pages/VideoDetailPage';
 import LyricPage from './pages/LyricPage';
 import { LanguageProvider } from './lang/LanguageContext';
 import LoginPopup from './components/LoginPopup';

@@ -6,8 +6,9 @@ import UserPage from './UserPage';
 import VideoPage from './VideoPage';
 import SongPage from './SongPage';
 import LoginPopup from '../components/LoginPopup';
-import UploadPopup from '../components/UploadPopup';
+import VideoUploadPopup from '../components/VideoUploadPopup';
 import FilterPopup from '../components/FilterPopup';
+import { FILTER_CONFIGS } from '../utils/constants';
 import { COLOR_MAP } from '../components/ColorMapTable';
 import SearchPopup from '../components/SearchPopup';
 import { AnimatePresence } from 'framer-motion';
@@ -288,8 +289,8 @@ const HomePage = ({ initialPage = 'video' }) => {
 
       <AnimatePresence>
         {showSongUpload && <SongUploadPopup onClose={() => setShowSongUpload(false)} />}
-        {showUpload && <UploadPopup onClose={() => setShowUpload(false)} />}
-        {showFilter && <FilterPopup tagList={fullTagList} selectedTags={selectedTags} onClose={() => setShowFilter(false)} onApply={handleApplyFilter} />}
+        {showUpload && <VideoUploadPopup onClose={() => setShowUpload(false)} />}
+        {showFilter && <FilterPopup tagList={fullTagList} selectedTags={selectedTags} onClose={() => setShowFilter(false)} onApply={handleApplyFilter} config={FILTER_CONFIGS.video} />}
         {showLogin && <LoginPopup onClose={() => setShowLogin(false)} />}
       </AnimatePresence>
     </div>
