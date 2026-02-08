@@ -1,0 +1,5 @@
+const API_URL = import.meta.env.VITE_UPLOAD_API_URL || "/api/upload";
+const ENABLE_USER_UPLOAD = (import.meta.env.VITE_ENABLE_USER_UPLOAD || 'true') === 'true';
+const VALID_VIDEO_EXTENSIONS = import.meta.env.VALID_VIDEO_EXTENSIONS || ".mp4,.mkv,.avi,.mov,.wmv,.flv,.webm";
+
+export { API_URL, ENABLE_USER_UPLOAD, VALID_VIDEO_EXTENSIONS };

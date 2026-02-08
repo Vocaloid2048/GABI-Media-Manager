@@ -26,6 +26,9 @@ const runProcess = (cmd, args) => {
  * @returns {boolean} Success status
  */
 exports.generateThumbnail = async (videoFileName) => {
+    // Since we are using UUIDs, the filename is already safe. 
+    // But we keep generateSafeName for compatibility if needed, or just use basename.
+    // For UUIDs, generateSafeName(uuid) returns uuid.
     const safeName = this.generateSafeName(videoFileName);
     const videoDir = process.env.VIDEO_DIR;
     const thumbDir = process.env.THUMB_DIR;
@@ -45,39 +48,38 @@ exports.generateThumbnail = async (videoFileName) => {
     }
 
     const baseName = path.parse(safeName).name;
-    const pngPath = path.join(thumbDir, `${baseName}.png`);
-    const gifPath = path.join(thumbDir, `${baseName}.gif`);
+    const webpPath = path.join(thumbDir, `${baseName}.webp`);
+    const animWebpPath = path.join(thumbDir, `${baseName}_anim.webp`);
 
-    // PNG thumbnail generate (640px width)
+    // Static WebP (Lossless for max quality)
     await runProcess(ffmpegPath, [
         '-hide_banner',
         '-loglevel', 'error',
         '-y',
-        // Seek a little to avoid black first frame; works for most videos
         '-ss', '00:00:01',
         '-i', inputPath,
         '-frames:v', '1',
         '-vf', 'scale=640:-2:flags=lanczos',
-        pngPath,
+        '-c:v', 'libwebp',
+        '-lossless', '1',
+        webpPath,
     ]);
 
-    // GIF thumbnail (2 seconds, 15 FPS, 640px width) with palette for quality
-    // Use palettegen/paletteuse for better GIF quality
+    // Animated WebP (High Quality)
     await runProcess(ffmpegPath, [
         '-hide_banner',
         '-loglevel', 'error',
         '-y',
         '-ss', '00:00:01',
-        '-t', '2',
+        '-t', '1',
         '-i', inputPath,
-        '-filter_complex',
-        [
-            'fps=15,scale=640:-2:flags=lanczos,split[s0][s1];',
-            '[s0]palettegen=stats_mode=diff[p];',
-            '[s1][p]paletteuse=dither=bayer:bayer_scale=3',
-        ].join(''),
+        '-vf', 'fps=10,scale=640:-2:flags=lanczos',
+        '-c:v', 'libwebp',
+        '-q:v', '90',
         '-loop', '0',
-        gifPath,
+        '-preset', 'default',
+        '-an',
+        animWebpPath,
     ]);
 
     return true;
@@ -98,7 +100,7 @@ exports.generateThumbnailGroup = async (groupId, videoGroupThumbName) => {
     // 1) Get all videos in the group
     const videos = await db.VideoDb.videoData.findAll({
         where: { group_id: groupId },
-        order: [['video_id', 'ASC']],
+        order: [['video_filename', 'ASC']],
     });
     if (!videos || videos.length === 0) { throw new Error(`No videos for group ${groupId}`); }
 
@@ -108,45 +110,54 @@ exports.generateThumbnailGroup = async (groupId, videoGroupThumbName) => {
             .findOne({ where: { group_id: groupId } })
             .then(g => (g && g.group_thumb_name) ? g.group_thumb_name : `group_${groupId}`)
     );
-    const mergedGifPath = path.join(thumbDir, `${path.parse(groupBase).name}.gif`);
-    const pngPath = path.join(thumbDir, `${path.parse(groupBase).name}.png`);
+    const mergedWebpPath = path.join(thumbDir, `${path.parse(groupBase).name}_anim.webp`);
+    const webpPath = path.join(thumbDir, `${path.parse(groupBase).name}.webp`);
 
-    // 3) Collect individual video GIFs and PNGs
-    const gifInputs = videos
-        .map(v => path.join(thumbDir, `${(v.video_thumb_name || v.video_filename)}.gif`))
-        .filter(p => fs.existsSync(p));
-    const firstPng = videos
-        .map(v => path.join(thumbDir, `${(v.video_thumb_name || v.video_filename)}.png`))
+    // 3) Collect source video paths for animated merge
+    const videoDir = process.env.VIDEO_DIR;
+    const sourceInputs = videos.map(v => {
+        const ext = v.video_format ? `.${v.video_format.toLowerCase()}` : '';
+        return path.join(videoDir, `${v.video_filename}${ext}`);
+    }).filter(p => fs.existsSync(p)).slice(0, 8);
+
+    const firstWebp = videos
+        .map(v => path.join(thumbDir, `${(v.video_thumb_name || v.video_filename)}.webp`))
         .find(p => fs.existsSync(p));
 
-    if (gifInputs.length === 0) { throw new Error('No per-video GIFs to merge'); }
+    if (sourceInputs.length === 0) { throw new Error('No source videos found for group merge'); }
 
-    // 4) Merge GIFs
+    // 4) Merge Source Videos into Animated WebP
     const args = ['-hide_banner', '-loglevel', 'error', '-y'];
-    gifInputs.forEach(g => args.push('-i', g));
+    
+    sourceInputs.forEach(p => {
+        args.push('-ss', '00:00:01', '-t', '1', '-i', p);
+    });
 
-    if (gifInputs.length === 1) {
-        // Only one GIF, just copy
+    if (sourceInputs.length === 1) {
         args.push(
-            '-filter_complex', 'fps=15,scale=640:-2:flags=lanczos',
-            '-loop', '0',
-            mergedGifPath
+            '-vf', 'fps=10,scale=640:-2:flags=lanczos',
+            '-c:v', 'libwebp', '-q:v', '90', '-loop', '0',
+            '-preset', 'default', '-an',
+            mergedWebpPath
         );
     } else {
-        const inputs = gifInputs.map((_, i) => `[${i}:v]`).join('');
-        const filter = `${inputs}concat=n=${gifInputs.length}:v=1:a=0,fps=15,scale=640:-2:flags=lanczos`;
+        const filterChains = sourceInputs.map((_, i) => `[${i}:v]fps=10,scale=640:-2:flags=lanczos[v${i}]`);
+        const concatInputsStr = sourceInputs.map((_, i) => `[v${i}]`).join('');
+        const fullFilter = `${filterChains.join(';')};${concatInputsStr}concat=n=${sourceInputs.length}:v=1:a=0`;
+
         args.push(
-            '-filter_complex', filter,
-            '-loop', '0',
-            mergedGifPath
+            '-filter_complex', fullFilter,
+            '-c:v', 'libwebp', '-q:v', '90', '-loop', '0',
+            '-preset', 'default', '-an',
+            mergedWebpPath
         );
     }
 
     await runProcess(ffmpegPath, args);
 
-    // 5) Group PNG: prioritize copying the first video's PNG
-    if (firstPng && fs.existsSync(firstPng)) {
-        fs.copyFileSync(firstPng, pngPath);
+    // 5) Group Static WebP: prioritize copying the first video's WebP
+    if (firstWebp && fs.existsSync(firstWebp)) {
+        fs.copyFileSync(firstWebp, webpPath);
     }
 
     return true;

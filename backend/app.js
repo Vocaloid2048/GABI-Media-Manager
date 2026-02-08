@@ -2,17 +2,20 @@ const express = require('express');
 const session = require('express-session')
 const fs = require('fs')
 const https = require('https')
-const cors = require('cors')
+const path = require('path');
+// const cors = require('cors')  // 移除 CORS 依賴，因為不再需要
 
 const app = express();
 const router = require('./routers/router');
 const { VideoDb, initDb } = require('./models');
-
+const { initBackupSchedule } = require('./utils/backup');
+const { initCleanupSchedule } = require('./utils/cleanup');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3000
 
-app.use(express.json({ limit: '10mb' }))
+app.use(express.json({ limit: '120mb' }))
+app.use(express.urlencoded({ limit: '120mb', extended: true }));
 app.enable('trust proxy');
 app.use(
   session({
@@ -22,35 +25,56 @@ app.use(
   })
 )
 
-// CORS (allow front-end dev server and custom headers for login)
-const allowedOrigin = process.env.VITE_DEV_SERVER_ORIGIN || process.env.FRONTEND_ORIGIN || 'http://localhost:5173'
+// CORS 設定：由於前端通過 Nginx 反向代理，請求為同源，故移除 CORS 以簡化配置
+/*
+const origins = [
+  process.env.FRONTEND_ORIGIN,
+  process.env.VITE_DEV_SERVER_ORIGIN,
+  'http://localhost:5173'
+].filter(Boolean).flatMap(o => o.split(',').map(s => s.trim()));
+
 const corsOptions = {
-  origin: allowedOrigin,
+  origin: origins.length > 0 ? origins : true, // 如果沒設定則預設允許
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'username', 'password_hash', 'Authorization']
+  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'username', 'password_hash', 'Authorization', 'user_id', 'ds']
 }
 app.use(cors(corsOptions))
+*/
 
 // Check is Database Connected
 initDb();
 
-// Check if the environment is production
-const isProduction = process.env.NODE_ENV === 'production'
+// Initialize backup schedule if not in local （dev) mode
+if (process.env.NODE_ISLOCAL !== 'true') {
+  initBackupSchedule();
+}
 
-// Set up HTTPS only in production
-if (isProduction && !process.env.NODE_ISLOCAL) {
-  const privateKey = fs.readFileSync('./cert/key.pem', 'utf8')
-  const certificate = fs.readFileSync('./cert/cert.pem', 'utf8')
-  const credentials = { key: privateKey, cert: certificate }
+initCleanupSchedule();
+
+// HTTPS configuration
+const useHttps = process.env.BACKEND_USE_HTTPS === 'true';
+// use path.resolve(__dirname, ...) if certs are stored relative to this file
+const certPath = path.resolve(__dirname, './cert/cert.pem');
+const keyPath = path.resolve(__dirname, './cert/key.pem');
+
+console.log("useHttps:", useHttps);
+console.log("certPath:", fs.existsSync(certPath), certPath);
+console.log("keyPath:", fs.existsSync(keyPath), keyPath);
+
+if (useHttps && fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+  const credentials = { 
+    key: fs.readFileSync(keyPath, 'utf8'), 
+    cert: fs.readFileSync(certPath, 'utf8') 
+  }
 
   https.createServer(credentials, app).listen(PORT, () => {
-    console.log(`Server is running on https://localhost:${PORT}`)
+    console.log(`[Backend] Server is running on https://localhost:${PORT} (SSL Enabled)`)
   })
 } else {
-  // Run the app with HTTP in non-production environments
+  // Run the app with HTTP
   app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`)
+    console.log(`[Backend] Server is running on http://localhost:${PORT}`)
   })
 }
 

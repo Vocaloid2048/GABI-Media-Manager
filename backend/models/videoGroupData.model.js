@@ -15,14 +15,15 @@ module.exports = (sequelize, DataTypes, uid) => {
   }
   VideoGroupData.init({
     group_id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4, // 自動生成 UUID
       primaryKey: true
     },
     group_title: DataTypes.TEXT,
     group_desc: DataTypes.TEXT,
     group_author: DataTypes.TEXT,
     group_tags: DataTypes.TEXT,
+    group_colors: DataTypes.TEXT,
     group_thumb_name: DataTypes.TEXT,
     group_add_at: {
       type: DataTypes.DATE,

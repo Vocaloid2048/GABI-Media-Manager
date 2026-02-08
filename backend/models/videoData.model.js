@@ -15,11 +15,11 @@ const {
     }
     VideoData.init({
       video_id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true
       },
-      group_id: DataTypes.INTEGER,
+      group_id: DataTypes.UUID,
       video_filename: DataTypes.TEXT,
       video_resolution: DataTypes.TEXT,
       video_format: DataTypes.TEXT,

@@ -1,9 +1,12 @@
 const router = require('express').Router()
 const video = require("../controllers/video.controller")
+const checkAuth = require("../middlewares/checkAuth")
 
 // ./api/video
 router.get('/list', video.getVideoGroupList)
 router.get('/group', video.getVideoGroupInfo)
-router.get('/download', video.getDownloadableVideo)
+router.get('/download', checkAuth, video.getDownloadableVideo)
+router.get('/thumb', video.getVideoThumbnail)
+router.get('/tags', video.getVideoTagsList)
 
 module.exports = router

@@ -19,8 +19,9 @@ const {
         autoIncrement: true,
         primaryKey: true
       },
-      tag_name: DataTypes.TEXT,
-      tag_locale_name: DataTypes.TEXT,
+      tag_en_name: DataTypes.TEXT,
+      tag_zh_name: DataTypes.TEXT,
+      tag_type: DataTypes.TEXT
     }, {
       sequelize,
       modelName: 'TagData',
