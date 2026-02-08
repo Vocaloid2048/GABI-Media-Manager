@@ -1,10 +1,29 @@
 # GABI-Media-Manager
 
-> GABI 的 ProContent 影片，詩歌管理工具，用於簡化投影員選擇背景影片及製作ProPresenter相關詩歌檔案的流程。
+> GABI 的 ProContent 影片、詩歌管理工具，用於簡化投影員選擇背景影片及製作ProPresenter相關詩歌檔案的流程。
 
 [![License](https://img.shields.io/badge/License-GNU_3.0-blue.svg)](https://opensource.org/license/gpl-3-0)
 ![Make With Love](https://img.shields.io/badge/make_with_%E2%9D%A4%EF%B8%8F-white)
 [![wakatime](https://wakatime.com/badge/user/ca727ba5-9112-4612-b454-d5e407277a51/project/e28f1bcd-fef9-4905-b8d0-761aee8acb80.svg)](https://wakatime.com/badge/user/ca727ba5-9112-4612-b454-d5e407277a51/project/e28f1bcd-fef9-4905-b8d0-761aee8acb80)
+
+### Tech Stack
+![Express.js](https://img.shields.io/badge/Express.js-000000?logo=express&logoColor=fff&style=for-the-badge) 
+![React.js](https://img.shields.io/badge/React.Js-61DAFB?logo=react&logoColor=white&style=for-the-badge)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=Vite&logoColor=white)
+
+## 圖片集
+
+> 聲明：截圖中部份影片來源自ProContent，於許可生效期間下載，僅供教會內部使用，並未附帶於本repo內
+
+> 聲明：截圖中的詩歌版權屬各出版者，部份歌詞、詩歌來源等資訊來自網上，僅供教會內部使用，歌詞並未附帶於本repo內
+
+| 頁面| 手機端  | PC端                                                       |
+| --------------- | ------------------ | ------------ |
+| 主頁/影片列表頁 | <img src="readme_img/Screenshot_20260208_204026_Chrome.png" width="150">                                                                          | ![alt text](<readme_img/螢幕截圖 2026-02-08 20.03.52.png>) |
+| 影片詳情頁      | <img src="readme_img/Screenshot_20260208_204032_Chrome.png" width="150"> <img src="readme_img/Screenshot_20260208_204522_Chrome.png" width="150"> | ![alt](<readme_img/螢幕截圖 2026-02-08 20.03.59.png>)      |
+| 搜尋功能        | <img src="readme_img/Screenshot_20260208_204055_Chrome.png" width="150">                                                                          | ![alt](<readme_img/螢幕截圖 2026-02-08 20.04.10.png>)      |
+| 詩歌列表頁      | <img src="readme_img/Screenshot_20260208_204101_Chrome.png" width="150">                                                                          | ![alt](<readme_img/螢幕截圖 2026-02-08 20.24.12.png>)      |
+| 詩歌詳情頁      | <img src="readme_img/Screenshot_20260208_204118_Chrome.png" width="150"> <img src="readme_img/Screenshot_20260208_204125_Chrome.png" width="150"> | ![alt](<readme_img/螢幕截圖 2026-02-08 20.25.26.png>)      |
 
 ## 部署說明
 
@@ -136,11 +155,11 @@
 
 ### history_data (歷史資料表)
 
-| 欄位名稱    | 資料型態 | 說明                        |
-| ----------- | -------- | --------------------------- |
-| history_id  | INTEGER  | 主鍵，自動遞增              |
-| user_id     | INTEGER  | 使用者 ID                   |
-| group_id    | UUID     | 群組 ID（可空）             |
-| video_id    | UUID     | 影片 ID（可空）             |
-| action_type | STRING   | 操作類型 |
-| created_at  | DATE     | 創建時間（預設 NOW）        |
+| 欄位名稱    | 資料型態 | 說明                 |
+| ----------- | -------- | -------------------- |
+| history_id  | INTEGER  | 主鍵，自動遞增       |
+| user_id     | INTEGER  | 使用者 ID            |
+| group_id    | UUID     | 群組 ID（可空）      |
+| video_id    | UUID     | 影片 ID（可空）      |
+| action_type | STRING   | 操作類型             |
+| created_at  | DATE     | 創建時間（預設 NOW） |
