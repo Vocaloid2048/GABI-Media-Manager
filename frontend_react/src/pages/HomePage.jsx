@@ -13,6 +13,7 @@ import { COLOR_MAP } from '../components/ColorMapTable';
 import SearchPopup from '../components/SearchPopup';
 import { AnimatePresence } from 'framer-motion';
 import SongUploadPopup from '../components/SongUploadPopup';
+import ToolPage from './ToolPage';
 
 const HomePage = ({ initialPage = 'video' }) => {
   const navigate = useNavigate();
@@ -283,6 +284,7 @@ const HomePage = ({ initialPage = 'video' }) => {
         )}
         {currentPage === 'song' && <SongPage />}
         {currentPage === 'user' && <UserPage />}
+        {currentPage === 'tool' && <ToolPage />}
       </div>
 
       <BottomNav currentPage={currentPage} onPageChange={setCurrentPage} />
