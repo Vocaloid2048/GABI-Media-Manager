@@ -100,12 +100,6 @@ async function handleChunkedToolUpload(req, res, file) {
         fs.rmSync(chunksDir, { recursive: true, force: true });
     } catch(e) {}
 
-    // Release queue slot before processing (file is merged and ready)
-    const userId = req.get('user_id') || req.query.user_id;
-    if (userId && fileId) {
-        uploadQueue.releaseFile(userId, fileId);
-    }
-
     // Now process the merged file
     await exports.uploadToolFileImpl(mergedPath, safeBase, res);
 }
@@ -166,12 +160,6 @@ exports.cancelToolUpload = async (req, res) => {
            if (file.includes(targetToken)) {
                try { fs.unlinkSync(path.join(tempDir, file)); } catch(e) {}
            }
-        }
-
-        // Release queue slot
-        const userId = req.get('user_id') || req.query.user_id;
-        if (userId && targetToken) {
-            uploadQueue.releaseFile(userId, targetToken);
         }
         
         returnSuccess(res, { message: 'Upload cancelled and cleaned' });

@@ -4,6 +4,9 @@ export default {
 
   // Navigation
   "nav.home": "首頁",
+  "nav.song": "詩歌",
+  "nav.video": "影片",
+  "nav.tool": "工具",
   "nav.filter": "篩選",
   "filter.colors": "顏色篩選",
   "filter.color_category.grayscale": "灰階系",
@@ -221,6 +224,25 @@ export default {
   "download.quality_high": "高畫質",
   "download.res_original": "原始",
   "download.failed": "下載失敗，請重試。",
+
+  // Tools
+  "tool.title": "工具集",
+  "tool.description": "實用的媒體管理與修復工具",
+  "tool.propresenter_fix_title": "ProPresenter Mac 編碼修復",
+  "tool.propresenter_fix_desc": "解決 macOS 製作的 .pro / .probundle / .proplaylist 檔案在 Windows 上顯示亂碼的問題",
+  "tool.upload_description": "上傳在 Mac 製作的 .pro 或 .probundle 檔案，修復在 Windows 上顯示亂碼的問題。",
+  "tool.drag_drop": "點擊上傳或拖放檔案",
+  "tool.supports": "支援 .pro, .probundle, .proplaylist",
+  "tool.file_too_large": "檔案過大，上限為 %1",
+  "tool.preparing": "準備上傳...",
+  "tool.processing": "修正中，請耐心等候...",
+  "tool.completed": "完成！",
+  "tool.repair_complete": "修復完成！檔案已開始下載。",
+  "tool.cancel": "取消",
+  "tool.done": "完成",
+  "tool.processing_status": "處理中...",
+  "tool.repair_download": "修復並下載",
+  "tool.cancelled": "已取消",
 
   // Footer
   "footer.rights": "版權所有。",

@@ -16,7 +16,7 @@ const BottomNav = ({ currentPage, onPageChange, className }) => {
           }`}
         >
           <FaMusic className="text-xl mb-1" />
-          <span className="text-xs font-medium">詩歌</span>
+          <span className="text-xs font-medium">{locale('nav.song')}</span>
         </button>
 
         <div className="w-px h-8 bg-gray-800"></div>
@@ -28,7 +28,7 @@ const BottomNav = ({ currentPage, onPageChange, className }) => {
           }`}
         >
           <FaVideo className="text-xl mb-1" />
-          <span className="text-xs font-medium">影片</span>
+          <span className="text-xs font-medium">{locale('nav.video')}</span>
         </button>
 
         <div className="w-px h-8 bg-gray-800"></div>
@@ -40,7 +40,7 @@ const BottomNav = ({ currentPage, onPageChange, className }) => {
           }`}
         >
           <FaTools className="text-xl mb-1" />
-          <span className="text-xs font-medium">工具</span>
+          <span className="text-xs font-medium">{locale('nav.tool')}</span>
         </button>
 
         <div className="w-px h-8 bg-gray-800"></div>

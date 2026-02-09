@@ -7,8 +7,10 @@ import {
   FaFileAlt,
 } from "react-icons/fa";
 import { generateDs } from "../utils/auth";
+import { useLanguage } from "../lang/LanguageContext";
 
 const ToolPopup = ({ onClose, title }) => {
+  const { locale } = useLanguage();
   const [file, setFile] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
@@ -85,7 +87,7 @@ const ToolPopup = ({ onClose, title }) => {
     setProcessing(false);
     setProgress(0);
     setSpeed(null);
-    setStatusMessage("已取消");
+    setStatusMessage(locale('tool.cancelled'));
   };
 
   const handleProcess = async () => {
@@ -101,14 +103,14 @@ const ToolPopup = ({ onClose, title }) => {
 
     if (file.size > 3 * 1024 * 1024 * 1024) {
       // 3GB limit
-      setError("檔案過大，上限為 3GB");
+      setError(locale('tool.file_too_large').replace('%1', '3GB'));
       return;
     }
 
     setProcessing(true);
     setError("");
     setProgress(0);
-    setStatusMessage("準備上傳...");
+    setStatusMessage(locale('tool.preparing'));
 
     // Chunk configuration
     const CHUNK_SIZE = 85 * 1024 * 1024; // 85MB per chunk (same as video upload)
@@ -232,7 +234,7 @@ const ToolPopup = ({ onClose, title }) => {
                 // When upload finishes, we enter "processing" state
                 xhr.onloadstart = () => {
                   if (xhr.upload.loaded === xhr.upload.total) {
-                    setStatusMessage("修正中，請耐心等候...");
+                    setStatusMessage(locale('tool.processing'));
                   }
                 };
 
@@ -297,7 +299,7 @@ const ToolPopup = ({ onClose, title }) => {
 
                       setSuccess(true);
                       setFile(null);
-                      setStatusMessage("完成！");
+                      setStatusMessage(locale('tool.completed'));
                       resolve();
                     }
                   } else {
@@ -378,8 +380,7 @@ const ToolPopup = ({ onClose, title }) => {
 
         <div className="p-6">
           <p className="text-gray-300 mb-4 text-sm">
-            上傳在 Mac 製作的 .pro 或 .probundle 檔案，修復在 Windows
-            上顯示亂碼的問題。
+            {locale('tool.upload_description')}
           </p>
 
           <div
@@ -411,9 +412,9 @@ const ToolPopup = ({ onClose, title }) => {
             ) : (
               <div className="text-gray-400">
                 <FaCloudUploadAlt className="text-4xl mx-auto mb-2" />
-                <p className="font-medium">點擊上傳或拖放檔案</p>
+                <p className="font-medium">{locale('tool.drag_drop')}</p>
                 <p className="text-xs mt-1">
-                  支援 .pro, .probundle, .proplaylist
+                  {locale('tool.supports')}
                 </p>
               </div>
             )}
@@ -445,7 +446,7 @@ const ToolPopup = ({ onClose, title }) => {
 
           {success && (
             <div className="mt-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg text-green-200 text-sm">
-              修復完成！檔案已開始下載。
+              {locale('tool.repair_complete')}
             </div>
           )}
 
@@ -455,7 +456,7 @@ const ToolPopup = ({ onClose, title }) => {
                 onClick={handleCancel}
                 className="px-4 py-2 rounded-lg text-gray-300 hover:bg-gray-700 transition-colors"
               >
-                {"取消"}
+                {locale('tool.cancel')}
               </button>
             )}
             <button
@@ -468,16 +469,16 @@ const ToolPopup = ({ onClose, title }) => {
               `}
             >
               {success ? (
-                <>完成</>
+                <>{locale('tool.done')}</>
               ) : processing ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  處理中...
+                  {locale('tool.processing_status')}
                 </>
               ) : (
                 <>
                   <FaDownload />
-                  修復並下載
+                  {locale('tool.repair_download')}
                 </>
               )}
             </button>

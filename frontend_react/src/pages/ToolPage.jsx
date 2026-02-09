@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTools, FaWrench, FaApple, FaWindows } from 'react-icons/fa';
 import ToolPopup from '../components/ToolPopup';
+import { useLanguage } from '../lang/LanguageContext';
 
 const ToolPage = () => {
   const [activeTool, setActiveTool] = useState(null);
+  const { locale } = useLanguage();
 
   const tools = [
     {
       id: 'propresenter-fix',
-      title: 'ProPresenter Mac 編碼修復',
-      description: '解決 macOS 製作的 .pro / .probundle / .proplaylist 檔案在 Windows 上顯示亂碼的問題',
+      title: locale('tool.propresenter_fix_title'),
+      description: locale('tool.propresenter_fix_desc'),
       icon: <FaWrench className="text-yellow-500 text-3xl" />,
       platforms: ['macOS', 'Windows']
     },
@@ -23,9 +25,9 @@ const ToolPage = () => {
         <div className="mb-8">
             <h1 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
                 <FaTools className="text-blue-500" />
-                工具集
+                {locale('tool.title')}
             </h1>
-            <p className="text-gray-400">實用的媒體管理與修復工具</p>
+            <p className="text-gray-400">{locale('tool.description')}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -68,7 +70,7 @@ const ToolPage = () => {
       <AnimatePresence>
         {activeTool === 'propresenter-fix' && (
           <ToolPopup 
-            title="ProPresenter Mac 編碼修復"
+            title={locale('tool.propresenter_fix_title')}
             onClose={() => setActiveTool(null)} 
           />
         )}
