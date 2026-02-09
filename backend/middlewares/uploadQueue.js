@@ -1,8 +1,7 @@
-const activeUploads = new Map(); // userId -> Set<req> (for legacy)
-const activeFiles = new Map(); // userId -> Set<fileId>
-const requestQueue = []; // Array of { userId, fileId, run }
+const activeUploads = new Map(); // userId -> Set<req>
+const requestQueue = []; // Array of { userId, run }
 
-const MAX_CONCURRENT_FILES = 1;
+const MAX_CONCURRENT_UPLOADS = 1;
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 Minutes
 
 /**
@@ -13,25 +12,25 @@ const processQueue = (userId) => {
     const queueIndex = requestQueue.findIndex(item => item.userId === userId);
     if (queueIndex === -1) return;
 
-    const activeSet = getActiveFileSet(userId);
+    const activeSet = getActiveSet(userId);
     cleanZombieRequests(userId, activeSet);
 
-    if (activeSet.size < MAX_CONCURRENT_FILES) {
+    if (activeSet.size < MAX_CONCURRENT_UPLOADS) {
         const { run } = requestQueue.splice(queueIndex, 1)[0];
         run();
     }
 };
 
 /**
- * Gets or creates the active file set for a user.
+ * Gets or creates the active upload set for a user.
  * @param {string} userId 
  * @returns {Set}
  */
-const getActiveFileSet = (userId) => {
-    if (!activeFiles.has(userId)) {
-        activeFiles.set(userId, new Set());
+const getActiveSet = (userId) => {
+    if (!activeUploads.has(userId)) {
+        activeUploads.set(userId, new Set());
     }
-    return activeFiles.get(userId);
+    return activeUploads.get(userId);
 };
 
 /**
@@ -50,19 +49,80 @@ const cleanZombieRequests = (userId, activeSet) => {
 
 module.exports = (req, res, next) => {
     const userId = req.get('user_id') || req.query.user_id;
-    if (!userId) return next();
+    const activeSet = getActiveSet(userId);
 
-    const fileId = req.body?.fileId || req.query.fileId;
-    if (!fileId) return next(); // not chunked upload
+    // Initial Zombie Cleanup
+    cleanZombieRequests(userId, activeSet);
 
-    const activeSet = getActiveFileSet(userId);
+    // Function to execute the upload logic
+    const run = () => {
+        if (req.destroyed || req.aborted) {
+            console.log(`User ${userId} request skipped (closed before run).`);
+            processQueue(userId);
+            return;
+        }
 
-    const isAlreadyActive = activeSet.has(fileId);
+        activeSet.add(req);
+        console.log(`User ${userId} started upload. Active uploads: ${activeSet.size}`);
 
-    if (!isAlreadyActive && activeSet.size >= MAX_CONCURRENT_FILES) {
-        console.log(`User ${userId} file ${fileId} queued. Active files: ${activeSet.size}`);
+        let finished = false;
+
+        const cleanup = () => {
+            if (finished) return;
+            finished = true;
+
+            activeSet.delete(req);
+            
+            // Remove listeners
+            res.removeListener('finish', onComplete);
+            res.removeListener('close', onComplete);
+            req.removeListener('close', onComplete);
+            req.removeListener('aborted', onComplete);
+            req.removeListener('error', onError);
+            if (req.socket) {
+                req.socket.removeListener('close', onComplete);
+                req.socket.removeListener('timeout', onSocketTimeout);
+            }
+
+            processQueue(userId);
+        };
+
+        const onComplete = () => cleanup();
         
-        const queueItem = { userId, fileId, run: () => next() };
+        const onError = (err) => {
+            console.error(`User ${userId} upload error: ${err.message}`);
+            cleanup();
+        };
+
+        const onSocketTimeout = () => {
+            console.log(`User ${userId} socket timeout (${IDLE_TIMEOUT_MS}ms). Destroying.`);
+            if (!finished) {
+                req.destroy(new Error('Upload idle timeout'));
+                cleanup();
+            }
+        };
+
+        // Attach Event Listeners
+        res.on('finish', onComplete);
+        res.on('close', onComplete);
+        req.on('close', onComplete);
+        req.on('aborted', onComplete);
+        req.on('error', onError);
+        
+        if (req.socket) {
+            req.socket.on('close', onComplete);
+            req.socket.setTimeout(IDLE_TIMEOUT_MS);
+            req.socket.on('timeout', onSocketTimeout);
+        }
+
+        next();
+    };
+
+    // Queue Logic
+    if (activeSet.size >= MAX_CONCURRENT_UPLOADS) {
+        console.log(`User ${userId} queued. Active uploads: ${activeSet.size}`);
+        
+        const queueItem = { userId, run };
         requestQueue.push(queueItem);
 
         // Remove from queue if client disconnects while waiting
@@ -70,7 +130,7 @@ module.exports = (req, res, next) => {
             const index = requestQueue.indexOf(queueItem);
             if (index !== -1) {
                 requestQueue.splice(index, 1);
-                console.log(`User ${userId} file ${fileId} removed from queue (disconnected).`);
+                console.log(`User ${userId} removed from queue (disconnected).`);
             }
         };
 
@@ -79,34 +139,7 @@ module.exports = (req, res, next) => {
         req.on('error', removeFromQueue);
         if (req.socket) req.socket.on('close', removeFromQueue);
         
-        return;
-    }
-
-    if (!isAlreadyActive) {
-        activeSet.add(fileId);
-        console.log(`User ${userId} started file ${fileId}. Active files: ${activeSet.size}`);
-    }
-
-    // On response finish, check if last chunk
-    res.on('finish', () => {
-        const chunkIndex = parseInt(req.body?.chunkIndex || req.query.chunkIndex || 0);
-        const totalChunks = parseInt(req.body?.totalChunks || req.query.totalChunks || 1);
-        
-        if (chunkIndex === totalChunks - 1) {
-            activeSet.delete(fileId);
-            console.log(`User ${userId} finished file ${fileId}. Active files: ${activeSet.size}`);
-            processQueue(userId);
-        }
-    });
-
-    next();
-};
-
-module.exports.releaseFile = (userId, fileId) => {
-    const activeSet = getActiveFileSet(userId);
-    if (activeSet.has(fileId)) {
-        activeSet.delete(fileId);
-        console.log(`User ${userId} released file ${fileId}. Active files: ${activeSet.size}`);
-        processQueue(userId);
+    } else {
+        run();
     }
 };
