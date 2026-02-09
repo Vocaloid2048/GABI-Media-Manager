@@ -2,18 +2,50 @@ const fs = require('fs');
 const path = require('path');
 const { fixProFile, fixProBundle } = require('../utils/fixProFile');
 const { raiseError, returnSuccess, INVALID_REQUEST, errorByAPI } = require('../middlewares/error');
+const uploadQueue = require('../middlewares/uploadQueue');
 
-const toolController = {
-  handleChunkedToolUpload: async (req, res) => {
+const validExtensions = ['.pro', '.proplaylist', '.probundle'];
+
+exports.uploadToolFile = async (req, res) => {
+    // Auth is handled by middleware
+
+    // Handle File Upload
+    const file = req.file;
+
+    // --- Cancellation Handling ---
+    // If request closes prematurely, delete the uploaded file/chunk
+    req.on('close', async () => {
+        if (!res.headersSent) {
+            console.log('Request cancelled by user. Cleaning up...');
+            if (file && file.path) {
+                try {
+                    await fs.promises.access(file.path);
+                    await fs.promises.unlink(file.path);
+                    console.log(`Deleted temp file: ${file.path}`);
+                } catch (e) { /* ignore if already gone */ }
+            }
+        }
+    });
+
+    // Validate file extension (only for the first chunk or when fileName is provided)
+    const fileNameToCheck = req.body.fileName || file.originalname;
+    if (fileNameToCheck && !validExtensions.includes(path.extname(fileNameToCheck).toLowerCase())) {
+        return raiseError(res, INVALID_REQUEST);
+    }
+
+    // --- Chunked Upload Handling ---
+    if (req.body.chunkIndex != null && req.body.totalChunks != null && req.body.fileId) {
+        return await handleChunkedToolUpload(req, res, file);
+    }
+
+    // Single file processing (if needed, but currently all are chunked)
+    return raiseError(res, 'Chunked upload required');
+};
+
+async function handleChunkedToolUpload(req, res, file) {
     const { chunkIndex, totalChunks, fileId, fileName } = req.body;
     const index = parseInt(chunkIndex);
     const total = parseInt(totalChunks);
-    const file = req.file;
-
-    if (!file) {
-         return raiseError(res, "No chunk file uploaded");
-    }
-
     const tempDir = process.env.TEMP_DIR || path.join(__dirname, '../Temp');
     const chunksDir = path.join(tempDir, 'tool_chunks', fileId);
 
@@ -34,7 +66,6 @@ const toolController = {
     }
 
     // Check if we have all chunks
-    // Simplest way: check if count of files == total
     const files = fs.readdirSync(chunksDir);
     if (files.length < total) {
         return returnSuccess(res, { status: 'chunk_received', index });
@@ -43,7 +74,6 @@ const toolController = {
     console.log(`All ${total} chunks received for ${fileId}, merging...`);
     
     // Merge
-    // Use fileName provided by frontend to preserve non-ASCII
     const safeBase = fileName ? path.basename(fileName) : `${fileId}.probundle`;
     const mergedPath = path.join(tempDir, `merged_${Date.now()}_${safeBase}`);
     const writeStream = fs.createWriteStream(mergedPath);
@@ -70,12 +100,49 @@ const toolController = {
         fs.rmSync(chunksDir, { recursive: true, force: true });
     } catch(e) {}
 
-    // Now convert/fix the merged file
-    // We reuse the fixEncoding logic but with a local file path
-    await toolController.processMergedFile(req, res, mergedPath, safeBase);
-  },
+    // Release queue slot before processing (file is merged and ready)
+    const userId = req.get('user_id') || req.query.user_id;
+    if (userId && fileId) {
+        uploadQueue.releaseFile(userId, fileId);
+    }
 
-  cancelToolUpload: async (req, res) => {
+    // Now process the merged file
+    await exports.uploadToolFileImpl(mergedPath, safeBase, res);
+}
+
+exports.uploadToolFileImpl = async (filePath, originalName, res) => {
+    const ext = path.extname(originalName).toLowerCase();
+    const baseName = path.basename(originalName, ext);
+    const tempDir = path.dirname(filePath);
+    
+    // Output filename with suffix "_fix" before extension
+    const outputFilename = `${baseName}_fix${ext}`;
+    const outputPath = path.join(tempDir, `fixed_${Date.now()}_${outputFilename}`);
+
+    try {
+        if (ext === '.pro') {
+            await fixProFile(filePath, outputPath);
+        } else if (ext === '.proplaylist' || ext === '.probundle') {
+            await fixProBundle(filePath, outputPath);
+        } else {
+            try { fs.unlinkSync(filePath); } catch(e) {}
+            return raiseError(res, 'Unsupported file extension. Only .pro, .proplaylist and .probundle are supported.');
+        }
+
+        // Send file back
+        res.download(outputPath, outputFilename, (err) => {
+            // Cleanup files after download
+            try { fs.unlinkSync(filePath); } catch(e) {}
+            try { fs.unlinkSync(outputPath); } catch(e) {}
+        });
+    } catch (error) {
+        console.error("Processing error:", error);
+        try { fs.unlinkSync(filePath); } catch(e) {}
+        return raiseError(res, errorByAPI(null, error.message || "Processing failed", false));
+    }
+};
+
+exports.cancelToolUpload = async (req, res) => {
     const { fileId, token16 } = req.body;
     const targetToken = token16 || fileId;
 
@@ -100,101 +167,16 @@ const toolController = {
                try { fs.unlinkSync(path.join(tempDir, file)); } catch(e) {}
            }
         }
+
+        // Release queue slot
+        const userId = req.get('user_id') || req.query.user_id;
+        if (userId && targetToken) {
+            uploadQueue.releaseFile(userId, targetToken);
+        }
         
         returnSuccess(res, { message: 'Upload cancelled and cleaned' });
     } catch (err) {
         console.error(`[Tool] Failed to clean up cancelled upload ${targetToken}:`, err);
         returnSuccess(res, { message: 'Cleanup attempted' });
     }
-  },
-
-  processMergedFile: async (req, res, filePath, originalName) => {
-      const ext = path.extname(originalName).toLowerCase();
-      const baseName = path.basename(originalName, ext);
-      const tempDir = path.dirname(filePath);
-      
-      // Output filename with suffix "_fix" before extension
-      const outputFilename = `${baseName}_fix${ext}`;
-      const outputPath = path.join(tempDir, `fixed_${Date.now()}_${outputFilename}`);
-
-      try {
-const isZip = require('unzipper').Open.file(filePath)
-            .then(d => { d.files; return true; })
-            .catch(() => false); // Simple check if it can open
-
-        if (ext === '.pro') {
-          await fixProFile(filePath, outputPath);
-        } else if (ext === '.proplaylist') {
-          // Check if it is a zip (bundle) or single file
-          // We can try to unzip it, if error, fallback to single file
-          try {
-             await fixProBundle(filePath, outputPath);
-          } catch(e) {
-             console.log("ProPlaylist is not a zip, treating as single file");
-             await fixProFile(filePath, outputPath);
-          }
-        } else if (ext === '.probundle') {
-          // Both handled as bundle/zip structure now
-          await fixProBundle(filePath, outputPath);
-        } else {
-             try { fs.unlinkSync(filePath); } catch(e) {}
-             return raiseError(res, 'Unsupported file extension. Only .pro, .proplaylist and .probundle are supported.');
-        }
-
-        // Send file back
-        // Ensure UTF-8 filename in Content-Disposition for legacy/compat
-        const encodedFilename = encodeURIComponent(outputFilename);
-        res.setHeader('Content-Disposition', `attachment; filename="${encodedFilename}"; filename*=UTF-8''${encodedFilename}`);
-        res.setHeader('Content-Type', 'application/zip'); // Assuming zip output for most, but .pro is binary. 
-        // Actually res.download sets CD, we should use that but with headers.
-        
-        res.download(outputPath, outputFilename, {
-            headers: {
-                'Content-Disposition': `attachment; filename="${encodedFilename}"; filename*=UTF-8''${encodedFilename}`
-            }
-        }, (err) => {
-          // Cleanup files after download
-          try {
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
-          } catch (e) {
-            console.error('Error cleaning up temp files:', e);
-          }
-        });
-
-      } catch (error) {
-        console.error('Error fixing ProPresenter file:', error);
-        // Cleanup on error
-        try {
-          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-          if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
-        } catch (e) {}
-        
-        // Since this might be a background request for chunking?
-        // Wait, if it's the last chunk request, the client is waiting for response.
-        // We can return error json.
-        // But if res.download was called, headers are sent.
-        if (!res.headersSent) {
-             return raiseError(res, 'Failed to process file: ' + error.message);
-        }
-      }
-  },
-
-  fixEncoding: async (req, res) => {
-    // If chunked upload
-    if (req.body.chunkIndex !== undefined) {
-        return await toolController.handleChunkedToolUpload(req, res);
-    }
-  
-    // Single file upload
-    const file = req.file;
-    if (!file) {
-      return raiseError(res, 'No file uploaded');
-    }
-    
-    // Process directly
-    await toolController.processMergedFile(req, res, file.path, file.originalname);
-  }
 };
-
-module.exports = toolController;
