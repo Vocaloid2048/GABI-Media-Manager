@@ -4,7 +4,7 @@ import {
   FaCloudUploadAlt,
   FaTimes,
   FaDownload,
-  FaFileAlt,
+  FaWrench,
 } from "react-icons/fa";
 import { generateDs } from "../utils/auth";
 import { useLanguage } from "../lang/LanguageContext";
@@ -358,7 +358,7 @@ const ToolPopup = ({ onClose, title }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -367,7 +367,7 @@ const ToolPopup = ({ onClose, title }) => {
       >
         <div className="flex justify-between items-center p-4 border-b border-gray-700">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <FaFileAlt className="text-blue-500" />
+            <FaWrench className="text-yellow-500" />
             {title || "ProPresenter Mac Fixer"}
           </h3>
           <button
@@ -403,7 +403,7 @@ const ToolPopup = ({ onClose, title }) => {
 
             {file ? (
               <div className="text-green-400">
-                <FaFileAlt className="text-4xl mx-auto mb-2" />
+                <FaWrench className="text-4xl mx-auto mb-2" />
                 <p className="font-medium break-all">{file.name}</p>
                 <p className="text-xs text-gray-400 mt-1">
                   {(file.size / 1024 / 1024).toFixed(2)} MB

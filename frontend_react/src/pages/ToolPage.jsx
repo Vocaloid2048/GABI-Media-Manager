@@ -3,9 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaTools, FaWrench, FaApple, FaWindows } from 'react-icons/fa';
 import ToolPopup from '../components/ToolPopup';
 import { useLanguage } from '../lang/LanguageContext';
+import { useRef } from 'react';
 
 const ToolPage = () => {
   const [activeTool, setActiveTool] = useState(null);
+  const scrollContainerRef = useRef(null);
   const { locale } = useLanguage();
 
   const tools = [
@@ -14,14 +16,18 @@ const ToolPage = () => {
       title: locale('tool.propresenter_fix_title'),
       description: locale('tool.propresenter_fix_desc'),
       icon: <FaWrench className="text-yellow-500 text-3xl" />,
-      platforms: ['macOS', 'Windows']
+      platforms: ['macOS']
     },
     // Future tools can be added here
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-black p-4 pb-24">
-      <div className="max-w-4xl mx-auto pt-4">
+    <div
+      ref={scrollContainerRef}
+      className="flex-1 overflow-y-auto no-scrollbar relative p-6"
+    >
+      
+      <div className="max-w-4xl mx-auto">
         <div className="mb-8">
             <h1 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
                 <FaTools className="text-blue-500" />
@@ -36,7 +42,7 @@ const ToolPage = () => {
               key={tool.id}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="bg-gray-800/50 backdrop-blur border border-gray-700/50 rounded-xl p-6 cursor-pointer hover:bg-gray-700/50 transition-colors"
+              className="bg-gray-800/80 backdrop-blur border border-gray-700/50 rounded-xl p-6 cursor-pointer hover:bg-gray-700/50 transition-colors"
               onClick={() => setActiveTool(tool.id)}
             >
               <div className="flex items-start gap-4">
