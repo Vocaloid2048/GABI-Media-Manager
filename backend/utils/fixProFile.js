@@ -45,13 +45,10 @@ function normalizeObject(obj, fixPaths = false) {
                          
       if (assetExts.includes(ext)) {
           // It's likely a media file reference.
-          // Extract basename and prefix with Media/
-          // Note: Windows usage of forward slash is generally fine in Pro file paths, 
-          // but if we want to be super specific for Windows we could use backslash,
-          // however ProPresenter usually handles / fine or uses URIs.
-          // Since we are in a bundle, relative path "Media/file.ext" is standard.
+          // Extract basename and remove directory
           const basename = path.basename(val);
-          val = "Media/" + basename;
+          // User request: remove paths, keep only filename for media refs in .pro
+          val = basename;
       }
     }
     return val;
@@ -72,42 +69,55 @@ function normalizeObject(obj, fixPaths = false) {
 }
 
 async function fixProFileContent(buffer, root, filename, fixPaths = false) {
-  // Determine type based on extension
-  let typeUrl = "rv.data.Presentation"; // Default to Presentation
-  if (filename && filename.toLowerCase().endsWith(".proplaylist")) {
-    typeUrl = "rv.data.Playlist";
-  }
-
-  const Type = root.lookupType(typeUrl);
+  // Try to guess type or fallback
+  // List of likely types to try
+  const strategies = ["rv.data.Presentation", "rv.data.Playlist", "rv.data.Action"];
   
-  try {
-    const message = Type.decode(buffer);
-    const object = Type.toObject(message, {
-      longs: String,
-      enums: String,
-      bytes: String,
-      defaults: true,
-      arrays: true
-    });
-
-    // Normalize strings and fix paths
-    const fixedObject = normalizeObject(object, fixPaths);
-
-    // Encode back
-    const verifyError = Type.verify(fixedObject);
-    if (verifyError) {
-      console.warn("Verification Warning:", verifyError);
-    }
-    
-    const newMessage = Type.fromObject(fixedObject); // Re-create message from object
-    return Type.encode(newMessage).finish();
-  } catch (e) {
-    console.warn(`Failed to parse as ${typeUrl}, trying raw normalization. error: ${e.message}`);
-    // Fallback: If proto parsing fails, we could try string replacement on buffer? 
-    // But modifying binary buffer blindly is risky. 
-    // We return original buffer.
-    return buffer; 
+  // Optimization based on filename
+  if (filename) {
+      if (filename.toLowerCase().endsWith(".proplaylist")) {
+          // Move Playlist to front
+          const idx = strategies.indexOf("rv.data.Playlist");
+          if (idx > -1) strategies.unshift(strategies.splice(idx, 1)[0]);
+      }
   }
+
+  let lastError = null;
+
+  for (const typeUrl of strategies) {
+    const Type = root.lookupType(typeUrl);
+    try {
+        // Attempt decode
+        const message = Type.decode(buffer);
+        
+        const object = Type.toObject(message, {
+            longs: String,
+            enums: String,
+            bytes: String,
+            defaults: true,
+            arrays: true
+        });
+
+        // Normalize strings and fix paths
+        const fixedObject = normalizeObject(object, fixPaths);
+
+        // Encode back
+        const verifyError = Type.verify(fixedObject);
+        if (verifyError) {
+           console.warn(`Verification Warning (${typeUrl}):`, verifyError);
+        }
+    
+        const newMessage = Type.fromObject(fixedObject);
+        return Type.encode(newMessage).finish();
+
+    } catch (e) {
+        lastError = e;
+        // Continue to next strategy
+    }
+  }
+
+  console.warn(`Failed to parse file ${filename} with any strategy. Last error: ${lastError?.message}`);
+  return buffer; 
 }
 
 async function fixProBundle(filePath, outputPath) {
@@ -120,20 +130,24 @@ async function fixProBundle(filePath, outputPath) {
     forceLocalTime: true,
   });
 
+  const streamFinished = new Promise((resolve, reject) => {
+      output.on('close', resolve);
+      output.on('end', resolve);
+      output.on('error', reject);
+      archive.on('error', reject);
+  });
+
   archive.pipe(output);
 
   // Ensure "Media" and "PDF" folders exist
   archive.append(null, { name: 'Media/' });
   archive.append(null, { name: 'PDF/' });
 
-  // Map to track what we've added to avoid duplicates if zip has same-named files in diff folders (flatten collision)
+  // Map to track what we've added
   const addedFiles = new Set();
-  // But wait, if we flatten, we might overwrite. We accept that or rename?
-  // User didn't specify rename strategy for collisions. Assuming mostly unique basenames.
 
   console.log("Fixing Bundle: Extracting...");
   
-  // We extract to temp dir first to ensure we catch everything properly
   const tempExtractDir = path.join(path.dirname(filePath), `ext_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`);
   
   try {
@@ -159,10 +173,24 @@ async function fixProBundle(filePath, outputPath) {
                 const ext = path.extname(basename).toLowerCase();
 
                 let destName = basename;
+                let shouldFixContent = false;
+                let fixPaths = false;
+
                 if (basename === 'data') {
                     destName = basename; // Root
+                    shouldFixContent = true;
+                    // 'data' implies bundle root file, likely playlist or presentation. 
+                    // Usually we don't fix paths in playlist, but we do in presentation.
+                    // Hard to know which one. But we can default to fixPaths=true if it assumes basenames. 
+                    // But playlist usually links to Presentaiton Paths.
+                    // If we flatten presentations to root, playlist links might need update if they had folders.
+                    // But we normalize paths in fixJob also.
+                    // Let's assume safe to normalize.
+                    fixPaths = false; // Usually Playlist "data" doesn't have media paths itself, it has items.
                 } else if (ext === '.pro' || ext === '.proplaylist') {
                     destName = basename; // Root
+                    shouldFixContent = true;
+                    fixPaths = (ext === '.pro'); // Only fix paths for .pro (presentations)
                 } else if (ext === '.pdf') {
                     destName = `PDF/${basename}`;
                 } else {
@@ -174,9 +202,9 @@ async function fixProBundle(filePath, outputPath) {
                 const content = await fs.promises.readFile(fullPath);
                 
                 let finalContent = content;
-                if (ext === '.pro' || ext === '.proplaylist') {
+                if (shouldFixContent) {
                     // Fix content
-                    finalContent = await fixProFileContent(content, root, basename, true); // fixPaths = true
+                    finalContent = await fixProFileContent(content, root, basename, fixPaths);
                 }
 
                 if (!addedFiles.has(destName)) {
@@ -202,6 +230,7 @@ async function fixProBundle(filePath, outputPath) {
   }
 
   await archive.finalize();
+  await streamFinished; // Wait for write stream to finish
   return outputPath;
 }
 
