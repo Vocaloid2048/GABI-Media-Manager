@@ -178,15 +178,11 @@ async function fixProBundle(filePath, outputPath) {
 
                 if (basename === 'data') {
                     destName = basename; // Root
-                    shouldFixContent = true;
-                    // 'data' implies bundle root file, likely playlist or presentation. 
-                    // Usually we don't fix paths in playlist, but we do in presentation.
-                    // Hard to know which one. But we can default to fixPaths=true if it assumes basenames. 
-                    // But playlist usually links to Presentaiton Paths.
-                    // If we flatten presentations to root, playlist links might need update if they had folders.
-                    // But we normalize paths in fixJob also.
-                    // Let's assume safe to normalize.
-                    fixPaths = false; // Usually Playlist "data" doesn't have media paths itself, it has items.
+                    // Optimization: data file in bundle usually does not need content fix if it's playlist
+                    // unless we want to normalize strings deeply. 
+                    // User requested: "只是data檔案那邊，直接複製貼上就好"
+                    // So we skip shouldFixContent for 'data'
+                    shouldFixContent = false; 
                 } else if (ext === '.pro' || ext === '.proplaylist') {
                     destName = basename; // Root
                     shouldFixContent = true;

@@ -68,7 +68,7 @@ const ToolPage = () => {
       <AnimatePresence>
         {activeTool === 'propresenter-fix' && (
           <ToolPopup 
-            title="ProPresenter Mac 編碼修復."
+            title="ProPresenter Mac 編碼修復"
             onClose={() => setActiveTool(null)} 
           />
         )}

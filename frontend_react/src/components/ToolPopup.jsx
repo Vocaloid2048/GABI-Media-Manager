@@ -1,19 +1,36 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaCloudUploadAlt, FaTimes, FaDownload, FaFileAlt } from 'react-icons/fa';
+import { generateDs } from '../utils/auth';
 
 const ToolPopup = ({ onClose, title }) => {
   const [file, setFile] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [progress, setProgress] = useState(0); // 0-100
+  const [speed, setSpeed] = useState(null); // MB/s string
+  const [statusMessage, setStatusMessage] = useState(''); // e.g. "Checking...", "Uploading..."
   
+  const xhrRef = useRef(null);
+  const activeFileIdRef = useRef(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+     return () => {
+         mountedRef.current = false;
+     }
+  }, []);
+
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       setFile(selectedFile);
       setError('');
       setSuccess(false);
+      setProgress(0);
+      setSpeed(null);
+      setStatusMessage('');
     }
   };
 
@@ -28,11 +45,51 @@ const ToolPopup = ({ onClose, title }) => {
         setFile(droppedFile);
         setError('');
         setSuccess(false);
+        setProgress(0);
+        setSpeed(null);
+        setStatusMessage('');
     }
   };
   
+  const handleCancel = async () => {
+      // 1. Abort current XHR
+      if (xhrRef.current) {
+          xhrRef.current.abort();
+          xhrRef.current = null;
+      }
+
+      // 2. Send cancel request to backend if we have a fileId
+      if (activeFileIdRef.current) {
+          try {
+              const userId = localStorage.getItem('user_id');
+              const ds = generateDs(userId);
+              
+              await fetch(`/api/tool/cancel?user_id=${userId}&ds=${encodeURIComponent(ds)}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ fileId: activeFileIdRef.current })
+              });
+          } catch(e) {
+              console.warn("Cancel request failed", e);
+          }
+      }
+
+      setProcessing(false);
+      setProgress(0);
+      setSpeed(null);
+      setStatusMessage('已取消');
+  };
+
   const handleProcess = async () => {
     if (!file) return;
+    
+    const userId = localStorage.getItem('user_id');
+    const ds = generateDs(userId);
+
+    if (!ds) {
+        setError('Authentication error. Please login again.');
+        return;
+    }
 
     if (file.size > 3 * 1024 * 1024 * 1024) { // 3GB limit
         setError('檔案過大，上限為 3GB');
@@ -41,14 +98,22 @@ const ToolPopup = ({ onClose, title }) => {
 
     setProcessing(true);
     setError('');
+    setProgress(0);
+    setStatusMessage('準備上傳...');
     
     // Chunk configuration
-    const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB per chunk
+    const CHUNK_SIZE = 85 * 1024 * 1024; // 85MB per chunk (same as video upload)
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-    const fileId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`; // Unique ID for this upload session
+    const fileId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`; // Unique ID
+    activeFileIdRef.current = fileId;
+
+    let startTime = Date.now();
+    let uploadedBytes = 0;
 
     try {
       for (let i = 0; i < totalChunks; i++) {
+          if (!mountedRef.current) return;
+          
           const start = i * CHUNK_SIZE;
           const end = Math.min(file.size, start + CHUNK_SIZE);
           const chunk = file.slice(start, end);
@@ -58,111 +123,193 @@ const ToolPopup = ({ onClose, title }) => {
           formData.append('chunkIndex', i);
           formData.append('totalChunks', totalChunks);
           formData.append('fileId', fileId);
-          formData.append('fileName', file.name); // Send original filename explicitly
+          formData.append('token16', fileId); // For consistency
+          formData.append('fileName', file.name); 
 
-          // For the LAST chunk, we expect the file download (blob)
-          // For others, we expect JSON success
+          // Update Status
+          setStatusMessage(`上傳中...`);
+
+          // Retry logic
+          let attempts = 0;
+          let success = false;
           
-          if (i < totalChunks - 1) {
-              // Intermediate chunks
-              const res = await fetch('/api/tool/fix-encoding', {
-                  method: 'POST',
-                  body: formData
-              });
-              
-              if (!res.ok) {
-                  throw new Error(`Upload failed at chunk ${i + 1}`);
-              } else {
-                  // Optional: check response json
-                  const json = await res.json();
-                  if (json.retcode !== 1) throw new Error(json.msg || 'Chunk upload error');
-              }
-              
-          } else {
-              // Final chunk
-              const res = await fetch('/api/tool/fix-encoding', {
-                  method: 'POST',
-                  body: formData
-              });
-
-              if (res.ok) {
-                // Determine valid content type. If application/json, it might be an error even with 200 (though retcode usually handles that, but download sets content-type)
-                const contentType = res.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    // It might be an error disguised as 200/Success with json body?
-                    // But our backend sends download stream on success. 
-                    // Let's try checking if it's json first?
-                    // Actually, if backend calls `res.download`, content-type is determined by file (zip or probundle).
-                    // If backend calls `returnSuccess` or `raiseError`, it is json.
-                    
-                    // Clone response to check json?
-                    // Or just try processing as blob.
-                    // If error, the backend usually sets 200 with {retcode: -1}.
-                    // But `res.download` sets 200.
-                }
-
-                // Handle file download
-                const blob = await res.blob();
+          while (!success && attempts < 3) {
+            try {
+                // For the LAST chunk, we expect the file download (blob)
+                // BUT user wants processing separated if possible, or at least handled logically.
+                // Current backend: Validates all chunks on every call, if all present -> merges -> responds.
+                // So the LAST chunk call IS the processing call.
                 
-                // If the blob is actually JSON error (unlikely with res.download unless error happened before stream start)
-                if (blob.type === 'application/json') {
-                     const text = await blob.text();
-                     const json = JSON.parse(text);
-                     if (json.retcode !== 1) {
-                         throw new Error(json.msg || 'Processing failed');
-                     }
-                }
+                // For intermediate chunks
+                if (i < totalChunks - 1) {
+                    await new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhrRef.current = xhr;
+                        // Use query param and userId/ds
+                        xhr.open('POST', `/api/tool/fix-encoding?token16=${fileId}&user_id=${userId}&ds=${encodeURIComponent(ds)}`);
+                        
+                        xhr.upload.onprogress = (event) => {
+                            if (event.lengthComputable && mountedRef.current) {
+                                const currentChunkLoaded = event.loaded;
+                                const totalLoadedSoFar = (i * CHUNK_SIZE) + currentChunkLoaded;
+                                const percentComplete = Math.min((totalLoadedSoFar / file.size) * 100, 100);
+                                setProgress(Math.floor(percentComplete));
 
-                // Extract filename from header or default
-                const contentDisposition = res.headers.get('Content-Disposition');
-                let filename = 'fixed_file.zip'; // Default
-                if (contentDisposition) {
-                  const match = contentDisposition.match(/filename="?([^" ;]+)"?/); // Improved regex
-                  // Browsers sometimes encode filename in UTF-8
-                  if (match && match[1]) {
-                    try {
-                        filename = decodeURIComponent(match[1]);
-                    } catch(e) {
-                         filename = match[1];
-                    }
-                  }
+                                const timeElapsed = (Date.now() - startTime) / 1000;
+                                if (timeElapsed > 0) {
+                                    const mbps = (totalLoadedSoFar / (1024 * 1024)) / timeElapsed;
+                                    setSpeed(mbps.toFixed(2));
+                                }
+                            }
+                        };
+
+                        xhr.onload = () => {
+                            if (xhr.status === 200) {
+                                try {
+                                    const response = JSON.parse(xhr.responseText);
+                                    if (response.retcode === 1 || response.retcode === '1') {
+                                        resolve(response);
+                                    } else {
+                                        reject(new Error(response.msg || 'Chunk upload error'));
+                                    }
+                                } catch (e) {
+                                    reject(e);
+                                }
+                            } else {
+                                reject(new Error(`Server error ${xhr.status}`));
+                            }
+                        };
+
+                        xhr.onerror = () => reject(new Error('Network error'));
+                        xhr.onabort = () => reject(new Error('Aborted'));
+
+                        xhr.send(formData);
+                    });
+                    success = true;
                 } else {
-                     // Fallback logic if header is missing
-                     const ext = file.name.split('.').pop();
-                     const base = file.name.substring(0, file.name.lastIndexOf('.'));
-                     filename = `${base}_fix.${ext}`;
+                    // Final chunk
+                    // We upload it, ensuring progress reaches 100%
+                    await new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhrRef.current = xhr;
+                        xhr.open('POST', `/api/tool/fix-encoding?token16=${fileId}&user_id=${userId}&ds=${encodeURIComponent(ds)}`);
+                        
+                        xhr.upload.onprogress = (event) => {
+                             if (event.lengthComputable && mountedRef.current) {
+                                const currentChunkLoaded = event.loaded;
+                                const totalLoadedSoFar = (i * CHUNK_SIZE) + currentChunkLoaded;
+                                const percentComplete = Math.min((totalLoadedSoFar / file.size) * 100, 100);
+                                setProgress(Math.floor(percentComplete));
+                                
+                                // Final chunk uploading...
+                             }
+                        };
+                        
+                        // When upload finishes, we enter "processing" state
+                        xhr.onloadstart = () => {
+                             if(xhr.upload.loaded === xhr.upload.total) {
+                                 setStatusMessage('修正中，請耐心等候...');
+                             }
+                        }
+
+                        xhr.onload = () => {
+                            if (xhr.status === 200) {
+                                // Handle file download
+                                const blob = xhr.response;
+                                
+                                // If the blob is actually JSON error
+                                if (xhr.getResponseHeader('content-type')?.includes('application/json')) {
+                                     // Reader to parse blob text
+                                     const reader = new FileReader();
+                                     reader.onload = () => {
+                                         try {
+                                             const json = JSON.parse(reader.result);
+                                             if (json.retcode !== 1) reject(new Error(json.msg || 'Processing failed'));
+                                             else resolve();
+                                         } catch(e) { reject(e); }
+                                     };
+                                     reader.readAsText(blob);
+                                } else {
+                                    // Process blob download
+                                    const contentDisposition = xhr.getResponseHeader('Content-Disposition');
+                                    let filename = 'fixed_file.zip'; 
+                                    if (contentDisposition) {
+                                      const match = contentDisposition.match(/filename="?([^" ;]+)"?/);
+                                      if (match && match[1]) {
+                                        try { filename = decodeURIComponent(match[1]); } catch(e) { filename = match[1]; }
+                                      }
+                                    } else {
+                                         const ext = file.name.split('.').pop();
+                                         const base = file.name.substring(0, file.name.lastIndexOf('.'));
+                                         filename = `${base}_fix.${ext}`;
+                                    }
+                                    
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = filename;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                    document.body.removeChild(a);
+                                    
+                                    setSuccess(true);
+                                    setFile(null); 
+                                    setStatusMessage('完成！');
+                                    resolve();
+                                }
+                            } else {
+                                // Try convert blob to text for error
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                     try {
+                                        const json = JSON.parse(reader.result);
+                                        reject(new Error(json.msg || `Server error: ${xhr.status}`));
+                                     } catch(e) {
+                                        reject(new Error(`Server error: ${xhr.status}`));
+                                     }
+                                };
+                                reader.readAsText(xhr.response); 
+                            }
+                        };
+
+                        xhr.onerror = () => reject(new Error('Network error'));
+                        xhr.onabort = () => reject(new Error('Aborted'));
+                        xhr.responseType = 'blob'; 
+
+                        xhr.send(formData);
+                    });
+                    success = true;
                 }
-                
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-                
-                setSuccess(true);
-                setFile(null); // Clear file after success
-              } else {
-                // If not OK (e.g. 500, 413)
-                const text = await res.text();
-                try {
-                    const json = JSON.parse(text);
-                    throw new Error(json.msg || 'Processing failed');
-                } catch(e) {
-                    throw new Error(`Server error: ${res.status}`);
-                }
-              }
+            } catch (err) {
+                 if (err.message === 'Aborted') throw err;
+                 attempts++;
+                 console.warn(`Chunk ${i} attempt ${attempts} failed:`, err);
+                 if (attempts >= 3) throw new Error(`Failed to upload chunk ${i} after 3 attempts`);
+                 await new Promise(r => setTimeout(r, 1000 * attempts));
+            }
           }
+          
+          // Speed calc
+          uploadedBytes += chunk.size;
       }
     } catch (err) {
-      console.error(err);
-      setError(err.message || 'Network error or server unavailable');
+      if (err.message === 'Aborted') {
+          console.log('Upload cancelled by user');
+          // State handled in handleCancel
+      } else {
+          console.error(err);
+          setError(err.message || 'Network error or server unavailable');
+          setProcessing(false);
+      }
     } finally {
-      setProcessing(false);
+      if (activeFileIdRef.current === fileId && !success && error) {
+          // If we finished with error, ensure processing is false
+           setProcessing(false);
+      }
     }
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -223,6 +370,21 @@ const ToolPopup = ({ onClose, title }) => {
             )}
           </div>
 
+          {processing && (
+            <div className="mt-4 space-y-2">
+                <div className="flex justify-between text-xs text-gray-300">
+                    <span>{statusMessage} {progress > 0 && `(${progress}%)`}</span>
+                    {speed && <span>{speed} MB/s</span>}
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                    <div 
+                        className="bg-blue-500 h-full transition-all duration-300 ease-out"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+            </div>
+          )}
+
           {error && (
             <div className="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200 text-sm">
               {error}
@@ -237,11 +399,11 @@ const ToolPopup = ({ onClose, title }) => {
 
           <div className="mt-6 flex justify-end gap-3">
              <button
-              onClick={onClose}
-              disabled={processing}
-              className="px-4 py-2 rounded-lg text-gray-300 hover:bg-gray-700 transition-colors disabled:opacity-50"
+              onClick={processing ? handleCancel : onClose}
+              disabled={false}
+              className="px-4 py-2 rounded-lg text-gray-300 hover:bg-gray-700 transition-colors"
             >
-              取消
+              {processing ? '取消' : '關閉'}
             </button>
             <button
               onClick={handleProcess}

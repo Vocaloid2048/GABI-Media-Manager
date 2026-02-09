@@ -75,6 +75,39 @@ const toolController = {
     await toolController.processMergedFile(req, res, mergedPath, safeBase);
   },
 
+  cancelToolUpload: async (req, res) => {
+    const { fileId, token16 } = req.body;
+    const targetToken = token16 || fileId;
+
+    if (!targetToken) {
+        return raiseError(res, INVALID_REQUEST);
+    }
+
+    const tempDir = process.env.TEMP_DIR || path.join(__dirname, '../Temp');
+    const chunksDir = path.join(tempDir, 'tool_chunks', targetToken);
+
+    console.log(`[Tool] User cancelled upload ${targetToken}, cleaning up...`);
+
+    try {
+        if (fs.existsSync(chunksDir)) {
+            fs.rmSync(chunksDir, { recursive: true, force: true });
+        }
+        
+        // Also cleanup merged files if they exist but weren't finished
+        const files = fs.readdirSync(tempDir);
+        for (const file of files) {
+           if (file.includes(targetToken)) {
+               try { fs.unlinkSync(path.join(tempDir, file)); } catch(e) {}
+           }
+        }
+        
+        returnSuccess(res, { message: 'Upload cancelled and cleaned' });
+    } catch (err) {
+        console.error(`[Tool] Failed to clean up cancelled upload ${targetToken}:`, err);
+        returnSuccess(res, { message: 'Cleanup attempted' });
+    }
+  },
+
   processMergedFile: async (req, res, filePath, originalName) => {
       const ext = path.extname(originalName).toLowerCase();
       const baseName = path.basename(originalName, ext);
@@ -85,9 +118,22 @@ const toolController = {
       const outputPath = path.join(tempDir, `fixed_${Date.now()}_${outputFilename}`);
 
       try {
+const isZip = require('unzipper').Open.file(filePath)
+            .then(d => { d.files; return true; })
+            .catch(() => false); // Simple check if it can open
+
         if (ext === '.pro') {
           await fixProFile(filePath, outputPath);
-        } else if (ext === '.proplaylist' || ext === '.probundle') {
+        } else if (ext === '.proplaylist') {
+          // Check if it is a zip (bundle) or single file
+          // We can try to unzip it, if error, fallback to single file
+          try {
+             await fixProBundle(filePath, outputPath);
+          } catch(e) {
+             console.log("ProPlaylist is not a zip, treating as single file");
+             await fixProFile(filePath, outputPath);
+          }
+        } else if (ext === '.probundle') {
           // Both handled as bundle/zip structure now
           await fixProBundle(filePath, outputPath);
         } else {
@@ -96,7 +142,17 @@ const toolController = {
         }
 
         // Send file back
-        res.download(outputPath, outputFilename, (err) => {
+        // Ensure UTF-8 filename in Content-Disposition for legacy/compat
+        const encodedFilename = encodeURIComponent(outputFilename);
+        res.setHeader('Content-Disposition', `attachment; filename="${encodedFilename}"; filename*=UTF-8''${encodedFilename}`);
+        res.setHeader('Content-Type', 'application/zip'); // Assuming zip output for most, but .pro is binary. 
+        // Actually res.download sets CD, we should use that but with headers.
+        
+        res.download(outputPath, outputFilename, {
+            headers: {
+                'Content-Disposition': `attachment; filename="${encodedFilename}"; filename*=UTF-8''${encodedFilename}`
+            }
+        }, (err) => {
           // Cleanup files after download
           try {
             if (fs.existsSync(filePath)) fs.unlinkSync(filePath);

@@ -3,6 +3,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const toolController = require('../controllers/tool.controller');
+const uploadQueue = require('../middlewares/uploadQueue');
+const checkAuth = require('../middlewares/checkAuth');
 
 const router = express.Router();
 
@@ -16,12 +18,19 @@ const storage = multer.diskStorage({
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    cb(null, `upload_${Date.now()}_${file.originalname}`);
+    // Use token16 or Date
+    const token16 = req.query.token16 || req.body.token16; 
+    if (token16) {
+        cb(null, `${token16}_${Date.now()}_${file.originalname}`);
+    } else {
+        cb(null, `upload_${Date.now()}_${file.originalname}`);
+    }
   }
 });
 
 const upload = multer({ storage: storage });
 
-router.post('/fix-encoding', upload.single('file'), toolController.fixEncoding);
+router.post('/fix-encoding', checkAuth, uploadQueue, upload.single('file'), toolController.handleChunkedToolUpload);
+router.post('/cancel', checkAuth, toolController.cancelToolUpload);
 
 module.exports = router;
