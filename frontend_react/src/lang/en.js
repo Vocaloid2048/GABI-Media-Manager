@@ -4,6 +4,9 @@ export default {
 
   // Navigation
   "nav.home": "Home",
+  "nav.song": "Songs",
+  "nav.video": "Videos",
+  "nav.tool": "Tools",
   "nav.filter": "Filter",
   "filter.colors": "Color Filter",
   "filter.color_category.grayscale": "Grayscale",
@@ -222,6 +225,25 @@ export default {
   "download.quality_high": "High Quality",
   "download.res_original": "Original",
   "download.failed": "Download failed. Please try again.",
+
+  // Tools
+  "tool.title": "Tools",
+  "tool.description": "Useful media management and repair tools",
+  "tool.propresenter_fix_title": "ProPresenter Mac Encoding Fix",
+  "tool.propresenter_fix_desc": "Fix encoding issues where .pro / .probundle / .proplaylist files created on macOS display garbled text on Windows",
+  "tool.upload_description": "Upload .pro or .probundle files created on Mac to fix garbled text display issues on Windows.",
+  "tool.drag_drop": "Click to upload or drag and drop file",
+  "tool.supports": "Supports .pro, .probundle, .proplaylist",
+  "tool.file_too_large": "File too large, limit is %1",
+  "tool.preparing": "Preparing upload...",
+  "tool.processing": "Processing, please wait...",
+  "tool.completed": "Completed!",
+  "tool.repair_complete": "Repair completed! File download has started.",
+  "tool.cancel": "Cancel",
+  "tool.done": "Done",
+  "tool.processing_status": "Processing...",
+  "tool.repair_download": "Repair and Download",
+  "tool.cancelled": "Cancelled",
 
   // Footer
   "footer.rights": "All Rights Reserved.",

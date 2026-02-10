@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaUser, FaMusic, FaVideo } from 'react-icons/fa';
+import { FaUser, FaMusic, FaVideo, FaTools } from 'react-icons/fa';
 import { useLanguage } from '../lang/LanguageContext';
 
 const BottomNav = ({ currentPage, onPageChange, className }) => {
@@ -16,7 +16,7 @@ const BottomNav = ({ currentPage, onPageChange, className }) => {
           }`}
         >
           <FaMusic className="text-xl mb-1" />
-          <span className="text-xs font-medium">詩歌</span>
+          <span className="text-xs font-medium">{locale('nav.song')}</span>
         </button>
 
         <div className="w-px h-8 bg-gray-800"></div>
@@ -28,7 +28,19 @@ const BottomNav = ({ currentPage, onPageChange, className }) => {
           }`}
         >
           <FaVideo className="text-xl mb-1" />
-          <span className="text-xs font-medium">影片</span>
+          <span className="text-xs font-medium">{locale('nav.video')}</span>
+        </button>
+
+        <div className="w-px h-8 bg-gray-800"></div>
+
+        <button 
+          onClick={() => onPageChange('tool')}
+          className={`flex flex-col items-center justify-center w-full h-full transition-all active:scale-95 ${
+            currentPage === 'tool' ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
+          }`}
+        >
+          <FaTools className="text-xl mb-1" />
+          <span className="text-xs font-medium">{locale('nav.tool')}</span>
         </button>
 
         <div className="w-px h-8 bg-gray-800"></div>
