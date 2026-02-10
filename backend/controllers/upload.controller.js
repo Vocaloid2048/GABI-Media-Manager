@@ -8,7 +8,8 @@ const path = require('path');
 const { generateSafeName, generateThumbnail, generateThumbnailGroup } = require("../middlewares/generateThumb");
 const unzipper = require('unzipper');
 const { group } = require("console");
-const ffmpeg = require('fluent-ffmpeg');
+// const ffmpeg = require('fluent-ffmpeg');
+const { spawn } = require('child_process');
 const crypto = require('crypto');
 const { generateColorTags, rgbToHex } = require("../middlewares/generateColorTags");
 
@@ -247,11 +248,39 @@ async function processVideoFiles(videoFiles, videoInfo) {
 
 const getVideoMetadata = (filePath) => {
     return new Promise((resolve, reject) => {
-        ffmpeg.ffprobe(filePath, (err, metadata) => {
-            if (err) {
-                return reject(err);
+        const ffprobe = spawn('ffprobe', [
+            '-v', 'quiet',
+            '-print_format', 'json',
+            '-show_format',
+            '-show_streams',
+            filePath
+        ]);
+
+        let stdout = '';
+        let stderr = '';
+
+        ffprobe.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+
+        ffprobe.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        ffprobe.on('close', (code) => {
+            if (code !== 0) {
+                return reject(new Error(`ffprobe exited with code ${code}: ${stderr}`));
             }
-            resolve(metadata);
+            try {
+                const metadata = JSON.parse(stdout);
+                resolve(metadata);
+            } catch (err) {
+                reject(new Error(`Failed to parse ffprobe output: ${err.message}`));
+            }
+        });
+
+        ffprobe.on('error', (err) => {
+            reject(err);
         });
     });
 };

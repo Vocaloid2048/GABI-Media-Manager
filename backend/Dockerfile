@@ -1,6 +1,9 @@
 # 使用官方 Node.js 基礎映像檔
 FROM node:20-bookworm-slim
 
+# 安裝系統相依套件
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+
 # 設定工作目錄
 WORKDIR /app
 

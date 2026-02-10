@@ -2,7 +2,8 @@ const db = require("../models");
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
-const ffmpegPath = require('ffmpeg-static');
+// const ffmpegPath = require('ffmpeg-static');
+const ffmpegPath = 'ffmpeg'; // Use system/docker installed ffmpeg
 
 const runProcess = (cmd, args) => {
     return new Promise((resolve, reject) => {
@@ -34,7 +35,7 @@ exports.generateThumbnail = async (videoFileName) => {
     const thumbDir = process.env.THUMB_DIR;
 
     if (!ffmpegPath) {
-        throw new Error('ffmpeg-static path not found (ffmpegPath is empty)');
+        throw new Error('ffmpeg path not found');
     }
 
     console.log(`videoDir: ${videoDir}, thumbDir: ${thumbDir}, safeName: ${safeName}`);
@@ -91,7 +92,7 @@ exports.generateThumbnail = async (videoFileName) => {
  * @returns {boolean} Success status
  */
 exports.generateThumbnailGroup = async (groupId, videoGroupThumbName) => {
-    if (!ffmpegPath) { throw new Error('ffmpeg-static path not found'); }
+    if (!ffmpegPath) { throw new Error('ffmpeg path not found'); }
 
     const thumbDir = process.env.THUMB_DIR;
     if (!thumbDir) { throw new Error('THUMB_DIR is not set'); }
