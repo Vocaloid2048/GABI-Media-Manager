@@ -138,7 +138,7 @@ const ToolPopup = ({ onClose, title }) => {
         formData.append("fileName", file.name);
 
         // Update Status
-        setStatusMessage(`上傳中...`);
+        setStatusMessage(`${locale('tool.processing')}`);
 
         // Retry logic
         let attempts = 0;
@@ -379,10 +379,6 @@ const ToolPopup = ({ onClose, title }) => {
         </div>
 
         <div className="p-6">
-          <p className="text-gray-300 mb-4 text-sm">
-            {locale('tool.upload_description')}
-          </p>
-
           <div
             onDragOver={handleDragOver}
             onDrop={handleDrop}

@@ -495,5 +495,8 @@ module.exports = {
   generateProFile,
   saveProFile,
   loadTheme,
-  textToRTF
+  textToRTF,
+  GROUP_LABEL_LIST,
+  mapTagToKey,
+  getGroupLabel
 };

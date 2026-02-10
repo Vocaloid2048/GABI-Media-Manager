@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaTools, FaWrench, FaApple, FaWindows } from 'react-icons/fa';
+import { FaTools, FaWrench, FaApple, FaWindows, FaLanguage } from 'react-icons/fa';
 import ToolPopup from '../components/ToolPopup';
+import TagConvertPopup from '../components/TagConvertPopup';
 import { useLanguage } from '../lang/LanguageContext';
 import { useRef } from 'react';
 
@@ -18,6 +19,13 @@ const ToolPage = () => {
       icon: <FaWrench className="text-yellow-500 text-3xl" />,
       platforms: ['macOS']
     },
+    {
+      id: 'tag-convert',
+      title: locale('tool.tag_convert_title'),
+      description: locale('tool.tag_convert_desc'),
+      icon: <FaLanguage className="text-blue-500 text-3xl" />,
+      platforms: ['macOS', 'Windows']
+    }
     // Future tools can be added here
   ];
 
@@ -77,6 +85,12 @@ const ToolPage = () => {
         {activeTool === 'propresenter-fix' && (
           <ToolPopup 
             title={locale('tool.propresenter_fix_title')}
+            onClose={() => setActiveTool(null)} 
+          />
+        )}
+        {activeTool === 'tag-convert' && (
+          <TagConvertPopup 
+            title={locale('tool.tag_convert_title')}
             onClose={() => setActiveTool(null)} 
           />
         )}

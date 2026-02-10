@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { fixProFile, fixProBundle } = require('../utils/fixProFile');
+const { convertProFileTags, convertProBundleTags } = require('../utils/tagConverter');
 const { raiseError, returnSuccess, INVALID_REQUEST, errorByAPI } = require('../middlewares/error');
 const uploadQueue = require('../middlewares/uploadQueue');
 
@@ -39,6 +40,33 @@ exports.uploadToolFile = async (req, res) => {
     }
 
     // Single file processing (if needed, but currently all are chunked)
+    return raiseError(res, 'Chunked upload required');
+};
+
+exports.uploadTagConvertFile = async (req, res) => {
+    const file = req.file;
+
+    // Cancellation Handling
+    req.on('close', async () => {
+        if (!res.headersSent) {
+            if (file && file.path) {
+                try {
+                    await fs.promises.access(file.path);
+                    await fs.promises.unlink(file.path);
+                } catch (e) { }
+            }
+        }
+    });
+
+    const fileNameToCheck = req.body.fileName || file.originalname;
+    if (fileNameToCheck && !validExtensions.includes(path.extname(fileNameToCheck).toLowerCase())) {
+        return raiseError(res, INVALID_REQUEST);
+    }
+
+    if (req.body.chunkIndex != null && req.body.totalChunks != null && req.body.fileId) {
+        return await handleChunkedTagConvertUpload(req, res, file);
+    }
+
     return raiseError(res, 'Chunked upload required');
 };
 
@@ -104,6 +132,55 @@ async function handleChunkedToolUpload(req, res, file) {
     await exports.uploadToolFileImpl(mergedPath, safeBase, res);
 }
 
+async function handleChunkedTagConvertUpload(req, res, file) {
+    const { chunkIndex, totalChunks, fileId, fileName, targetLang } = req.body;
+    const index = parseInt(chunkIndex);
+    const total = parseInt(totalChunks);
+    const tempDir = process.env.TEMP_DIR || path.join(__dirname, '../Temp');
+    const chunksDir = path.join(tempDir, 'tool_chunks', fileId);
+
+    if (!fs.existsSync(chunksDir)) {
+        fs.mkdirSync(chunksDir, { recursive: true });
+    }
+
+    const chunkPath = path.join(chunksDir, `${index}`);
+    
+    try {
+        fs.renameSync(file.path, chunkPath);
+    } catch (err) {
+        fs.copyFileSync(file.path, chunkPath);
+        fs.unlinkSync(file.path);
+    }
+
+    const files = fs.readdirSync(chunksDir);
+    if (files.length < total) {
+        return returnSuccess(res, { status: 'chunk_received', index });
+    }
+
+    const safeBase = fileName ? path.basename(fileName) : `${fileId}.probundle`;
+    const mergedPath = path.join(tempDir, `merged_${Date.now()}_${safeBase}`);
+    const writeStream = fs.createWriteStream(mergedPath);
+
+    try {
+        for (let i = 0; i < total; i++) {
+            const chunkP = path.join(chunksDir, `${i}`);
+            const data = fs.readFileSync(chunkP);
+            writeStream.write(data);
+        }
+        writeStream.end();
+    } catch (err) {
+        return raiseError(res, errorByAPI(null, "Merge failed", false));
+    }
+
+    await new Promise((resolve) => writeStream.on('finish', resolve));
+
+    try {
+        fs.rmSync(chunksDir, { recursive: true, force: true });
+    } catch(e) {}
+
+    await exports.uploadTagConvertFileImpl(mergedPath, safeBase, targetLang, res);
+}
+
 exports.uploadToolFileImpl = async (filePath, originalName, res) => {
     const ext = path.extname(originalName).toLowerCase();
     const baseName = path.basename(originalName, ext);
@@ -133,6 +210,35 @@ exports.uploadToolFileImpl = async (filePath, originalName, res) => {
         console.error("Processing error:", error);
         try { fs.unlinkSync(filePath); } catch(e) {}
         return raiseError(res, errorByAPI(null, error.message || "Processing failed", false));
+    }
+};
+
+exports.uploadTagConvertFileImpl = async (filePath, originalName, targetLang, res) => {
+    const ext = path.extname(originalName).toLowerCase();
+    const baseName = path.basename(originalName, ext);
+    const tempDir = path.dirname(filePath);
+    
+    const outputFilename = `${baseName}_tag_${targetLang}${ext}`;
+    const outputPath = path.join(tempDir, `fixed_${Date.now()}_${outputFilename}`);
+
+    try {
+        if (ext === '.pro') {
+            await convertProFileTags(filePath, outputPath, targetLang);
+        } else if (ext === '.proplaylist' || ext === '.probundle') {
+            await convertProBundleTags(filePath, outputPath, targetLang);
+        } else {
+            try { fs.unlinkSync(filePath); } catch(e) {}
+            return raiseError(res, 'Unsupported file extension.');
+        }
+
+        res.download(outputPath, outputFilename, (err) => {
+            try { fs.unlinkSync(filePath); } catch(e) {}
+            try { fs.unlinkSync(outputPath); } catch(e) {}
+        });
+    } catch (error) {
+        console.error("Tag conversion processing error:", error);
+        try { fs.unlinkSync(filePath); } catch(e) {}
+        return raiseError(res, errorByAPI(null, error.message || "Tag conversion failed", false));
     }
 };
 

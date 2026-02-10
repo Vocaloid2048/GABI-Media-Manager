@@ -31,6 +31,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 router.post('/fix-encoding', checkAuth, uploadQueue, upload.single('file'), toolController.uploadToolFile);
+router.post('/tag-convert', checkAuth, uploadQueue, upload.single('file'), toolController.uploadTagConvertFile);
 router.post('/cancel', checkAuth, toolController.cancelToolUpload);
 
 module.exports = router;
