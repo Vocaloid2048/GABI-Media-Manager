@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaTools, FaWrench, FaApple, FaWindows, FaLanguage } from 'react-icons/fa';
+import { FaTools, FaWrench, FaApple, FaWindows, FaLanguage, FaMusic } from 'react-icons/fa';
 import ToolPopup from '../components/ToolPopup';
 import TagConvertPopup from '../components/TagConvertPopup';
+import LyricEditorPopup from '../components/LyricEditorPopup';
 import { useLanguage } from '../lang/LanguageContext';
 import { useRef } from 'react';
 
@@ -24,6 +25,13 @@ const ToolPage = () => {
       title: locale('tool.tag_convert_title'),
       description: locale('tool.tag_convert_desc'),
       icon: <FaLanguage className="text-blue-500 text-3xl" />,
+      platforms: ['macOS', 'Windows']
+    },
+    {
+      id: 'multi-lang-lyric',
+      title: locale('tool.multi_lang_lyric_title'),
+      description: locale('tool.multi_lang_lyric_desc'),
+      icon: <FaMusic className="text-purple-500 text-3xl" />,
       platforms: ['macOS', 'Windows']
     }
     // Future tools can be added here
@@ -93,6 +101,9 @@ const ToolPage = () => {
             title={locale('tool.tag_convert_title')}
             onClose={() => setActiveTool(null)} 
           />
+        )}
+        {activeTool === 'multi-lang-lyric' && (
+          <LyricEditorPopup onClose={() => setActiveTool(null)} />
         )}
       </AnimatePresence>
     </div>

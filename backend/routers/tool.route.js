@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const toolController = require('../controllers/tool.controller');
+const lyricEditorController = require('../controllers/lyricEditor.controller');
 const uploadQueue = require('../middlewares/uploadQueue');
 const checkAuth = require('../middlewares/checkAuth');
 
@@ -33,5 +34,10 @@ const upload = multer({ storage: storage });
 router.post('/fix-encoding', checkAuth, uploadQueue, upload.single('file'), toolController.uploadToolFile);
 router.post('/tag-convert', checkAuth, uploadQueue, upload.single('file'), toolController.uploadTagConvertFile);
 router.post('/cancel', checkAuth, toolController.cancelToolUpload);
+
+// 多語言歌詞編輯器路由
+router.post('/lyric-editor/parse-text', checkAuth, lyricEditorController.parseText);
+router.post('/lyric-editor/parse-pro', checkAuth, upload.single('file'), lyricEditorController.parsePro);
+router.post('/lyric-editor/generate-pro', checkAuth, lyricEditorController.generatePro);
 
 module.exports = router;
