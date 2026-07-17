@@ -421,13 +421,6 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
                   ''
                 } ${!isFixed ? 'cursor-move' : ''}`}
               >
-                {isFixed && (
-                  <div className="flex items-center gap-2 mb-1 px-1">
-                    <span className="text-xs text-gray-400 border border-gray-500 rounded px-1.5 py-0.5">
-                      {locale('lyric_editor.fixed')}
-                    </span>
-                  </div>
-                )}
                 <LyricItem
                   slide={lyricItemSlide}
                   tagInfo={tagInfo}

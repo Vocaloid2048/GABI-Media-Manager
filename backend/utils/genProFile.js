@@ -258,16 +258,16 @@ async function generateProFile(songData, options = {}) {
           authorParts.push(`${COPYRIGHT_LABEL_LIST.arranger[copyrightLanguage] || COPYRIGHT_LABEL_LIST.arranger.en}${copyright.arranger.trim()}`);
         }
 
-        console.log(typeof copyright.year, copyright.year, Number.isInteger(+copyright.year), parseInt(copyright.year));
-        
         presentation.ccli = {
           author: authorParts.join('\n'),
           publisher: copyright.publisher || '',
           songTitle: songData.song_name || '',
-          copyrightYear: Number.isInteger(+copyright.year) ? parseInt(copyright.year) : undefined,
           album: copyright.album || '',
           display: showCopyright
         };
+        if (copyright.year && Number.isInteger(+copyright.year)) {
+          presentation.ccli.copyrightYear = parseInt(copyright.year);
+        }
       } catch (error) {
         console.warn('Failed to parse song_copyright:', error);
         presentation.ccli = {};
@@ -599,10 +599,12 @@ async function generateMultiLangProFile(params) {
       author: authorParts.join('\n'),
       publisher: copyright.publisher || '',
       songTitle: songName || '',
-      copyrightYear: Number.isInteger(+copyright.year) ? parseInt(copyright.year) : undefined,
       album: copyright.album || '',
       display: showCopyright
     };
+    if (copyright.year && Number.isInteger(+copyright.year)) {
+      presentation.ccli.copyrightYear = parseInt(copyright.year);
+    }
   }
 
   const cuesByGroup = {};
