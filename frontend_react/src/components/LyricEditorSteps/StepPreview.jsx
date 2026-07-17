@@ -3,14 +3,16 @@ import { FaDownload, FaArrowLeft, FaCheck } from 'react-icons/fa';
 import { useLanguage } from '../../lang/LanguageContext';
 import { generateDs } from '../../utils/auth';
 import { GROUP_LABEL_LIST } from '../../constants/lyrics';
-import LyricItem from '../LyricItem';
 import { useLyricOptions } from '../../hooks/useLyricOptions';
+import LyricItem from '../LyricItem';
 
 const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
   const { locale } = useLanguage();
   const [isGenerating, setIsGenerating] = useState(false);
   const [themes, setThemes] = useState([]);
   const [showCopyrightEdit, setShowCopyrightEdit] = useState(false);
+  const [draggedSlide, setDraggedSlide] = useState(null);
+  const [dropTarget, setDropTarget] = useState(null);
 
   const {
     spacing, setSpacing,
@@ -22,7 +24,7 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
     copyrightLanguage, setCopyrightLanguage
   } = useLyricOptions();
 
-  // 獲取主題列表
+  // 获取主题列表
   React.useEffect(() => {
     const fetchThemes = async () => {
       try {
@@ -38,47 +40,9 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
     fetchThemes();
   }, []);
 
-  // 處理 content 根據選項
-  const processedSlides = useMemo(() => {
-    if (!data.slides || !Array.isArray(data.slides)) return [];
-
-    let slides = data.slides.map(slide => ({
-      ...slide,
-      content: (slide.content || '').replace("\t", " ").replace(/ /g, (spacing === 'tab' ? '\t' : " ".repeat(parseInt(spacing) || 1)))
-    }));
-
-    if (addTitlePage) {
-      slides.unshift({
-        is_title: true,
-        content: data.songName || "Title",
-        tag: 'TAG'
-      });
-    }
-
-    if (!addTitlePage) {
-      slides = slides.filter(slide => !slide.is_title);
-    }
-
-    slides = slides.map((slide, index) => ({
-      ...slide,
-      page: index + 1
-    }));
-
-    if (addBlankPage) {
-      slides.push({
-        page: slides.length + 1,
-        tag: 'BLANK',
-        content: ''
-      });
-    }
-
-    return slides;
-  }, [data.slides, data.songName, spacing, addBlankPage, addTitlePage]);
-
-  // 獲取Label的顯示名稱和顏色
+  // 获取Label的显示名称和颜色
   const getLabelDisplay = (slide) => {
     const upperLabel = slide.tag ? slide.tag.toUpperCase().replace(/\s+/g, '') : '';
-    // 如果啟用「使用前奏代替標籤」，且是標題頁，則使用 INTRO
     const effectiveLabel = (data.useIntroAsLabel && slide.is_title)
       ? 'INTRO'
       : upperLabel;
@@ -95,7 +59,7 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
     return { colorHex: groupInfo.colorHex, labelName };
   };
 
-  // 生成 CCLI 資訊
+  // 生成 CCLI 信息
   const ccliInfo = useMemo(() => {
     const copyright = data.copyright || {};
     const authorParts = [];
@@ -121,6 +85,124 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
     };
   }, [data.copyright, data.songName, copyrightLanguage]);
 
+  // 处理所有 slides（包含标题页和空白页）
+  const allSlides = useMemo(() => {
+    if (!data.slides || !Array.isArray(data.slides)) return [];
+
+    let slides = data.slides.map((slide, idx) => ({
+      ...slide,
+      _displayIdx: idx + 1
+    }));
+
+    const fixed = [];
+
+    // 标题页固定在最前面
+    if (addTitlePage) {
+      fixed.unshift({
+        id: 'fixed_title',
+        is_title: true,
+        content: data.songName || "Title",
+        tag: 'TAG',
+        fixed: true
+      });
+    }
+
+    // 空白页固定在最后面
+    if (addBlankPage) {
+      fixed.push({
+        id: 'fixed_blank',
+        tag: 'BLANK',
+        content: '',
+        fixed: true
+      });
+    }
+
+    return { movableSlides: slides, fixedSlides: fixed };
+  }, [data.slides, data.songName, addBlankPage, addTitlePage]);
+
+  // 拖拽处理
+  const handleDragStart = (e, slide) => {
+    if (slide.fixed) return;
+    setDraggedSlide(slide);
+    e.dataTransfer.effectAllowed = 'move';
+    // 设置拖拽图像（可选）
+    if (e.dataTransfer.setDragImage) {
+      const ghost = document.createElement('div');
+      ghost.style.width = '200px';
+      ghost.style.height = '100px';
+      ghost.style.backgroundColor = 'rgba(59, 130, 246, 0.3)';
+      ghost.style.border = '2px dashed #3b82f6';
+      ghost.style.borderRadius = '8px';
+      ghost.style.position = 'fixed';
+      ghost.style.top = '-1000px';
+      document.body.appendChild(ghost);
+      e.dataTransfer.setDragImage(ghost, 100, 50);
+      setTimeout(() => document.body.removeChild(ghost), 0);
+    }
+  };
+
+  const handleDragOver = (e, slide) => {
+    e.preventDefault();
+    if (!draggedSlide || draggedSlide.id === slide.id || slide.fixed) return;
+    e.dataTransfer.dropEffect = 'move';
+    setDropTarget(slide);
+  };
+
+  const handleDragLeave = () => {
+    setDropTarget(null);
+  };
+
+  const handleDrop = (e, targetSlide) => {
+    e.preventDefault();
+    if (!draggedSlide || draggedSlide.id === targetSlide.id || targetSlide.fixed) {
+      setDraggedSlide(null);
+      setDropTarget(null);
+      return;
+    }
+
+    const movableSlides = allSlides.movableSlides;
+    const fromIdx = movableSlides.findIndex(s => s.id === draggedSlide.id);
+    const toIdx = movableSlides.findIndex(s => s.id === targetSlide.id);
+
+    if (fromIdx === -1 || toIdx === -1) {
+      setDraggedSlide(null);
+      setDropTarget(null);
+      return;
+    }
+
+    // 移动元素到新位置
+    const newMovableSlides = [...movableSlides];
+    const [moved] = newMovableSlides.splice(fromIdx, 1);
+    newMovableSlides.splice(toIdx, 0, moved);
+
+    // 重新分配 page 编号
+    const reordered = newMovableSlides.map((s, i) => ({
+      ...s,
+      page: i + 1,
+      _displayIdx: i + 1
+    }));
+
+    // 更新 data.slides（去掉内部属性）
+    const updatedSlides = reordered.map(({ _displayIdx, ...rest }) => rest);
+    onChange({ slides: updatedSlides });
+
+    setDraggedSlide(null);
+    setDropTarget(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedSlide(null);
+    setDropTarget(null);
+  };
+
+  // 生成完整的显示列表（固定项 + 可移动项）
+  const displaySlides = [
+    ...allSlides.fixedSlides.filter(s => s.is_title),
+    ...allSlides.movableSlides,
+    ...allSlides.fixedSlides.filter(s => s.tag === 'BLANK')
+  ];
+
+  // 下载处理
   const handleDownload = async () => {
     setIsGenerating(true);
     try {
@@ -133,9 +215,7 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
       }
       const response = await fetch(`/api/tool/lyric-editor/generate-pro?user_id=${userId}&ds=${encodeURIComponent(ds)}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           songName: data.songName,
           slides: data.slides,
@@ -174,7 +254,7 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
 
   return (
     <div className="space-y-6">
-      {/* 選項欄 */}
+      {/* 选项栏 */}
       <div className="p-4 bg-gray-800 rounded-lg">
         <div className="flex flex-wrap gap-4 items-center">
           <div className="flex items-center gap-2">
@@ -228,7 +308,7 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
         </div>
       </div>
 
-      {/* 排版模式選擇 */}
+      {/* 排版模式选择 */}
       <div className="bg-gray-800/50 rounded-lg p-4">
         <h4 className="text-white font-medium text-sm mb-3">{locale('lyric_editor.layout_mode')}</h4>
         <div className="flex flex-wrap gap-3">
@@ -262,7 +342,7 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
         </div>
       </div>
 
-      {/* 版權資訊 */}
+      {/* 版权信息 */}
       <div className="bg-gray-800/50 rounded-lg p-4">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-white font-medium text-sm">{locale('lyric_editor.copyright_title')}</h4>
@@ -305,27 +385,63 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
         )}
       </div>
 
-      {/* 預覽 */}
+      {/* 预览与排列 - Grid 卡片 + 拖拽 */}
       <div>
-        <h4 className="text-white font-medium text-sm mb-3">{locale('lyric_editor.preview_title')}</h4>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-white font-medium text-sm">{locale('lyric_editor.preview_title')}</h4>
+          <p className="text-gray-400 text-xs">{locale('lyric_editor.drag_to_reorder')}</p>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {processedSlides.map((slide) => {
+          {displaySlides.map((slide, index) => {
             const tagInfo = getLabelDisplay(slide);
+            const isFixed = slide.fixed;
+            const isDragged = draggedSlide?.id === slide.id;
+            const isDropTarget = dropTarget?.id === slide.id && !isFixed;
+
+            // 为 LyricItem 准备 slide 数据
+            const lyricItemSlide = {
+              content: slide.content || '',
+              page: isFixed ? (slide.is_title ? '封面' : '尾頁') : (slide._displayIdx || slide.page || index + 1),
+              tag: slide.tag
+            };
+
             return (
-              <LyricItem
-                key={slide.page}
-                slide={slide}
-                tagInfo={tagInfo}
-                ccli={ccliInfo}
-                isTitlePage={slide.is_title && addTitlePage}
-                showCopyright={showCopyright}
-              />
+              <div
+                key={slide.id || index}
+                draggable={!isFixed}
+                onDragStart={(e) => handleDragStart(e, slide)}
+                onDragOver={(e) => handleDragOver(e, slide)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, slide)}
+                onDragEnd={handleDragEnd}
+                className={`transition-all ${
+                  isFixed ? 'opacity-75' :
+                  isDragged ? 'opacity-40' :
+                  isDropTarget ? 'scale-105' :
+                  ''
+                } ${!isFixed ? 'cursor-move' : ''}`}
+              >
+                {isFixed && (
+                  <div className="flex items-center gap-2 mb-1 px-1">
+                    <span className="text-xs text-gray-400 border border-gray-500 rounded px-1.5 py-0.5">
+                      {locale('lyric_editor.fixed')}
+                    </span>
+                  </div>
+                )}
+                <LyricItem
+                  slide={lyricItemSlide}
+                  tagInfo={tagInfo}
+                  ccli={ccliInfo}
+                  isTitlePage={slide.is_title}
+                  showCopyright={showCopyright}
+                />
+              </div>
             );
           })}
         </div>
       </div>
 
-      {/* 底部導航 */}
+      {/* 底部导航 */}
       <div className="flex justify-between items-center pt-4 border-t border-gray-700">
         <button
           onClick={onPrev}

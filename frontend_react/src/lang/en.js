@@ -310,6 +310,7 @@ export default {
   "lyric_editor.zh_placeholder": "Enter Chinese lyrics...",
   "lyric_editor.en_placeholder": "Enter English lyrics...",
   "lyric_editor.empty_slide": "(Blank Slide)",
+  "lyric_editor.fixed": "Fixed",
 
   // Footer
   "footer.rights": "All Rights Reserved.",

@@ -309,6 +309,7 @@ export default {
   "lyric_editor.zh_placeholder": "輸入中文歌詞...",
   "lyric_editor.en_placeholder": "輸入英文歌詞...",
   "lyric_editor.empty_slide": "（空白 Slide）",
+  "lyric_editor.fixed": "固定",
 
   // Footer
   "footer.rights": "版權所有。",

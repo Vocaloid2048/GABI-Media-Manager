@@ -5,15 +5,13 @@ import { useLanguage } from '../lang/LanguageContext';
 import { generateDs } from '../utils/auth';
 import StepInput from './LyricEditorSteps/StepInput';
 import StepReview from './LyricEditorSteps/StepReview';
-import StepArrange from './LyricEditorSteps/StepArrange';
 import StepPreview from './LyricEditorSteps/StepPreview';
 
-const STEPS = [1, 2, 3, 4];
+const STEPS = [1, 2, 3];
 const STEP_TITLES = [
   'lyric_editor.step1_title',
   'lyric_editor.step2_title',
-  'lyric_editor.step3_title',
-  'lyric_editor.step4_title'
+  'lyric_editor.step3_title'
 ];
 
 const LyricEditorPopup = ({ onClose }) => {
@@ -195,42 +193,32 @@ const LyricEditorPopup = ({ onClose }) => {
     }
   }, [data]);
 
-  // Step 2 完成時：生成 slides
+  // Step 2 完成時：生成 slides（添加唯一 id）
   const handleStep2Complete = useCallback(() => {
     const zhMap = new Map(data.zhStanzas.map(s => [s.id, s]));
     const enMap = new Map(data.enStanzas.map(s => [s.id, s]));
 
     const slides = data.pairings.map((pair, index) => {
-      if (pair.type === 'pair') {
-        const zhStanza = zhMap.get(pair.zhId);
-        const enStanza = enMap.get(pair.enId);
-        const zhContent = zhStanza ? zhStanza.content : '';
-        const enContent = enStanza ? enStanza.content : '';
-        const tag = (zhStanza && zhStanza.tag) || (enStanza && enStanza.tag) || 'VERSE';
-        const content = mergeContent(zhContent, enContent, data.layoutMode, data.layoutSwap);
-        return { page: index + 1, tag, zhContent, enContent, content };
-      } else if (pair.type === 'zh') {
-        const zhStanza = zhMap.get(pair.zhId);
-        const zhContent = zhStanza ? zhStanza.content : '';
-        const tag = zhStanza ? zhStanza.tag : 'VERSE';
-        return { page: index + 1, tag, zhContent, enContent: '', content: zhContent };
-      } else if (pair.type === 'en') {
-        const enStanza = enMap.get(pair.enId);
-        const enContent = enStanza ? enStanza.content : '';
-        const tag = enStanza ? enStanza.tag : 'VERSE';
-        return { page: index + 1, tag, zhContent: '', enContent, content: enContent };
-      }
-      return null;
-    }).filter(s => s && (s.zhContent || s.enContent));
+      const zhStanza = zhMap.get(pair.zhId);
+      const enStanza = enMap.get(pair.enId);
+      const zhContent = zhStanza ? zhStanza.content : '';
+      const enContent = enStanza ? enStanza.content : '';
+      const tag = (zhStanza && zhStanza.tag) || (enStanza && enStanza.tag) || 'VERSE';
+      const content = mergeContent(zhContent, enContent, data.layoutMode, data.layoutSwap);
+      
+      return {
+        id: `slide_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 6)}`,
+        page: index + 1,
+        tag,
+        zhContent,
+        enContent,
+        content
+      };
+    }).filter(s => s.zhContent || s.enContent);
 
     setData(prev => ({ ...prev, slides }));
     setStep(3);
   }, [data]);
-
-  // Step 3 完成時：進入預覽
-  const handleStep3Complete = useCallback(() => {
-    setStep(4);
-  }, []);
 
   // 合併內容輔助函數
   const mergeContent = (zhContent, enContent, layoutMode, layoutSwap) => {
@@ -264,7 +252,7 @@ const LyricEditorPopup = ({ onClose }) => {
 
   // 當排版模式或對調狀態改變時，重新生成 slides
   useEffect(() => {
-    if (step >= 3 && data.slides.length > 0) {
+    if (step === 3 && data.slides.length > 0) {
       const updatedSlides = data.slides.map(slide => ({
         ...slide,
         content: mergeContent(slide.zhContent, slide.enContent, data.layoutMode, data.layoutSwap)
@@ -349,7 +337,7 @@ const LyricEditorPopup = ({ onClose }) => {
             </div>
           </div>
           <p className="text-gray-400 text-sm mt-2">
-            {locale('lyric_editor.step')} {step} / 4: {locale(STEP_TITLES[step - 1])}
+            {locale('lyric_editor.step')} {step} / 3: {locale(STEP_TITLES[step - 1])}
           </p>
         </div>
 
@@ -391,18 +379,10 @@ const LyricEditorPopup = ({ onClose }) => {
                   />
                 )}
                 {step === 3 && (
-                  <StepArrange
-                    data={data}
-                    onChange={updateData}
-                    onNext={handleStep3Complete}
-                    onPrev={() => setStep(2)}
-                  />
-                )}
-                {step === 4 && (
                   <StepPreview
                     data={data}
                     onChange={updateData}
-                    onPrev={() => setStep(3)}
+                    onPrev={() => setStep(2)}
                     onComplete={handleComplete}
                   />
                 )}
