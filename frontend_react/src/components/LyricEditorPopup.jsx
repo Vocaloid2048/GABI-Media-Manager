@@ -23,14 +23,14 @@ const LyricEditorPopup = ({ onClose }) => {
     songName: '',
     proFile: null,
     proParsedData: null,
-    proUseFor: {},
+    proElementMapping: { zh: 0, en: 1 },
     zhText: '',
     enText: '',
     zhStanzas: [],
     enStanzas: [],
     pairings: [],
     slides: [],
-    layoutMode: 'interleave',
+    layoutMode: 'center-split',
     layoutSwap: false,
     useIntroAsLabel: false,
     copyright: {
@@ -94,12 +94,18 @@ const LyricEditorPopup = ({ onClose }) => {
       // 如果使用 .pro 作為中文
       if (data.proUseFor?.zh) {
         if (data.proParsedData?.slides) {
-          newData.zhStanzas = data.proParsedData.slides.map((s, i) => ({
-            id: `pro_zh_${i}_${Math.random().toString(36).substr(2, 6)}`,
-            content: s.content,
-            tag: s.tag,
-            order: i
-          }));
+          const zhElementIdx = data.proElementMapping?.zh ?? 0;
+          newData.zhStanzas = data.proParsedData.slides.map((s, i) => {
+            const content = (s.elements && s.elements[zhElementIdx] !== undefined)
+              ? s.elements[zhElementIdx]
+              : s.content;
+            return {
+              id: `pro_zh_${i}_${Math.random().toString(36).substr(2, 6)}`,
+              content: content || '',
+              tag: s.tag,
+              order: i
+            };
+          }).filter(s => s.content.trim());
         } else {
           throw new Error('No .pro file uploaded for Chinese');
         }
@@ -108,12 +114,18 @@ const LyricEditorPopup = ({ onClose }) => {
       // 如果使用 .pro 作為英文
       if (data.proUseFor?.en) {
         if (data.proParsedData?.slides) {
-          newData.enStanzas = data.proParsedData.slides.map((s, i) => ({
-            id: `pro_en_${i}_${Math.random().toString(36).substr(2, 6)}`,
-            content: s.content,
-            tag: s.tag,
-            order: i
-          }));
+          const enElementIdx = data.proElementMapping?.en ?? 1;
+          newData.enStanzas = data.proParsedData.slides.map((s, i) => {
+            const content = (s.elements && s.elements[enElementIdx] !== undefined)
+              ? s.elements[enElementIdx]
+              : s.content;
+            return {
+              id: `pro_en_${i}_${Math.random().toString(36).substr(2, 6)}`,
+              content: content || '',
+              tag: s.tag,
+              order: i
+            };
+          }).filter(s => s.content.trim());
         } else {
           throw new Error('No .pro file uploaded for English');
         }
@@ -125,14 +137,36 @@ const LyricEditorPopup = ({ onClose }) => {
         throw new Error('No lyrics data available');
       }
 
-      // 自動配對
-      const maxLen = Math.max(newData.zhStanzas?.length || 0, newData.enStanzas?.length || 0);
+      // 自動配對（新結構：pairings 包含 type 和 id 欄位）
+      const zhLen = newData.zhStanzas?.length || 0;
+      const enLen = newData.enStanzas?.length || 0;
       const pairings = [];
-      for (let i = 0; i < maxLen; i++) {
+      const minLen = Math.min(zhLen, enLen);
+      for (let i = 0; i < minLen; i++) {
         pairings.push({
-          zhId: newData.zhStanzas?.[i]?.id || null,
-          enId: newData.enStanzas?.[i]?.id || null
+          id: `pair_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`,
+          type: 'pair',
+          zhId: newData.zhStanzas[i].id,
+          enId: newData.enStanzas[i].id
         });
+      }
+      if (zhLen > minLen) {
+        for (let i = minLen; i < zhLen; i++) {
+          pairings.push({
+            id: `zh_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`,
+            type: 'zh',
+            zhId: newData.zhStanzas[i].id
+          });
+        }
+      }
+      if (enLen > minLen) {
+        for (let i = minLen; i < enLen; i++) {
+          pairings.push({
+            id: `en_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`,
+            type: 'en',
+            enId: newData.enStanzas[i].id
+          });
+        }
       }
       newData.pairings = pairings;
 
@@ -155,23 +189,27 @@ const LyricEditorPopup = ({ onClose }) => {
     const enMap = new Map(data.enStanzas.map(s => [s.id, s]));
 
     const slides = data.pairings.map((pair, index) => {
-      const zhStanza = zhMap.get(pair.zhId);
-      const enStanza = enMap.get(pair.enId);
-      const zhContent = zhStanza ? zhStanza.content : '';
-      const enContent = enStanza ? enStanza.content : '';
-      const tag = (zhStanza && zhStanza.tag) || (enStanza && enStanza.tag) || 'VERSE';
-
-      // 根據排版模式合併
-      const content = mergeContent(zhContent, enContent, data.layoutMode, data.layoutSwap);
-
-      return {
-        page: index + 1,
-        tag,
-        zhContent,
-        enContent,
-        content
-      };
-    }).filter(s => s.zhContent || s.enContent); // 過濾空 slide
+      if (pair.type === 'pair') {
+        const zhStanza = zhMap.get(pair.zhId);
+        const enStanza = enMap.get(pair.enId);
+        const zhContent = zhStanza ? zhStanza.content : '';
+        const enContent = enStanza ? enStanza.content : '';
+        const tag = (zhStanza && zhStanza.tag) || (enStanza && enStanza.tag) || 'VERSE';
+        const content = mergeContent(zhContent, enContent, data.layoutMode, data.layoutSwap);
+        return { page: index + 1, tag, zhContent, enContent, content };
+      } else if (pair.type === 'zh') {
+        const zhStanza = zhMap.get(pair.zhId);
+        const zhContent = zhStanza ? zhStanza.content : '';
+        const tag = zhStanza ? zhStanza.tag : 'VERSE';
+        return { page: index + 1, tag, zhContent, enContent: '', content: zhContent };
+      } else if (pair.type === 'en') {
+        const enStanza = enMap.get(pair.enId);
+        const enContent = enStanza ? enStanza.content : '';
+        const tag = enStanza ? enStanza.tag : 'VERSE';
+        return { page: index + 1, tag, zhContent: '', enContent, content: enContent };
+      }
+      return null;
+    }).filter(s => s && (s.zhContent || s.enContent));
 
     setData(prev => ({ ...prev, slides }));
     setStep(3);

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { FaCloudUploadAlt, FaFile, FaTimes } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaFile, FaTimes, FaExchangeAlt } from 'react-icons/fa';
 import { useLanguage } from '../../lang/LanguageContext';
 import { generateDs } from '../../utils/auth';
 
@@ -85,6 +85,30 @@ const StepInput = ({ data, onChange, onNext, error }) => {
       }
     });
   };
+
+  const handleElementMappingChange = (lang, index) => {
+    const currentMapping = data.proElementMapping || { zh: 0, en: 1 };
+    onChange({
+      proElementMapping: {
+        ...currentMapping,
+        [lang]: parseInt(index, 10)
+      }
+    });
+  };
+
+  const handleSwapElements = () => {
+    const currentMapping = data.proElementMapping || { zh: 0, en: 1 };
+    onChange({
+      proElementMapping: {
+        zh: currentMapping.en ?? 1,
+        en: currentMapping.zh ?? 0
+      }
+    });
+  };
+
+  // 檢查是否有 elements 需要分配
+  const hasMultipleElements = data.proParsedData?.slides?.some(s => s.elements && s.elements.length > 1);
+  const maxElements = data.proParsedData?.slides?.reduce((max, s) => Math.max(max, s.elements?.length || 0), 0) || 0;
 
   const canProceed = data.songName?.trim() && (
     data.zhText?.trim() ||
@@ -184,6 +208,61 @@ const StepInput = ({ data, onChange, onNext, error }) => {
                 />
                 {locale('lyric_editor.pro_version_en')}
               </label>
+            </div>
+          )}
+
+          {/* Element 分配（當 .pro 有多個 elements 時顯示） */}
+          {hasMultipleElements && (data.proUseFor?.zh || data.proUseFor?.en) && (
+            <div className="mt-4 bg-gray-800/70 rounded-lg p-3 border border-gray-600">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-gray-300 text-xs font-medium">{locale('lyric_editor.pro_element_assignment')}</p>
+                <button
+                  onClick={handleSwapElements}
+                  className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1"
+                >
+                  <FaExchangeAlt size={10} /> {locale('lyric_editor.swap_elements')}
+                </button>
+              </div>
+              <div className="space-y-2">
+                {data.proUseFor?.zh && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400 text-xs w-12">{locale('lyric_editor.zh')}:</span>
+                    <select
+                      value={data.proElementMapping?.zh ?? 0}
+                      onChange={(e) => handleElementMappingChange('zh', e.target.value)}
+                      className="bg-gray-700 text-white text-xs px-2 py-1 rounded border border-gray-600 flex-1"
+                    >
+                      {Array.from({ length: maxElements }, (_, i) => (
+                        <option key={i} value={i}>
+                          Element {i + 1}
+                          {data.proParsedData.slides[0]?.elements?.[i]
+                            ? ` — ${data.proParsedData.slides[0].elements[i].substring(0, 30)}...`
+                            : ' (空)'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {data.proUseFor?.en && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400 text-xs w-12">{locale('lyric_editor.en')}:</span>
+                    <select
+                      value={data.proElementMapping?.en ?? 1}
+                      onChange={(e) => handleElementMappingChange('en', e.target.value)}
+                      className="bg-gray-700 text-white text-xs px-2 py-1 rounded border border-gray-600 flex-1"
+                    >
+                      {Array.from({ length: maxElements }, (_, i) => (
+                        <option key={i} value={i}>
+                          Element {i + 1}
+                          {data.proParsedData.slides[0]?.elements?.[i]
+                            ? ` — ${data.proParsedData.slides[0].elements[i].substring(0, 30)}...`
+                            : ' (空)'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

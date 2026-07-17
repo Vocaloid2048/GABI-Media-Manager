@@ -132,6 +132,9 @@ async function extractAllSlides(proFilePath) {
         
         let slideContent = '';
         
+        // 提取每個 text element 的獨立內容
+        const elements = [];
+        
         if (cue.actions && cue.actions.length > 0) {
           cue.actions.forEach(action => {
             if (action.slide && action.slide.presentation && action.slide.presentation.baseSlide) {
@@ -154,6 +157,7 @@ async function extractAllSlides(proFilePath) {
                     const textContent = cleanText.replace(/;+/g, '').trim();
 
                     if (textContent.trim()) {
+                      elements.push(textContent);
                       if (slideContent) {
                         slideContent += '\n' + textContent;
                       } else {
@@ -173,6 +177,7 @@ async function extractAllSlides(proFilePath) {
         slides.push({
           page: cueIndex + 1,
           content: slideContent.trim(),
+          elements: elements,
           tag: finalTag || 'VERSE',
           cueName: cue.name || ''
         });
