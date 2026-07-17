@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Reorder, AnimatePresence } from 'framer-motion';
 import { FaGripLines } from 'react-icons/fa';
 import { useLanguage } from '../../lang/LanguageContext';
@@ -8,7 +8,6 @@ const StepArrange = ({ data, onChange, onNext, onPrev }) => {
   const { locale } = useLanguage();
 
   const handleReorder = (newOrder) => {
-    // 更新 slides 順序，重新分配 page 編號
     const updatedSlides = newOrder.map((slide, index) => ({
       ...slide,
       page: index + 1
@@ -26,14 +25,6 @@ const StepArrange = ({ data, onChange, onNext, onPrev }) => {
     return info ? info.colorHex : '#777777';
   };
 
-  // 預覽內容（簡短截斷）
-  const previewContent = (content) => {
-    if (!content) return '';
-    const lines = content.split('\n').filter(l => l.trim());
-    const preview = lines.slice(0, 3).join(' / ');
-    return preview.length > 80 ? preview.substring(0, 80) + '...' : preview;
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -42,37 +33,20 @@ const StepArrange = ({ data, onChange, onNext, onPrev }) => {
       </div>
 
       <div className="bg-gray-800/50 rounded-lg p-4">
-        <Reorder.Group axis="y" values={data.slides || []} onReorder={handleReorder} className="space-y-2">
+        <Reorder.Group axis="y" values={data.slides || []} onReorder={handleReorder} className="space-y-3">
           <AnimatePresence>
             {(data.slides || []).map((slide) => (
               <Reorder.Item
                 key={slide.page}
                 value={slide}
-                className="bg-gray-700 rounded-lg border border-gray-600 cursor-grab active:cursor-grabbing"
+                className="cursor-grab active:cursor-grabbing"
               >
-                <div className="flex items-center gap-3 p-3">
-                  <div className="text-gray-400">
-                    <FaGripLines />
-                  </div>
-                  <div
-                    className="w-2 h-8 rounded-full shrink-0"
-                    style={{ backgroundColor: getTagColor(slide.tag) }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-white text-sm font-medium">#{slide.page}</span>
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full text-white"
-                        style={{ backgroundColor: getTagColor(slide.tag) }}
-                      >
-                        {getTagLabel(slide.tag)}
-                      </span>
-                    </div>
-                    <p className="text-gray-400 text-xs truncate">
-                      {previewContent(slide.content)}
-                    </p>
-                  </div>
-                </div>
+                <SlidePreviewCard
+                  slide={slide}
+                  tagLabel={getTagLabel(slide.tag)}
+                  tagColor={getTagColor(slide.tag)}
+                  pageNum={slide.page}
+                />
               </Reorder.Item>
             ))}
           </AnimatePresence>
@@ -93,6 +67,74 @@ const StepArrange = ({ data, onChange, onNext, onPrev }) => {
         >
           {locale('lyric_editor.next_step')}
         </button>
+      </div>
+    </div>
+  );
+};
+
+// 預覽卡片組件
+const SlidePreviewCard = ({ slide, tagLabel, tagColor, pageNum }) => {
+  const containerRef = useRef(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const { width } = entry.contentRect;
+        setScale(width / 1920);
+      }
+    });
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  const lines = (slide.content || '').split('\n').filter(l => l.trim());
+  const isEmpty = lines.length === 0;
+
+  return (
+    <div
+      className="bg-gray-700 rounded-lg border-2 overflow-hidden"
+      style={{ borderColor: tagColor }}
+    >
+      {/* 頂部標籤欄 */}
+      <div className="flex items-center justify-between px-3 py-2 bg-gray-800/80">
+        <div className="flex items-center gap-2">
+          <div className="text-gray-400">
+            <FaGripLines size={14} />
+          </div>
+          <span className="text-white text-sm font-bold">#{pageNum}</span>
+          <span
+            className="text-xs px-2 py-0.5 rounded-full text-white font-medium"
+            style={{ backgroundColor: tagColor }}
+          >
+            {tagLabel}
+          </span>
+        </div>
+      </div>
+
+      {/* 內容預覽區（16:9 比例） */}
+      <div
+        ref={containerRef}
+        className="relative bg-gray-900 w-full"
+        style={{ aspectRatio: '16/9' }}
+      >
+        <div className="absolute inset-0 flex items-center justify-center p-4">
+          {isEmpty ? (
+            <span className="text-gray-600 text-sm">{locale('lyric_editor.empty_slide')}</span>
+          ) : (
+            <div className="text-center w-full" style={{ transform: `scale(${scale * 40})`, transformOrigin: 'center' }}>
+              {lines.slice(0, 6).map((line, i) => (
+                <p key={i} className="text-white text-xs leading-tight truncate" style={{ fontSize: `${16 * scale}px` }}>
+                  {line}
+                </p>
+              ))}
+              {lines.length > 6 && (
+                <p className="text-gray-500 text-xs mt-1">... ({lines.length - 6} more)</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

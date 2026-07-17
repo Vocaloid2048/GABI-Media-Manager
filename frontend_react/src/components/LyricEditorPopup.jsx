@@ -137,36 +137,48 @@ const LyricEditorPopup = ({ onClose }) => {
         throw new Error('No lyrics data available');
       }
 
-      // 自動配對（新結構：pairings 包含 type 和 id 欄位）
+      // 自動配對（統一配對格式：所有項目都是 type='pair'，左右兩欄）
       const zhLen = newData.zhStanzas?.length || 0;
       const enLen = newData.enStanzas?.length || 0;
+      const maxLen = Math.max(zhLen, enLen);
       const pairings = [];
-      const minLen = Math.min(zhLen, enLen);
-      for (let i = 0; i < minLen; i++) {
+      
+      for (let i = 0; i < maxLen; i++) {
+        const zhStanza = newData.zhStanzas?.[i];
+        const enStanza = newData.enStanzas?.[i];
+        
+        // 如果某一边沒有段落，創建一個空的 stanza 來配對
+        let zhId = zhStanza?.id;
+        let enId = enStanza?.id;
+        
+        if (!zhId) {
+          const emptyZh = {
+            id: `empty_zh_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`,
+            content: '',
+            tag: enStanza?.tag || null,
+            order: i
+          };
+          newData.zhStanzas = [...(newData.zhStanzas || []), emptyZh];
+          zhId = emptyZh.id;
+        }
+        
+        if (!enId) {
+          const emptyEn = {
+            id: `empty_en_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`,
+            content: '',
+            tag: zhStanza?.tag || null,
+            order: i
+          };
+          newData.enStanzas = [...(newData.enStanzas || []), emptyEn];
+          enId = emptyEn.id;
+        }
+        
         pairings.push({
           id: `pair_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`,
           type: 'pair',
-          zhId: newData.zhStanzas[i].id,
-          enId: newData.enStanzas[i].id
+          zhId,
+          enId
         });
-      }
-      if (zhLen > minLen) {
-        for (let i = minLen; i < zhLen; i++) {
-          pairings.push({
-            id: `zh_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`,
-            type: 'zh',
-            zhId: newData.zhStanzas[i].id
-          });
-        }
-      }
-      if (enLen > minLen) {
-        for (let i = minLen; i < enLen; i++) {
-          pairings.push({
-            id: `en_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`,
-            type: 'en',
-            enId: newData.enStanzas[i].id
-          });
-        }
       }
       newData.pairings = pairings;
 
