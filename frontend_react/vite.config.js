@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => {
       https: httpsConfig,
       proxy: {
         '/api': {
-          target: env.VITE_API_BASE_URL,
+          target: env.VITE_API_BASE_URL || 'https://localhost:3000',
           changeOrigin: true,
           secure: false,
           xfwd: true, // Add X-Forwarded-For headers

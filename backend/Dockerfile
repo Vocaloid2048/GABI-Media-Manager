@@ -1,14 +1,8 @@
 # 使用官方 Node.js 基礎映像檔
 FROM node:20-bookworm-slim
 
-# 安裝必要的系統套件 (如果 ffmpeg-static 不支援特定系統，可以考慮直接安裝 ffmpeg)
-# 這裡安裝 libvips 是為了 sharp
-RUN apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+# 安裝系統相依套件
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
 # 設定工作目錄
 WORKDIR /app
@@ -18,7 +12,7 @@ COPY package*.json ./
 
 # 安裝相依套件
 # 使用 npm ci 以確保版本一致性
-RUN npm install
+RUN npm ci --only=production 
 
 # 複製其餘的程式碼
 COPY . .

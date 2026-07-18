@@ -1,7 +1,6 @@
 const protobuf = require("protobufjs");
 const path = require("path");
 const fs = require("fs");
-const { copy } = require("../routers/song.route");
 
 // 群組標籤映射表
 const GROUP_LABEL_LIST = {
@@ -102,10 +101,10 @@ async function loadTheme(themePath) {
 }
 
 // 將純文本轉換為簡單的 RTF 格式，使用主題 RTF 作為模板
-function textToRTF(text, baseSlide, fontName = "MicrosoftJhengHeiUI", fontSize = 72, bold = false) {
-  const textElement = baseSlide.elements.find(e => e.info === 2);
-  if (!textElement) throw new Error("No text element found in baseSlide");
-  const templateRtf = Buffer.from(textElement.element.text.rtfData, 'base64').toString('utf8');
+function textToRTF(text, baseSlide, fontName = "MicrosoftJhengHeiUI", fontSize = 72, bold = false, rtfTemplate = null, alignment = null) {
+  const templateRtf = rtfTemplate
+    ? Buffer.from(rtfTemplate, 'base64').toString('utf8')
+    : Buffer.from(baseSlide.elements.find(e => e.info === 2).element.text.rtfData, 'base64').toString('utf8');
 
   // 替換文字部分
   // 找到文字部分：從 \cb3 之後到 }
@@ -130,9 +129,30 @@ function textToRTF(text, baseSlide, fontName = "MicrosoftJhengHeiUI", fontSize =
     })
     .join('');
 
-  const newRtf = beforeText + escapedText + afterText;
+  let newRtf = beforeText + escapedText + afterText;
+
+  // 如果需要左對齊，將 \qc（居中）替換為 \ql（左對齊）
+  if (alignment === 'left') {
+    newRtf = newRtf.replace(/\\qc/g, '\\ql');
+  }
 
   return Buffer.from(newRtf, 'utf8').toString('base64');
+}
+
+// 創建一個新的 text element，基於模板 element
+function createTextElement(templateElement, bounds, fontName, fontSize, bold) {
+  const cloned = JSON.parse(JSON.stringify(templateElement));
+  cloned.element.uuid = { string: generateUUID() };
+  cloned.element.bounds = {
+    origin: { x: bounds.x, y: bounds.y },
+    size: { width: bounds.width, height: bounds.height }
+  };
+  cloned.element.text.attributes.font.name = fontName;
+  cloned.element.text.attributes.font.size = fontSize;
+  cloned.element.text.attributes.font.bold = bold;
+  cloned.element.text.attributes.font.family = fontName.replace(/(Bold|Regular|Italic)$/, '');
+  cloned.element.text.attributes.font.face = bold ? 'Bold' : 'Regular';
+  return cloned;
 }
 
 // 深拷貝 baseSlide 並更新 UUIDs
@@ -238,16 +258,16 @@ async function generateProFile(songData, options = {}) {
           authorParts.push(`${COPYRIGHT_LABEL_LIST.arranger[copyrightLanguage] || COPYRIGHT_LABEL_LIST.arranger.en}${copyright.arranger.trim()}`);
         }
 
-        console.log(typeof copyright.year, copyright.year, Number.isInteger(+copyright.year), parseInt(copyright.year));
-        
         presentation.ccli = {
           author: authorParts.join('\n'),
           publisher: copyright.publisher || '',
           songTitle: songData.song_name || '',
-          copyrightYear: Number.isInteger(+copyright.year) ? parseInt(copyright.year) : undefined,
           album: copyright.album || '',
           display: showCopyright
         };
+        if (copyright.year && Number.isInteger(+copyright.year)) {
+          presentation.ccli.copyrightYear = parseInt(copyright.year);
+        }
       } catch (error) {
         console.warn('Failed to parse song_copyright:', error);
         presentation.ccli = {};
@@ -491,9 +511,275 @@ const getGroupLabel = (tagKey, labelLanguage = 'zh_hk') => {
   })();
 }
 
+/**
+ * 生成多語言 .pro 檔案
+ * @param {Object} params
+ * @param {string} params.songName - 歌曲名稱
+ * @param {Array} params.slides - slide 列表 [{page, tag, content}]
+ * @param {Object} params.copyright - 版權資訊
+ * @param {string} params.theme - 主題名稱
+ * @param {string} params.labelLanguage - 標籤語言
+ * @param {string} params.spacing - 空格間距
+ * @param {boolean} params.addTitlePage - 是否添加標題頁
+ * @param {boolean} params.showCopyright - 是否顯示版權
+ * @param {string} params.copyrightLanguage - 版權語言
+ * @returns {Promise<Object>} presentation 物件
+ */
+async function generateMultiLangProFile(params) {
+  const {
+    songName,
+    slides,
+    copyright = {},
+    theme = 'default_Theme',
+    labelLanguage = 'zh_hk',
+    spacing = '1',
+    addTitlePage = true,
+    addBlankPage = false,
+    showCopyright = true,
+    copyrightLanguage = 'zh_hk',
+    useIntroAsLabel = false
+  } = params;
+
+  const themePath = path.join(__dirname, "theme", theme);
+  const root = await loadProPresenterProto();
+  const Presentation = root.lookupType("rv.data.Presentation");
+
+  // 載入主題
+  const themeSlides = await loadTheme(themePath);
+  const titleSlide = themeSlides.find(s => s.name === "詩歌名字");
+  const lyricsSlide = themeSlides.find(s => s.name === "詩歌歌詞");
+
+  if (!titleSlide || !lyricsSlide) {
+    throw new Error("Theme does not contain required slides: 詩歌名字 and 詩歌歌詞");
+  }
+
+  // 基本文件結構（複用 generateProFile 的結構）
+  const presentation = {
+    applicationInfo: {
+      platform: 2,
+      platformVersion: {
+        majorVersion: 10,
+        patchVersion: 4294967295,
+        build: "22631"
+      },
+      application: 1,
+      applicationVersion: {
+        majorVersion: 18,
+        minorVersion: 4,
+        patchVersion: 1,
+        build: "302252289"
+      }
+    },
+    uuid: { string: generateUUID() },
+    name: songName,
+    lastDateUsed: { seconds: Math.floor(Date.now() / 1000) },
+    lastModifiedDate: { seconds: Math.floor(Date.now() / 1000) },
+    background: { color: { alpha: 1 } },
+    selectedArrangement: { string: generateUUID() },
+    arrangements: [],
+    cueGroups: [],
+    cues: [],
+    ccli: {}
+  };
+
+  // 處理 CCLI 版權資訊
+  if (copyright) {
+    const authorParts = [];
+    if (copyright.composer && copyright.composer.trim()) {
+      authorParts.push(`${COPYRIGHT_LABEL_LIST.composer[copyrightLanguage] || COPYRIGHT_LABEL_LIST.composer.en}${copyright.composer.trim()}`);
+    }
+    if (copyright.lyricist && copyright.lyricist.trim()) {
+      authorParts.push(`${COPYRIGHT_LABEL_LIST.lyricist[copyrightLanguage] || COPYRIGHT_LABEL_LIST.lyricist.en}${copyright.lyricist.trim()}`);
+    }
+    if (copyright.arranger && copyright.arranger.trim()) {
+      authorParts.push(`${COPYRIGHT_LABEL_LIST.arranger[copyrightLanguage] || COPYRIGHT_LABEL_LIST.arranger.en}${copyright.arranger.trim()}`);
+    }
+
+    presentation.ccli = {
+      author: authorParts.join('\n'),
+      publisher: copyright.publisher || '',
+      songTitle: songName || '',
+      album: copyright.album || '',
+      display: showCopyright
+    };
+    if (copyright.year && Number.isInteger(+copyright.year)) {
+      presentation.ccli.copyrightYear = parseInt(copyright.year);
+    }
+  }
+
+  const cuesByGroup = {};
+  let processedSlides = [...slides];
+
+  // 應用 spacing
+  processedSlides = processedSlides.map(slide => ({
+    ...slide,
+    zhContent: (slide.zhContent || '').replace("\t", " ").replace(/ /g, (spacing === 'tab' ? '\t' : " ".repeat(parseInt(spacing) || 1))),
+    enContent: (slide.enContent || '').replace("\t", " ").replace(/ /g, (spacing === 'tab' ? '\t' : " ".repeat(parseInt(spacing) || 1)))
+  }));
+
+  // 如果添加標題頁，在前面插入
+  if (addTitlePage) {
+    processedSlides.unshift({
+      is_title: true,
+      content: songName || "Title",
+      tag: 'TAG'
+    });
+  }
+
+  // 如果添加尾頁，在後面插入
+  if (addBlankPage) {
+    processedSlides.push({
+      tag: 'BLANK',
+      content: ''
+    });
+  }
+
+  // 獲取主題中 info=2 的 text element 模板（用於雙語排版）
+  const lyricsTextTemplate = lyricsSlide.baseSlide.elements.find(e => e.info === 2);
+  const rtfTemplate = lyricsTextTemplate ? lyricsTextTemplate.element.text.rtfData : null;
+
+  // 生成 cues
+  processedSlides.forEach((slide, index) => {
+    let tagKey, cueName, baseSlideToUse, fontName, fontSize, bold;
+    let isDualText = false;
+
+    if (slide.is_title && addTitlePage) {
+      tagKey = mapTagToKey(useIntroAsLabel ? 'INTRO' : 'TAG');
+      cueName = getGroupLabel(tagKey, labelLanguage) || (useIntroAsLabel ? 'INTRO' : 'TAG');
+      baseSlideToUse = titleSlide.baseSlide;
+      fontName = "MicrosoftJhengHeiUIBold";
+      fontSize = 130;
+      bold = true;
+    } else if (slide.tag === 'BLANK' || (!slide.zhContent && !slide.enContent && !slide.content)) {
+      // 空白頁
+      tagKey = 'BLANK';
+      cueName = getGroupLabel('BLANK', labelLanguage) || 'Blank';
+      baseSlideToUse = lyricsSlide.baseSlide;
+      fontName = "ArialMT";
+      fontSize = 72;
+      bold = false;
+    } else {
+      // 歌詞頁（雙 text element）
+      tagKey = mapTagToKey(slide.tag) || 'VERSE';
+      cueName = getGroupLabel(tagKey, labelLanguage) || slide.tag || `Verse ${index + 1}`;
+      baseSlideToUse = lyricsSlide.baseSlide;
+      fontName = "ArialMT";
+      fontSize = 72;
+      bold = false;
+      isDualText = true;
+    }
+
+    const cue = {
+      uuid: { string: generateUUID() },
+      name: cueName,
+      isEnabled: true,
+      completionTargetUuid: { string: "00000000-0000-0000-0000-000000000000" },
+      completionActionUuid: { string: "00000000-0000-0000-0000-000000000000" },
+      triggerTime: (slide.is_title && addTitlePage) ? {} : { time: 0 },
+      actions: [
+        {
+          uuid: { string: generateUUID() },
+          name: "Presentation Slide",
+          label: { text: undefined },
+          isEnabled: true,
+          type: 11,
+          slide: {
+            presentation: {
+              baseSlide: cloneBaseSlide(baseSlideToUse)
+            }
+          }
+        }
+      ]
+    };
+
+    const baseSlideElements = cue.actions[0].slide.presentation.baseSlide.elements;
+
+    if (isDualText && lyricsTextTemplate) {
+      // 雙語排版：創建兩個 text element
+      // 移除原來的 info=2 element
+      const filteredElements = baseSlideElements.filter(e => e.info !== 2);
+
+      // Text（中文）：bounds = (53, 47, 1819, 451), fontSize = 115
+      const zhTextElement = createTextElement(
+        lyricsTextTemplate,
+        { x: 53, y: 47, width: 1819, height: 451 },
+        "MicrosoftJhengHeiUIBold",
+        115,
+        true
+      );
+      zhTextElement.element.text.rtfData = textToRTF(
+        slide.zhContent || "", baseSlideToUse, "MicrosoftJhengHeiUIBold", 115, true, rtfTemplate
+      );
+
+      // Text2（英文）：bounds = (53, 624, 1819, 411), fontSize = 90
+      const enTextElement = createTextElement(
+        lyricsTextTemplate,
+        { x: 53, y: 624, width: 1819, height: 411 },
+        "ArialMT",
+        90,
+        false
+      );
+      enTextElement.element.text.rtfData = textToRTF(
+        slide.enContent || "", baseSlideToUse, "ArialMT", 90, false, rtfTemplate
+      );
+
+      // 添加兩個 text element
+      filteredElements.push(zhTextElement, enTextElement);
+      cue.actions[0].slide.presentation.baseSlide.elements = filteredElements;
+
+      // 更新 elementBuildOrder
+      cue.actions[0].slide.presentation.baseSlide.elementBuildOrder = [
+        { string: zhTextElement.element.uuid.string },
+        { string: enTextElement.element.uuid.string }
+      ];
+    } else {
+      // 單語排版（標題頁或空白頁）
+      const textElement = baseSlideElements.find(e => e.info === 2);
+      if (textElement) {
+        const textContent = slide.content || slide.zhContent || slide.enContent || "";
+        // 標題頁使用左對齊，不居中
+        const alignment = slide.is_title ? 'left' : null;
+        textElement.element.text.rtfData = textToRTF(textContent, baseSlideToUse, fontName, fontSize, bold, rtfTemplate, alignment);
+      }
+    }
+
+    presentation.cues.push(cue);
+
+    if (!cuesByGroup[tagKey]) {
+      cuesByGroup[tagKey] = [];
+    }
+    cuesByGroup[tagKey].push(cue.uuid.string);
+  });
+
+  // 創建 cue groups
+  for (const [tagKey, cueUuids] of Object.entries(cuesByGroup)) {
+    const groupLabel = GROUP_LABEL_LIST[tagKey] || GROUP_LABEL_LIST['VERSE'];
+    const colorHex = groupLabel.colorHex;
+    const r = parseInt(colorHex.slice(1, 3), 16) / 255;
+    const g = parseInt(colorHex.slice(3, 5), 16) / 255;
+    const b = parseInt(colorHex.slice(5, 7), 16) / 255;
+
+    const cueGroup = {
+      group: {
+        uuid: { string: generateUUID() },
+        name: getGroupLabel(tagKey, labelLanguage) || tagKey,
+        color: { red: r, green: g, blue: b, alpha: 1 }
+      },
+      cueIdentifiers: cueUuids.map(uuid => ({ string: uuid }))
+    };
+    presentation.cueGroups.push(cueGroup);
+  }
+
+  return presentation;
+}
+
 module.exports = {
   generateProFile,
+  generateMultiLangProFile,
   saveProFile,
   loadTheme,
-  textToRTF
+  textToRTF,
+  GROUP_LABEL_LIST,
+  mapTagToKey,
+  getGroupLabel
 };
