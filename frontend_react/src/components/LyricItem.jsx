@@ -48,10 +48,10 @@ const LyricItem = ({ slide, tagInfo, ccli, isTitlePage, showCopyright }) => {
         ref={containerRef}
       >
         <div className="pt-1 pb-4 px-4 h-full relative" style={{ aspectRatio: '16/9' }}>
-          {/* 標題頁：單一文字框 (53,46,1773,412) */}
+          {/* 標題頁：單一文字框 (53,46,1773,412) — 頂置、靠左、width 撐滿 */}
           {isTitlePage && (
-            <div style={scaledStyle(bounds)}>
-              <p style={textStyle}>
+            <div style={{ ...scaledStyle(bounds), justifyContent: 'flex-start' }}>
+              <p style={{ ...textStyle, width: '100%' }}>
                 {slide.content}
               </p>
             </div>
