@@ -100,20 +100,15 @@ async function loadTheme(themePath) {
   throw new Error("Could not decode theme file");
 }
 
-// 將純文本轉換為簡單的 RTF 格式，使用主題 RTF 作為模板
+// 將純文本轉換為 RTF 格式，使用主題 RTF 作為模板
+// 主題模板因 3-run 間有 \par\pard 分隔（3 個獨立段落），若同時填入文字會堆疊顯示。
+// 只在第一個 run 填入用戶文字，其餘 2 個 run 清空（保留 strokec 描邊色但無文字內容）。
 function textToRTF(text, baseSlide, fontName = "MicrosoftJhengHeiUI", fontSize = 72, bold = false, rtfTemplate = null, alignment = null) {
   const templateRtf = rtfTemplate
     ? Buffer.from(rtfTemplate, 'base64').toString('utf8')
     : Buffer.from(baseSlide.elements.find(e => e.info === 2).element.text.rtfData, 'base64').toString('utf8');
 
-  // 替換文字部分
-  // 找到文字部分：從 \cb3 之後到 }
-  const textStart = templateRtf.indexOf('\\cb3') + 4;
-  const textEnd = templateRtf.lastIndexOf('}');
-  const beforeText = templateRtf.substring(0, textStart);
-  const afterText = templateRtf.substring(textEnd);
-
-  // 生成新的文字
+  // 生成 RTF 轉義後的文字（不改變大小寫）
   const escapedText = text
     .replace(/\\/g, '\\\\')
     .replace(/\{/g, '\\{')
@@ -129,14 +124,35 @@ function textToRTF(text, baseSlide, fontName = "MicrosoftJhengHeiUI", fontSize =
     })
     .join('');
 
-  let newRtf = beforeText + escapedText + afterText;
+  // 找出所有 \cb3 run 的邊界（從 \cb3 之後到 \par 或 }）
+  const cbRuns = [];
+  let pos = 0;
+  while ((pos = templateRtf.indexOf('\\cb3', pos)) !== -1) {
+    const afterMarker = pos + 4;
+    let endPos = templateRtf.indexOf('\\par', afterMarker);
+    const bracePos = templateRtf.indexOf('}', afterMarker);
+    if (bracePos !== -1 && (endPos === -1 || bracePos < endPos)) {
+      endPos = bracePos;
+    }
+    if (endPos === -1) endPos = templateRtf.length;
+    cbRuns.push({ afterMarker, endPos });
+    pos = endPos;
+  }
+
+  // 從後往���替換：只在第一個 run 填入文字，其餘清空（避免位置偏移）
+  let result = templateRtf;
+  for (let i = cbRuns.length - 1; i >= 0; i--) {
+    const { afterMarker, endPos } = cbRuns[i];
+    const replacement = i === 0 ? escapedText : '';
+    result = result.substring(0, afterMarker) + replacement + result.substring(endPos);
+  }
 
   // 如果需要左對齊，將 \qc（居中）替換為 \ql（左對齊）
   if (alignment === 'left') {
-    newRtf = newRtf.replace(/\\qc/g, '\\ql');
+    result = result.replace(/\\qc/g, '\\ql');
   }
 
-  return Buffer.from(newRtf, 'utf8').toString('base64');
+  return Buffer.from(result, 'utf8').toString('base64');
 }
 
 // 創建一個新的 text element，基於模板 element
