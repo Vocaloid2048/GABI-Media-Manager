@@ -103,13 +103,17 @@ async function loadTheme(themePath) {
 // 將純文本轉換為 RTF 格式，使用主題 RTF 作為模板
 // 主題模板因 3-run 間有 \par\pard 分隔（3 個獨立段落），若同時填入文字會堆疊顯示。
 // 只在第一個 run 填入用戶文字，其餘 2 個 run 清空（保留 strokec 描邊色但無文字內容）。
+// 在用戶文字前加 1 個空格（防止左邊界 stroke 裁切首字）。
 function textToRTF(text, baseSlide, fontName = "MicrosoftJhengHeiUI", fontSize = 72, bold = false, rtfTemplate = null, alignment = null) {
   const templateRtf = rtfTemplate
     ? Buffer.from(rtfTemplate, 'base64').toString('utf8')
     : Buffer.from(baseSlide.elements.find(e => e.info === 2).element.text.rtfData, 'base64').toString('utf8');
 
+  // 在用戶文字前加 1 個空格：避免左邊界 stroke 裁切首字
+  const paddedText = ' ' + text;
+
   // 生成 RTF 轉義後的文字（不改變大小寫）
-  const escapedText = text
+  const escapedText = paddedText
     .replace(/\\/g, '\\\\')
     .replace(/\{/g, '\\{')
     .replace(/\}/g, '\\}')
