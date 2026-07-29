@@ -745,14 +745,14 @@ async function generateMultiLangProFile(params) {
         slide.enContent || "", baseSlideToUse, "ArialMT", 90, false, rtfTemplate
       );
 
-      // 英文在下、中文在上（後加的在更上層）
-      filteredElements.push(enTextElement, zhTextElement);
+      // 中文 Text2 在前 (列表顯示順序)、英文 Text 在後
+      filteredElements.push(zhTextElement, enTextElement);
       cue.actions[0].slide.presentation.baseSlide.elements = filteredElements;
 
-      // elementBuildOrder：先畫英文、後畫中文 → 中文位於最上層
+      // elementBuildOrder：中文先畫（底層）、英文後畫（頂層覆蓋中文重疊區）
       cue.actions[0].slide.presentation.baseSlide.elementBuildOrder = [
-        { string: enTextElement.element.uuid.string },
-        { string: zhTextElement.element.uuid.string }
+        { string: zhTextElement.element.uuid.string },
+        { string: enTextElement.element.uuid.string }
       ];
     } else {
       // 單語排版（標題頁或空白頁）
