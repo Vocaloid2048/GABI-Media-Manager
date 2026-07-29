@@ -308,39 +308,7 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
         </div>
       </div>
 
-      {/* 排版模式选择 */}
-      <div className="bg-gray-800/50 rounded-lg p-4">
-        <h4 className="text-white font-medium text-sm mb-3">{locale('lyric_editor.layout_mode')}</h4>
-        <div className="flex flex-wrap gap-3">
-          {[
-            { key: 'interleave', label: locale('lyric_editor.layout_interleave') },
-            { key: 'top-bottom', label: locale('lyric_editor.layout_top_bottom') },
-            { key: 'center-split', label: locale('lyric_editor.layout_center_split') }
-          ].map(mode => (
-            <button
-              key={mode.key}
-              onClick={() => onChange({ layoutMode: mode.key })}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                data.layoutMode === mode.key
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-            >
-              {mode.label}
-            </button>
-          ))}
-          <button
-            onClick={() => onChange({ layoutSwap: !data.layoutSwap })}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              data.layoutSwap
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            {locale('lyric_editor.layout_swap')}
-          </button>
-        </div>
-      </div>
+      {/* 排版模式已統一：中文在上、英文在下（中間上中間下） */}
 
       {/* 版权信息 */}
       <div className="bg-gray-800/50 rounded-lg p-4">
@@ -401,6 +369,8 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
             // 为 LyricItem 准备 slide 数据
             const lyricItemSlide = {
               content: slide.content || '',
+              zhContent: slide.zhContent || '',
+              enContent: slide.enContent || '',
               page: isFixed ? (slide.is_title ? '封面' : '尾頁') : (slide._displayIdx || slide.page || index + 1),
               tag: slide.tag
             };

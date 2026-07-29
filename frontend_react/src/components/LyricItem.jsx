@@ -5,7 +5,7 @@ const LyricItem = ({ slide, tagInfo, ccli, isTitlePage, showCopyright }) => {
   const containerRef = useRef(null);
   const [dynamicScale, setDynamicScale] = useState(1);
 
-  const { textRef, calculateElementStyle, textStyle } = useLyricItem(slide, dynamicScale);
+  const { textRef, calculateElementStyle, textStyle, bounds } = useLyricItem(slide, dynamicScale);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -23,6 +23,23 @@ const LyricItem = ({ slide, tagInfo, ccli, isTitlePage, showCopyright }) => {
     return () => resizeObserver.disconnect();
   }, []);
 
+  // 計算中/英文文字框的位置
+  const zhBounds = { x: 53, y: 47, width: 1819, height: 451 };
+  const enBounds = { x: 53, y: 515, width: 1819, height: 517 };
+
+  const scaledStyle = (b) => ({
+    position: 'absolute',
+    left: `${b.x * dynamicScale}px`,
+    top: `${b.y * dynamicScale}px`,
+    width: `${b.width * dynamicScale}px`,
+    height: `${b.height * dynamicScale}px`,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    boxSizing: 'border-box',
+    overflow: 'hidden'
+  });
+
   return (
     <div className="bg-gray-800 overflow-hidden">
       <div
@@ -31,11 +48,33 @@ const LyricItem = ({ slide, tagInfo, ccli, isTitlePage, showCopyright }) => {
         ref={containerRef}
       >
         <div className="pt-1 pb-4 px-4 h-full relative" style={{ aspectRatio: '16/9' }}>
-          <div style={calculateElementStyle()}>
-            <p ref={textRef} style={textStyle}>
-              {slide.content}
-            </p>
-          </div>
+          {/* 標題頁：單一文字框 (53,46,1773,412) */}
+          {isTitlePage && (
+            <div style={scaledStyle(bounds)}>
+              <p style={textStyle}>
+                {slide.content}
+              </p>
+            </div>
+          )}
+
+          {/* 歌詞頁：中文 (53,47,1819,451) 上半 + 英文 (53,515,1819,517) 下半 */}
+          {!isTitlePage && (
+            <>
+              {/* 中文 Text2 - 最多 3 行 */}
+              <div style={scaledStyle(zhBounds)}>
+                <p style={{ ...textStyle, fontSize: `${115 * dynamicScale}px` }}>
+                  {(slide.zhContent || '').split('\n').slice(0, 3).join('\n')}
+                </p>
+              </div>
+              {/* 英文 Text - 最多 4 行 */}
+              <div style={scaledStyle(enBounds)}>
+                <p style={{ ...textStyle, fontSize: `${90 * dynamicScale}px`, textAlign: 'center' }}>
+                  {(slide.enContent || '').split('\n').slice(0, 4).join('\n')}
+                </p>
+              </div>
+            </>
+          )}
+
           {isTitlePage && showCopyright && ccli && (
             <div
               className="absolute text-white text-right"

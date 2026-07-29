@@ -28,10 +28,14 @@ export function useLyricItem(slide, dynamicScale) {
   const textRef = useRef(null);
   const [computedFontPx, setComputedFontPx] = useState(null);
 
-  // Hardcoded bounds for 青少崇拜 theme
+  // 標題頁 / 中文 / 英文 三個元素的 bounds
+  const titleBounds = { x: 53, y: 46, width: 1773, height: 412 };
+  const zhBounds   = { x: 53, y: 47, width: 1819, height: 451 };
+  const enBounds   = { x: 53, y: 515, width: 1819, height: 517 };
+
   const bounds = slide.is_title
-    ? { x: 52.61261261261268, y: 45.630630630630606, width: 1772.972972972973, height: 161.35135135135135 }
-    : { x: 52.61261261261268, y: 45.63063063063058, width: 1819.099099099099, height: 494.3693693693694 };
+    ? titleBounds
+    : zhBounds; // 向下相容
 
   const calculateElementStyle = () => {
     const scaledX = bounds.x * dynamicScale;
