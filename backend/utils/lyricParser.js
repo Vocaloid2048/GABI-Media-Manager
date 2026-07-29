@@ -2,7 +2,7 @@
 const GROUP_LABEL_LIST = {
   "VERSE": { colorHex: "#0072C6", en: "Verse", zh_cn: "主歌", zh_hk: "主歌" },
   "VERSE1": { colorHex: "#0072C6", en: "Verse 1", zh_cn: "主歌1", zh_hk: "主歌1" },
-  "VERSE2": { colorHex: "#0072C6", en: "Verse 2", zh_cn: "主歌2", zh_hk: "主歌2" },
+  "VERSE2": { colorHex: "#0072C6", en: "Verse 2", zh_cn: "主��2", zh_hk: "主歌2" },
   "VERSE3": { colorHex: "#0072C6", en: "Verse 3", zh_cn: "主歌3", zh_hk: "主歌3" },
   "VERSE4": { colorHex: "#0072C6", en: "Verse 4", zh_cn: "主歌4", zh_hk: "主歌4" },
   "VERSE5": { colorHex: "#005A9E", en: "Verse 5", zh_cn: "主歌5", zh_hk: "主歌5" },
@@ -13,7 +13,7 @@ const GROUP_LABEL_LIST = {
   "CHORUS3": { colorHex: "#5B0025", en: "Chorus 3", zh_cn: "副歌3", zh_hk: "副歌3" },
   "CHORUS4": { colorHex: "#D41243", en: "Chorus 4", zh_cn: "副歌4", zh_hk: "副歌4" },
   "BRIDGE": { colorHex: "#6F00FF", en: "Bridge", zh_cn: "桥段", zh_hk: "橋段" },
-  "BRIDGE1": { colorHex: "#6F00FF", en: "Bridge 1", zh_cn: "桥段1", zh_hk: "橋段1" },
+  "BRIDGE1": { colorHex: "#6F00FF", en: "Bridge 1", zh_cn: "桥��1", zh_hk: "橋段1" },
   "BRIDGE2": { colorHex: "#5000B8", en: "Bridge 2", zh_cn: "桥段2", zh_hk: "橋段2" },
   "BRIDGE3": { colorHex: "#300060", en: "Bridge 3", zh_cn: "桥段3", zh_hk: "橋段3" },
   "PRECHORUS": { colorHex: "#D41299", en: "PreChorus", zh_cn: "副歌预热", zh_hk: "副歌預熱" },
@@ -33,50 +33,103 @@ function generateId() {
 }
 
 /**
- * 判斷一行文字是否為標籤行
- * 支援格式：[Verse 1], Verse 1, [Chorus], Chorus, 主歌, 副歌 等
- * 參照 GROUP_LABEL_LIST 映射表
- * @param {string} line 
- * @returns {string|null} 返回對應的標籤 key，如果不是標籤行則返回 null
+ * 計算兩個字串的 Levenshtein（編輯距離）
+ */
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1]
+        : Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]) + 1;
+    }
+  }
+  return dp[m][n];
+}
+
+/**
+ * 模糊匹配標籤：容忍 2 個以內的拼寫差異（如 Chrous->Chorus）
+ */
+function fuzzyBestMatch(cleaned) {
+  const cleanedNoSpace = cleaned.toUpperCase().replace(/\s+/g, '');
+  let bestKey = null, bestDist = Infinity;
+  for (const [key, val] of Object.entries(GROUP_LABEL_LIST)) {
+    const enNoSpace = val.en ? val.en.toUpperCase().replace(/\s+/g, '') : '';
+    const d1 = levenshtein(cleanedNoSpace, enNoSpace);
+    if (d1 < bestDist && d1 <= 2 && cleanedNoSpace.length >= 4) {
+      bestDist = d1; bestKey = key;
+    }
+    const d2 = levenshtein(cleanedNoSpace, key.toUpperCase());
+    if (d2 < bestDist && d2 <= 2 && cleanedNoSpace.length >= 4) {
+      bestDist = d2; bestKey = key;
+    }
+  }
+  return bestKey;
+}
+
+/**
+ * 判斷一行文字是否為標籤行，返回 {tag, rest} 或 null。
+ * rest 為 [...] 之後、同一行的剩餘文字。
+ * tag 可��為 null：表示檢測到括號格式但不在映射表（如 Chrous 2），
+ * 調用方應沿用上一個標籤並排除括號文字於歌詞。
  */
 function detectTag(line) {
   if (!line || !line.trim()) return null;
-  
+
   const trimmed = line.trim();
-  
-  // 移除 [] 包裹
+  let rest = null;
   let cleaned = trimmed;
-  if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
-    cleaned = cleaned.slice(1, -1).trim();
+  let hasBrackets = false;
+
+  // 正則提取開頭的 [...] 標記，支援 [Tag]文字 同行格式
+  const bracketMatch = trimmed.match(/^\[([^\]]+)\](.*)/);
+  if (bracketMatch) {
+    hasBrackets = true;
+    cleaned = bracketMatch[1].trim();
+    const rawRest = bracketMatch[2].trim();
+    rest = rawRest || null;
   }
-  
-  // 如果移除 [] 後為空，返回 null
+
   if (!cleaned) return null;
-  
+
   const upperCleaned = cleaned.toUpperCase().replace(/\s+/g, '');
-  
-  // 1. 直接匹配英文 key（如 VERSE1, CHORUS）
+
+  const makeResult = (key) => ({ tag: key, rest });
+
+  // 1. 直接匹配英文 key
   if (GROUP_LABEL_LIST[upperCleaned]) {
-    return upperCleaned;
+    return makeResult(upperCleaned);
   }
-  
-  // 2. 匹配 GROUP_LABEL_LIST 中的 en / zh_cn / zh_hk
+
+  // 2. 匹配 en / zh_cn / zh_hk
   for (const [key, val] of Object.entries(GROUP_LABEL_LIST)) {
     const enNoSpace = val.en ? val.en.toUpperCase().replace(/\s+/g, '') : '';
     const zhCnNoSpace = val.zh_cn ? val.zh_cn.replace(/\s+/g, '') : '';
     const zhHkNoSpace = val.zh_hk ? val.zh_hk.replace(/\s+/g, '') : '';
-    
+
     const cleanedNoSpace = cleaned.toUpperCase().replace(/\s+/g, '');
-    
+
     if (
       cleanedNoSpace === enNoSpace ||
       cleanedNoSpace === zhCnNoSpace ||
       cleanedNoSpace === zhHkNoSpace
     ) {
-      return key;
+      return makeResult(key);
     }
   }
-  
+
+  // 3. 模糊匹配：容錯常見拼寫變體（如 Chrous->Chorus）
+  if (hasBrackets) {
+    const best = fuzzyBestMatch(cleaned);
+    if (best) {
+      return makeResult(best);
+    }
+    // 括號不在映射表，視為標籤行：tag=null，沿用上一個標籤
+    return { tag: null, rest };
+  }
+
   return null;
 }
 
@@ -87,23 +140,23 @@ function detectTag(line) {
  */
 function parseLyricText(text) {
   if (!text || !text.trim()) return [];
-  
+
   // 統一換行符
   const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const lines = normalizedText.split('\n');
-  
+
   const stanzas = [];
   let currentStanzaLines = [];
   let currentTag = null;
   let order = 0;
-  
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const tag = detectTag(line);
-    
-    if (tag) {
-      // 這是一個標籤行
-      // 如果之前有累積的段落內容，先保存
+    const detectResult = detectTag(line);
+
+    if (detectResult) {
+      const { tag, rest } = detectResult;
+      // 如果有累積的段落內容，先保存
       if (currentStanzaLines.length > 0) {
         const content = currentStanzaLines.join('\n').trim();
         if (content) {
@@ -116,9 +169,16 @@ function parseLyricText(text) {
         }
         currentStanzaLines = [];
       }
-      
-      // 設定新的標籤
-      currentTag = tag;
+
+      // 只有已知標籤才更新 currentTag；tag=null 沿用上一個
+      if (tag !== null) {
+        currentTag = tag;
+      }
+
+      // 若標籤後有同行歌詞（如 [Chorus]Hear...），加入為該段首行
+      if (rest) {
+        currentStanzaLines.push(rest);
+      }
     } else if (line.trim() === '' && currentStanzaLines.length > 0) {
       // 空行表示段落結束
       const content = currentStanzaLines.join('\n').trim();
@@ -131,14 +191,13 @@ function parseLyricText(text) {
         });
       }
       currentStanzaLines = [];
-      // 空行只結束當前段落，不重置標籤；
-      // 若下一段沒有新標籤行，則沿用上一段標籤（例如同一 [Chorus] 因空行分頁）。
+      // 空行只分段，不重置標籤；下一段無新標籤則沿用
     } else {
       // 普通歌詞行
       currentStanzaLines.push(line);
     }
   }
-  
+
   // 處理最後一個段落
   if (currentStanzaLines.length > 0) {
     const content = currentStanzaLines.join('\n').trim();
@@ -151,7 +210,7 @@ function parseLyricText(text) {
       });
     }
   }
-  
+
   return stanzas;
 }
 
@@ -165,25 +224,25 @@ function parseLyricText(text) {
 function buildSlides(zhStanzas, enStanzas, pairings, layoutMode = 'interleave', layoutSwap = false) {
   const slides = [];
   let page = 1;
-  
+
   // 建立 ID 到 stanza 的映射
   const zhMap = new Map(zhStanzas.map(s => [s.id, s]));
   const enMap = new Map(enStanzas.map(s => [s.id, s]));
-  
+
   // 按 pairings 順序生成 slides
   for (const pairing of pairings) {
     const zhStanza = zhMap.get(pairing.zhId);
     const enStanza = enMap.get(pairing.enId);
-    
+
     const zhContent = zhStanza ? zhStanza.content : '';
     const enContent = enStanza ? enStanza.content : '';
-    
+
     // 決定標籤：優先使用中文段落的標籤，若無則使用英文段落的標籤
     const tag = (zhStanza && zhStanza.tag) || (enStanza && enStanza.tag) || 'VERSE';
-    
+
     // 根據排版模式合併內容
     const content = mergeContent(zhContent, enContent, layoutMode, layoutSwap);
-    
+
     slides.push({
       page: page++,
       tag: tag,
@@ -192,17 +251,17 @@ function buildSlides(zhStanzas, enStanzas, pairings, layoutMode = 'interleave', 
       content: content
     });
   }
-  
+
   return slides;
 }
 
 /**
- * 根據排版模式合併中英內容
+ * 根據排版模式合併中英��容
  */
 function mergeContent(zhContent, enContent, layoutMode, layoutSwap) {
   const first = layoutSwap ? enContent : zhContent;
   const second = layoutSwap ? zhContent : enContent;
-  
+
   switch (layoutMode) {
     case 'interleave':
       return mergeInterleave(first, second);
@@ -224,38 +283,38 @@ function mergeInterleave(zhContent, enContent) {
   if (!zhContent && !enContent) return '';
   if (!zhContent) return enContent;
   if (!enContent) return zhContent;
-  
+
   const zhLines = zhContent.split('\n').filter(l => l.trim());
   const enLines = enContent.split('\n').filter(l => l.trim());
-  
+
   const result = [];
   const maxLen = Math.max(zhLines.length, enLines.length);
-  
+
   for (let i = 0; i < maxLen; i++) {
     if (zhLines[i]) result.push(zhLines[i]);
     if (enLines[i]) result.push(enLines[i]);
   }
-  
+
   return result.join('\n');
 }
 
 /**
  * 自動配對中英段落（簡單按順序一對一配對）
- * @param {Array} zhStanzas 
- * @param {Array} enStanzas 
+ * @param {Array} zhStanzas
+ * @param {Array} enStanzas
  * @returns {Array} [{zhId, enId}]
  */
 function autoPairStanzas(zhStanzas, enStanzas) {
   const pairings = [];
   const maxLen = Math.max(zhStanzas.length, enStanzas.length);
-  
+
   for (let i = 0; i < maxLen; i++) {
     pairings.push({
       zhId: zhStanzas[i] ? zhStanzas[i].id : null,
       enId: enStanzas[i] ? enStanzas[i].id : null
     });
   }
-  
+
   return pairings;
 }
 
