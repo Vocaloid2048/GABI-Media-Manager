@@ -719,7 +719,7 @@ async function generateMultiLangProFile(params) {
       // 移除原來的 info=2 element
       const filteredElements = baseSlideElements.filter(e => e.info !== 2);
 
-      // Text（中文）：bounds = (53, 47, 1819, 451), fontSize = 115
+      // Text（中文）：bounds = (53, 47, 1819, 451), fontSize = 115, name="Text2"
       const zhTextElement = createTextElement(
         lyricsTextTemplate,
         { x: 53, y: 47, width: 1819, height: 451 },
@@ -727,30 +727,32 @@ async function generateMultiLangProFile(params) {
         115,
         true
       );
+      zhTextElement.element.name = "Text2";
       zhTextElement.element.text.rtfData = textToRTF(
         slide.zhContent || "", baseSlideToUse, "MicrosoftJhengHeiUIBold", 115, true, rtfTemplate
       );
 
-      // Text2（英文）：bounds = (53, 624, 1819, 411), fontSize = 90
+      // Text2（英文）：bounds = (53, 515, 1819, 517), fontSize = 90, name="Text"
       const enTextElement = createTextElement(
         lyricsTextTemplate,
-        { x: 53, y: 624, width: 1819, height: 411 },
+        { x: 53, y: 515, width: 1819, height: 517 },
         "ArialMT",
         90,
         false
       );
+      enTextElement.element.name = "Text";
       enTextElement.element.text.rtfData = textToRTF(
         slide.enContent || "", baseSlideToUse, "ArialMT", 90, false, rtfTemplate
       );
 
-      // 添加兩個 text element
-      filteredElements.push(zhTextElement, enTextElement);
+      // 英文在下、中文在上（後加的在更上層）
+      filteredElements.push(enTextElement, zhTextElement);
       cue.actions[0].slide.presentation.baseSlide.elements = filteredElements;
 
-      // 更新 elementBuildOrder
+      // elementBuildOrder：先畫英文、後畫中文 → 中文位於最上層
       cue.actions[0].slide.presentation.baseSlide.elementBuildOrder = [
-        { string: zhTextElement.element.uuid.string },
-        { string: enTextElement.element.uuid.string }
+        { string: enTextElement.element.uuid.string },
+        { string: zhTextElement.element.uuid.string }
       ];
     } else {
       // 單語排版（標題頁或空白頁）
