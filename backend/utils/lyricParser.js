@@ -131,7 +131,8 @@ function parseLyricText(text) {
         });
       }
       currentStanzaLines = [];
-      currentTag = null;  // 空行後重置標籤（下一段需要重新標記）
+      // 空行只結束當前段落，不重置標籤；
+      // 若下一段沒有新標籤行，則沿用上一段標籤（例如同一 [Chorus] 因空行分頁）。
     } else {
       // 普通歌詞行
       currentStanzaLines.push(line);
