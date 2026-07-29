@@ -18,7 +18,8 @@ const LyricEditorPopup = ({ onClose }) => {
   const { locale } = useLanguage();
   const [step, setStep] = useState(1);
   const [data, setData] = useState({
-    songName: '',
+    songNameZh: '',
+    songNameEn: '',
     proFile: null,
     proParsedData: null,
     proElementMapping: { zh: 0, en: 1 },

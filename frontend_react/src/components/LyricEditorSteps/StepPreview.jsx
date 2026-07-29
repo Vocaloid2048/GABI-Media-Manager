@@ -78,7 +78,7 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
       authorParts.push(`${labels.arranger[copyrightLanguage] || labels.arranger.en}${copyright.arranger.trim()}`);
     }
     return {
-      songTitle: data.songName || '',
+      songTitle: [data.songNameZh, data.songNameEn].filter(Boolean).join('\n'),
       author: authorParts.join('\n'),
       publisher: copyright.publisher || '',
       copyrightYear: copyright.year || ''
@@ -101,7 +101,7 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
       fixed.unshift({
         id: 'fixed_title',
         is_title: true,
-        content: data.songName || "Title",
+        content: [data.songNameZh, data.songNameEn].filter(Boolean).join('\n') || "Title",
         tag: 'TAG',
         fixed: true
       });
@@ -217,7 +217,7 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          songName: data.songName,
+          songName: [data.songNameZh, data.songNameEn].filter(Boolean).join('\n'),
           slides: data.slides,
           copyright: data.copyright,
           theme: selectedTheme + "_Theme",
@@ -236,7 +236,7 @@ const StepPreview = ({ data, onChange, onPrev, onComplete }) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${data.songName}.pro`;
+        a.download = `${[data.songNameZh, data.songNameEn].filter(Boolean).join(' ')}.pro`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);

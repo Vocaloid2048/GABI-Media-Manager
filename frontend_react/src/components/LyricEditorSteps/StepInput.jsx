@@ -110,7 +110,7 @@ const StepInput = ({ data, onChange, onNext, error }) => {
   const hasMultipleElements = data.proParsedData?.slides?.some(s => s.elements && s.elements.length > 1);
   const maxElements = data.proParsedData?.slides?.reduce((max, s) => Math.max(max, s.elements?.length || 0), 0) || 0;
 
-  const canProceed = data.songName?.trim() && (
+  const canProceed = (data.songNameZh?.trim() || data.songNameEn?.trim()) && (
     data.zhText?.trim() ||
     data.enText?.trim() ||
     data.proUseFor?.zh ||
@@ -119,19 +119,29 @@ const StepInput = ({ data, onChange, onNext, error }) => {
 
   return (
     <div className="space-y-6">
-      {/* 歌曲名稱 */}
+      {/* 歌曲名稱 - 中文 / 英文分欄 */}
       <div>
         <label className="block text-white text-sm font-medium mb-2">
           {locale('lyric_editor.song_name')} <span className="text-red-500">*</span>
         </label>
-        <input
-          type="text"
-          value={data.songName || ''}
-          onChange={(e) => onChange({ songName: e.target.value })}
-          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-          placeholder={locale('lyric_editor.song_name_placeholder')}
-          maxLength={100}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <input
+            type="text"
+            value={data.songNameZh || ''}
+            onChange={(e) => onChange({ songNameZh: e.target.value })}
+            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            placeholder={locale('lyric_editor.song_name_zh_placeholder')}
+            maxLength={100}
+          />
+          <input
+            type="text"
+            value={data.songNameEn || ''}
+            onChange={(e) => onChange({ songNameEn: e.target.value })}
+            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            placeholder={locale('lyric_editor.song_name_en_placeholder')}
+            maxLength={100}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
