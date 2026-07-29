@@ -759,7 +759,7 @@ async function generateMultiLangProFile(params) {
         const textContent = slide.content || slide.zhContent || slide.enContent || "";
         // 標題頁使用左對齊，不居中
         const alignment = slide.is_title ? 'left' : null;
-        textElement.element.text.rtfData = textToRTF(textContent, baseSlideToUse, fontName, fontSize, bold, rtfTemplate, alignment);
+        textElement.element.text.rtfData = textToRTF(textContent, baseSlideToUse, fontName, fontSize, bold, slide.is_title ? null : rtfTemplate, alignment);
       }
     }
 
